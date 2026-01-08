@@ -1,379 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Siena Lane - Digital Marketing Portfolio</title>
-      <style>
-                * {
-                              margin: 0;
-                              padding: 0;
-                              box-sizing: border-box;
-                }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siena Lane - Digital Marketing Portfolio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-                :root {
-                              --cream: #F5F1E8;
-                              --sage-dark: #6B8E7F;
-                              --sage-light: #A8C5B3;
-                              --sage-very-light: #D4E5DC;
-                              --blush: #E8D4D0;
-                              --lavender: #D9D0E8;
-                              --dark-text: #3D3D3D;
-                              --accent-gold: #C9A961;
-                }
+    :root {
+      --cream: #F5F1E8;
+      --sage-dark: #6B8E7F;
+      --sage-light: #A8C5B3;
+      --sage-very-light: #D4E5DC;
+      --blush: #E8D4D0;
+      --lavender: #D9D0E8;
+      --dark-text: #3D3D3D;
+      --accent-gold: #C9A961;
+    }
 
-                html {
-                              scroll-behavior: smooth;
-                              background: var(--cream);
-                }
+    html {
+      scroll-behavior: smooth;
+      background: var(--cream);
+    }
 
-                body {
-                              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                              line-height: 1.6;
-                              color: var(--dark-text);
-                              background-color: var(--cream);
-                }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--dark-text);
+      background-color: var(--cream);
+    }
 
-                .navbar {
-                              position: sticky;
-                              top: 0;
-                              background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
-                              box-shadow: 0 4px 15px rgba(107, 142, 127, 0.1);
-                              z-index: 1000;
-                              padding: 1.2rem 0;
-                }
+    .navbar {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
+      box-shadow: 0 4px 15px rgba(107, 142, 127, 0.1);
+      z-index: 1000;
+      padding: 1.2rem 0;
+    }
 
-                .navbar-container {
-                              max-width: 1200px;
-                              margin: 0 auto;
-                              padding: 0 2rem;
-                              display: flex;
-                              justify-content: space-between;
-                              align-items: center;
-                }
+    .navbar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-                .logo {
-                              font-size: 1.8rem;
-                              font-weight: 700;
-                              color: var(--cream);
-                              letter-spacing: -0.5px;
-                }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: -0.5px;
+    }
 
-                .nav-menu {
-                              display: flex;
-                              gap: 2.5rem;
-                              align-items: center;
-                }
+    .nav-menu {
+      display: flex;
+      gap: 2.5rem;
+      align-items: center;
+    }
 
-                .nav-link {
-                              color: var(--cream);
-                              text-decoration: none;
-                              font-weight: 500;
-                              font-size: 0.95rem;
-                              transition: all 0.3s ease;
-                              position: relative;
-                }
+    .nav-link {
+      color: var(--cream);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
 
-                .nav-link::after {
-                              content: '';
-                              position: absolute;
-                              bottom: -5px;
-                              left: 0;
-                              width: 0;
-                              height: 2px;
-                              background: var(--accent-gold);
-                              transition: width 0.3s ease;
-                }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent-gold);
+      transition: width 0.3s ease;
+    }
 
-                .nav-link:hover::after {
-                              width: 100%;
-                }
+    .nav-link:hover::after {
+      width: 100%;
+    }
 
-                .hero {
-                              background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 50%, rgba(212, 229, 220, 0.3) 100%), 
-                                                        linear-gradient(to bottom, var(--cream), var(--cream));
-                              color: var(--dark-text);
-                              padding: 120px 2rem;
-                              text-align: center;
-                              position: relative;
-                              overflow: hidden;
-                }
+    .hero {
+      background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 50%, rgba(212, 229, 220, 0.3) 100%), linear-gradient(to bottom, var(--cream), var(--cream));
+      color: var(--dark-text);
+      padding: 120px 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
 
-                .hero::before {
-                              content: '';
-                              position: absolute;
-                              top: -50%;
-                              right: -10%;
-                              width: 600px;
-                              height: 600px;
-                              background: rgba(232, 212, 208, 0.15);
-                              border-radius: 50%;
-                              animation: float 6s ease-in-out infinite;
-                }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: rgba(232, 212, 208, 0.15);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
 
-                .hero::after {
-                              content: '';
-                              position: absolute;
-                              bottom: -30%;
-                              left: -5%;
-                              width: 400px;
-                              height: 400px;
-                              background: rgba(217, 208, 232, 0.15);
-                              border-radius: 50%;
-                              animation: float 8s ease-in-out infinite reverse;
-                }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -5%;
+      width: 400px;
+      height: 400px;
+      background: rgba(217, 208, 232, 0.15);
+      border-radius: 50%;
+      animation: float 8s ease-in-out infinite reverse;
+    }
 
-                @keyframes float {
-                              0%, 100% { transform: translateY(0px); }
-                              50% { transform: translateY(30px); }
-                }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(30px); }
+    }
 
-                .hero-content {
-                              position: relative;
-                              z-index: 1;
-                              max-width: 800px;
-                              margin: 0 auto;
-                }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
 
-                .hero-title {
-                              font-size: 3.5rem;
-                              font-weight: 800;
-                              margin-bottom: 1.5rem;
-                              line-height: 1.2;
-                              color: var(--sage-dark);
-                              text-shadow: 0 2px 10px rgba(245, 241, 232, 0.3);
-                }
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+      color: var(--sage-dark);
+      text-shadow: 0 2px 10px rgba(245, 241, 232, 0.3);
+    }
 
-                .hero-subtitle {
-                              font-size: 1.25rem;
-                              margin-bottom: 2.5rem;
-                              opacity: 0.9;
-                              font-weight: 300;
-                              max-width: 600px;
-                              margin-left: auto;
-                              margin-right: auto;
-                              color: var(--dark-text);
-                }
+    .hero-subtitle {
+      font-size: 1.25rem;
+      margin-bottom: 2.5rem;
+      opacity: 0.9;
+      font-weight: 300;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      color: var(--dark-text);
+    }
 
-                .cta-button {
-                              display: inline-block;
-                              background: var(--sage-dark);
-                              color: var(--cream);
-                              padding: 1rem 2.5rem;
-                              border-radius: 50px;
-                              text-decoration: none;
-                              font-weight: 600;
-                              font-size: 1.1rem;
-                              transition: all 0.3s ease;
-                              box-shadow: 0 10px 30px rgba(107, 142, 127, 0.2);
-                              border: none;
-                              cursor: pointer;
-                }
+    .cta-button {
+      display: inline-block;
+      background: var(--sage-dark);
+      color: var(--cream);
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(107, 142, 127, 0.2);
+      border: none;
+      cursor: pointer;
+    }
 
-                .cta-button:hover {
-                              transform: translateY(-3px);
-                              box-shadow: 0 15px 40px rgba(107, 142, 127, 0.3);
-                              background: var(--sage-light);
-                              color: var(--dark-text);
-                }
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(107, 142, 127, 0.3);
+      background: var(--sage-light);
+      color: var(--dark-text);
+    }
 
-                .about {
-                              padding: 80px 2rem;
-                              background: var(--cream);
-                }
+    .about {
+      padding: 80px 2rem;
+      background: var(--cream);
+    }
 
-                .contact {
-                              padding: 80px 2rem;
-                              background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
-                              color: var(--cream);
-                }
+    .contact {
+      padding: 80px 2rem;
+      background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
+      color: var(--cream);
+    }
 
-                .portfolio {
-                              padding: 80px 2rem;
-                              background: var(--sage-very-light);
-                }
+    .portfolio {
+      padding: 80px 2rem;
+      background: var(--sage-very-light);
+    }
 
-                .container {
-                              max-width: 1200px;
-                              margin: 0 auto;
-                }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-                h2 {
-                              font-size: 2.5rem;
-                              margin-bottom: 1.5rem;
-                              color: var(--sage-dark);
-                              text-align: center;
-                              font-weight: 700;
-                              position: relative;
-                              display: inline-block;
-                              width: 100%;
-                }
+    h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--sage-dark);
+      text-align: center;
+      font-weight: 700;
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
 
-                h2::after {
-                              content: '';
-                              display: block;
-                              width: 60px;
-                              height: 4px;
-                              background: linear-gradient(90deg, var(--sage-light), var(--accent-gold));
-                              margin: 1rem auto 0;
-                }
+    h2::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--sage-light), var(--accent-gold));
+      margin: 1rem auto 0;
+    }
 
-                .contact h2 {
-                              color: var(--cream);
-                }
+    .contact h2 {
+      color: var(--cream);
+    }
 
-                .contact h2::after {
-                              background: rgba(245, 241, 232, 0.4);
-                }
+    .contact h2::after {
+      background: rgba(245, 241, 232, 0.4);
+    }
 
-                .about p {
-                              font-size: 1.1rem;
-                              line-height: 1.8;
-                              color: var(--dark-text);
-                              max-width: 700px;
-                              margin: 2rem auto;
-                              text-align: center;
-                }
+    .about p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--dark-text);
+      max-width: 700px;
+      margin: 2rem auto;
+      text-align: center;
+    }
 
-                .portfolio-grid {
-                              display: grid;
-                              grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                              gap: 2rem;
-                              margin-top: 3rem;
-                }
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
 
-                .portfolio-card {
-                              background: var(--cream);
-                              border-radius: 12px;
-                              padding: 2rem;
-                              text-align: center;
-                              box-shadow: 0 5px 20px rgba(107, 142, 127, 0.08);
-                              transition: all 0.3s ease;
-                              border: 1px solid var(--sage-very-light);
-                }
+    .portfolio-card {
+      background: var(--cream);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(107, 142, 127, 0.08);
+      transition: all 0.3s ease;
+      border: 1px solid var(--sage-very-light);
+    }
 
-                .portfolio-card:hover {
-                              transform: translateY(-10px);
-                              box-shadow: 0 20px 40px rgba(107, 142, 127, 0.15);
-                              border-color: var(--sage-light);
-                              background: linear-gradient(135deg, var(--cream) 0%, var(--sage-very-light) 100%);
-                }
+    .portfolio-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(107, 142, 127, 0.15);
+      border-color: var(--sage-light);
+      background: linear-gradient(135deg, var(--cream) 0%, var(--sage-very-light) 100%);
+    }
 
-                .card-image {
-                              width: 100%;
-                              height: 200px;
-                              background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage-very-light) 50%, var(--blush) 100%);
-                              border-radius: 8px;
-                              margin-bottom: 1.5rem;
-                }
+    .card-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage-very-light) 50%, var(--blush) 100%);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
 
-                .portfolio-card h3 {
-                              font-size: 1.3rem;
-                              margin-bottom: 0.8rem;
-                              color: var(--sage-dark);
-                }
+    .portfolio-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.8rem;
+      color: var(--sage-dark);
+    }
 
-                .portfolio-card p {
-                              color: var(--dark-text);
-                              line-height: 1.6;
-                }
+    .portfolio-card p {
+      color: var(--dark-text);
+      line-height: 1.6;
+    }
 
-                .contact p {
-                              color: var(--cream);
-                              font-size: 1.1rem;
-                              margin: 1rem auto 2.5rem;
-                }
+    .contact p {
+      color: var(--cream);
+      font-size: 1.1rem;
+      margin: 1rem auto 2.5rem;
+    }
 
-                .footer {
-                              background: var(--sage-dark);
-                              color: var(--cream);
-                              text-align: center;
-                              padding: 2rem;
-                              font-size: 0.95rem;
-                }
+    .footer {
+      background: var(--sage-dark);
+      color: var(--cream);
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.95rem;
+    }
 
-                @media (max-width: 768px) {
-                              .hero-title {
-                                                font-size: 2.2rem;
-                              }
-                              .hero-subtitle {
-                                                font-size: 1rem;
-                              }
-                              .nav-menu {
-                                                gap: 1.5rem;
-                              }
-                              h2 {
-                                                font-size: 1.8rem;
-                              }
-                              .portfolio-grid {
-                                                grid-template-columns: 1fr;
-                              }
-                }
-            </style>
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.2rem; }
+      .hero-subtitle { font-size: 1rem; }
+      .nav-menu { gap: 1.5rem; }
+      h2 { font-size: 1.8rem; }
+      .portfolio-grid { grid-template-columns: 1fr; }
+    }
+    </style>
   </head>
   <body>
-        <header class="navbar">
-                  <div class="navbar-container">
-                                <div class="logo">SienaLane</div>div>
-                                <nav class="nav-menu">
-                                                  <a href="#about" class="nav-link">About</a>a>
-                                                  <a href="#portfolio" class="nav-link">Portfolio</a>a>
-                                                  <a href="#contact" class="nav-link">Contact</a>a>
-                                </nav>nav>
-                  </div>div>
-        </header>header>
 
-        <section class="hero">
-                  <div class="hero-content">
-                                <h1 class="hero-title">Digital Marketing Strategy & Execution</h1>h1>
-                                <p class="hero-subtitle">Specialized in social media marketing and email campaigns that drive engagement and results</p>p>
-                                <a href="#contact" class="cta-button">Get Started</a>a>
-                  </div>div>
-        </section>section>
+    <header class="navbar">
+      <div class="navbar-container">
+        <div class="logo">SienaLane</div>div>
+        <nav class="nav-menu">
+          <a href="#about" class="nav-link">About</a>a>
+          <a href="#portfolio" class="nav-link">Portfolio</a>a>
+          <a href="#contact" class="nav-link">Contact</a>a>
+        </nav>nav>
+      </div>div>
+    </header>header>
 
-        <section id="about" class="about">
-                  <div class="container">
-                                <h2>About Me</h2>
-                              <p>I'm a digital marketing specialist with a passion for creating compelling campaigns that connect brands with their audiences. With expertise in social media strategy, email marketing, and analytics, I help businesses grow their online presence.</p>
-                  </div>div>
-        </section>section>
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title">Digital Marketing Strategy & Execution</h1>h1>
+        <p class="hero-subtitle">Specialized in social media marketing and email campaigns that drive engagement and results</p>p>
+        <a href="#contact" class="cta-button">Get Started</a>a>
+      </div>div>
+    </section>section>
+
+    <section id="about" class="about">
+      <div class="container">
+        <h2>About Me</h2>
+      <p>I'm a digital marketing specialist with a passion for creating compelling campaigns that connect brands with their audiences. With expertise in social media strategy, email marketing, and analytics, I help businesses grow their online presence.</p>
+      </div>div>
+    </section>section>
   
-      <section id="portfolio" class="portfolio">
-              <div class="container">
-                          <h2>My Portfolio</h2>
-                          <div class="portfolio-grid">
-                                          <div class="portfolio-card">
-                                                              <div class="card-image"></div>div>
-                                                              <h3>Social Media Campaigns</h3>
-                                                              <p>Designed and executed targeted social media campaigns that increased brand awareness and engagement</p>
-                                          </div>div>
-                                          <div class="portfolio-card">
-                                                              <div class="card-image"></div>div>
-                                                              <h3>Email Marketing</h3>
-                                                              <p>Created strategic email campaigns with high conversion rates and customer retention</p>
-                                          </div>div>
-                                          <div class="portfolio-card">
-                                                              <div class="card-image"></div>div>
-                                                              <h3>Analytics & Insights</h3>
-                                                              <p>Analyzed data to provide actionable insights and optimize marketing strategies</p>
-                                          </div>div>
-                          </div>div>
-              </div>div>
-      </section>section>
+  <section id="portfolio" class="portfolio">
+  <div class="container">
+  <h2>My Portfolio</h2>
+  <div class="portfolio-grid">
+  <div class="portfolio-card">
+  <div class="card-image"></div>div>
+  <h3>Social Media Campaigns</h3>
+  <p>Designed and executed targeted social media campaigns that increased brand awareness and engagement</p>
+  </div>div>
+  <div class="portfolio-card">
+  <div class="card-image"></div>div>
+  <h3>Email Marketing</h3>
+  <p>Created strategic email campaigns with high conversion rates and customer retention</p>
+  </div>div>
+  <div class="portfolio-card">
+  <div class="card-image"></div>div>
+  <h3>Analytics & Insights</h3>
+  <p>Analyzed data to provide actionable insights and optimize marketing strategies</p>
+  </div>div>
+  </div>div>
+  </div>div>
+  </section>section>
   
-      <section id="contact" class="contact">
-              <div class="container">
-                          <h2>Let's Work Together</h2>
-                          <p>Ready to elevate your digital marketing? Get in touch today!</p>
-                          <p>Email: hello@sienalane.com | Phone: (555) 123-4567</p>
-              </div>div>
-      </section>section>
+  <section id="contact" class="contact">
+  <div class="container">
+  <h2>Let's Work Together</h2>
+  <p>Ready to elevate your digital marketing? Get in touch today!</p>
+  <p>Email: hello@sienalane.com | Phone: (555) 123-4567</p>
+  </div>div>
+  </section>section>
   
-      <footer class="footer">
-              <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
-      </footer>footer>
+  <footer class="footer">
+  <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+  </footer>footer>
+  
   </body>
 </html>html></p></p></h2>
   </body>
-      </style></title>
+  </style></title>
   </head>
