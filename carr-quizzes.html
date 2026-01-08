@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carr Winery Quizzes - Siena Lane</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <!-- Back to Home Link -->
+    <div class="mb-6 text-center">
+        <a href="index.html" class="text-purple-600 hover:text-purple-800 font-medium">
+            ← Back to Siena Lane
+        </a>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex justify-center gap-4 mb-8 flex-wrap">
+        <button id="tab-main" class="tab-button active px-6 py-3 rounded-lg font-bold transition-all">
+            Which Carr Wine Are You?
+        </button>
+        <button id="tab-thursday" class="tab-button px-6 py-3 rounded-lg font-bold transition-all">
+            Thirsty Thursday Quiz
+        </button>
+    </div>
+
+    <!-- Quiz 1: Main Wine Personality -->
+    <div id="quiz-main" class="quiz-section">
+        <div id="main-quiz-app"></div>
+    </div>
+
+    <!-- Quiz 2: Thirsty Thursday -->
+    <div id="quiz-thursday" class="quiz-section hidden">
+        <div id="thursday-quiz-app"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+    .tab-button {
+        background: white;
+        color: #6b7280;
+        border: 2px solid #e5e7eb;
+    }
+    .tab-button.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+    .tab-button:hover:not(.active) {
+        border-color: #9333ea;
+        color: #9333ea;
+    }
+</style>
+
+<script type="text/babel">
+const { useState } = React;
+
+// Tab Switching Logic
+document.getElementById('tab-main').addEventListener('click', () => {
+    document.getElementById('quiz-main').classList.remove('hidden');
+    document.getElementById('quiz-thursday').classList.add('hidden');
+    document.getElementById('tab-main').classList.add('active');
+    document.getElementById('tab-thursday').classList.remove('active');
+});
+
+document.getElementById('tab-thursday').addEventListener('click', () => {
+    document.getElementById('quiz-main').classList.add('hidden');
+    document.getElementById('quiz-thursday').classList.remove('hidden');
+    document.getElementById('tab-main').classList.remove('active');
+    document.getElementById('tab-thursday').classList.add('active');
+});
+
+// ============================================================
+// QUIZ 1: WHICH CARR WINE ARE YOU?
+// ============================================================
+
+function CarrWinePersonalityQuiz() {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+
+  const questions = [
+    {
+      id: 'food',
+      question: "What's your ideal comfort food?",
+      options: [
+        { text: "Rich pasta with cream sauce", points: { chardonnay: 3, port: 1 } },
+        { text: "Grilled steak with chimichurri", points: { cabfranc: 3, cabsauv: 2 } },
+        { text: "Fresh oysters and seafood", points: { vermentino: 3, sauvblanc: 2 } },
+        { text: "Spicy curry with bold flavors", points: { syrah: 3, elguapo: 2 } },
+        { text: "Elegant charcuterie with aged cheeses", points: { pinot: 3, sangiovese: 2 } }
+      ]
+    },
+    {
+      id: 'beach',
+      question: "How do you feel about the beach?",
+      options: [
+        { text: "I live for beach days and ocean breezes!", points: { vermentino: 3, rose: 2 } },
+        { text: "It's nice occasionally, prefer wine country", points: { pinot: 2, chardonnay: 2 } },
+        { text: "I prefer mountains or forests", points: { cabfranc: 3, syrah: 2 } },
+        { text: "Sand? No thanks, I'll stay cozy inside", points: { port: 3, sangiovese: 2 } }
+      ]
+    },
+    {
+      id: 'party',
+      question: "At a party, you're most likely to:",
+      options: [
+        { text: "Be energetic and social with everyone", points: { rose: 3, sauvblanc: 2 } },
+        { text: "Have deep, meaningful conversations", points: { pinot: 3, cabfranc: 2 } },
+        { text: "Network and make lasting connections", points: { chardonnay: 3, cabsauv: 2 } },
+        { text: "Be bold and make a statement", points: { elguapo: 3, syrah: 2 } },
+        { text: "Enjoy a nightcap and good company", points: { port: 3, sangiovese: 2 } }
+      ]
+    },
+    {
+      id: 'weekend',
+      question: "Your perfect weekend involves:",
+      options: [
+        { text: "Seaside brunch with friends", points: { vermentino: 3, rose: 2 } },
+        { text: "Hiking through wine country", points: { sauvblanc: 3, pinot: 2 } },
+        { text: "Art gallery and fine dining", points: { pinot: 3, chardonnay: 2 } },
+        { text: "BBQ with bold, smoky flavors", points: { syrah: 3, elguapo: 2 } },
+        { text: "Cozy evening with dessert and conversation", points: { port: 3, sangiovese: 2 } }
+      ]
+    },
+    {
+      id: 'season',
+      question: "Which season speaks to your soul?",
+      options: [
+        { text: "Summer - sunshine and coastal vibes!", points: { rose: 3, vermentino: 2 } },
+        { text: "Fall - harvest time and crisp air", points: { pinot: 3, sangiovese: 2 } },
+        { text: "Winter - fireplaces and rich flavors", points: { port: 3, cabsauv: 2 } },
+        { text: "Spring - fresh starts and bright days", points: { sauvblanc: 3, chardonnay: 2 } }
+      ]
+    },
+    {
+      id: 'vibe',
+      question: "Your personal style is:",
+      options: [
+        { text: "Fresh, bright, and effortlessly cool", points: { vermentino: 3, sauvblanc: 2 } },
+        { text: "Classic, elegant, and refined", points: { chardonnay: 3, pinot: 2 } },
+        { text: "Complex, intriguing, and layered", points: { pinot: 3, cabfranc: 2 } },
+        { text: "Bold, spicy, and unforgettable", points: { elguapo: 3, syrah: 2 } },
+        { text: "Rich, unique, and indulgent", points: { port: 3, cabsauv: 2 } }
+      ]
+    }
+  ];
+
+  const wineResults = {
+    sauvblanc: {
+      name: "Sauvignon Blanc",
+      description: "You're crisp, vibrant, and always refreshing! Like Carr's Sauvignon Blanc from Los Olivos District, you bring bright energy with notes of lemongrass, cantaloupe, and grapefruit. You're elegant, fresh, and perfect for any occasion - whether it's a casual gathering or an outdoor adventure.",
+      emoji: "🍋"
+    },
+    vermentino: {
+      name: "Vermentino",
+      description: "You're light, breezy, and delightfully unique! Like this rare gem from Open Gate Vineyard, you offer something special with peach blossom, lemon zest, and a dazzling acidity. You're the person who brings unexpected joy and sophistication to every moment.",
+      emoji: "🌊"
+    },
+    chardonnay: {
+      name: "Chardonnay",
+      description: "You're balanced, sophisticated, and full of character! Like Carr's oak-aged Chardonnay from Sta. Rita Hills, you have waves of toasted caramel and honey with a smooth, citrus finish. You appreciate both richness and elegance in life.",
+      emoji: "✨"
+    },
+    rose: {
+      name: "Grenache Rosé",
+      description: "You're light, crisp, and effortlessly delightful! Like this dry rosé from Kærskov Vineyard, you're bursting with strawberry, tangerine, and citrus aromas with hints of honeysuckle and peach. You bring a breezy, refreshing energy wherever you go.",
+      emoji: "🌸"
+    },
+    pinot: {
+      name: "Pinot Noir (Sta. Rita Hills)",
+      description: "You're elegant, complex, and world-class! Like this premium Pinot from the renowned Sta. Rita Hills, you're refined and thoughtful with incredible depth. With bright plum, clove, and cola notes, you unfold beautifully over time with silky sophistication.",
+      emoji: "🍂"
+    },
+    cabfranc: {
+      name: "Cabernet Franc",
+      description: "You're bold, intriguing, and unforgettable! Like Carr's Cabernet Franc with its chili pepper spice and dark chocolate notes, you open with complexity and reveal silky layers of black plum and blackcurrant. Your presence lingers long after you've left the room.",
+      emoji: "🌶️"
+    },
+    cabsauv: {
+      name: "Cabernet Sauvignon",
+      description: "You're rich, balanced, and commanding! Like this Cabernet from Happy Canyon's Sky's The Limit Vineyard, you have lush layers of baked cherry, blackberry, and black currant with hints of vanilla and caramel. You're well-balanced and leave a lasting impression.",
+      emoji: "👑"
+    },
+    syrah: {
+      name: "Syrah",
+      description: "You're rich, layered, and deeply satisfying! Like Carr's Syrah from Kærskov Vineyard, you have a deep ruby color with violet hues and a bouquet of crushed blackberries, blueberries, and white pepper. You're medium to full-bodied with a smooth, velvety finish.",
+      emoji: "🫐"
+    },
+    elguapo: {
+      name: "El Guapo (Grenache/Syrah Blend)",
+      description: "You're smooth, confident, and wonderfully charismatic! Like this 70% Grenache and 30% Syrah blend, you burst with personality - blackberries, white pepper, and baking spices. You're both refreshing and cozy, with inviting brightness and subtle spice that makes you endlessly appealing.",
+      emoji: "🔥"
+    },
+    sangiovese: {
+      name: "Sangiovese",
+      description: "You're expressive, sophisticated, and distinctly Italian in spirit! Like Carr's Sangiovese with its juicy red fruit and tea spice, you have aromatic intensity followed by a hint of molasses and a rich, velvety finish. You bring Old World charm with California soul.",
+      emoji: "🍒"
+    },
+    port: {
+      name: "Port-Style Wine (Método Portuguese)",
+      description: "You're rich, unique, and truly one-of-a-kind! Like Carr's rare port-style wine aged 4 years in French oak, you're smooth with candied cherry and peppers. You're perfect for life's special moments, bringing depth and sweetness that makes any occasion memorable.",
+      emoji: "🍫"
+    }
+  };
+
+  const handleAnswer = (option) => {
+    const newAnswers = { ...answers };
+
+    Object.entries(option.points).forEach(([wine, points]) => {
+      newAnswers[wine] = (newAnswers[wine] || 0) + points;
+    });
+
+    setAnswers(newAnswers);
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      calculateResult(newAnswers);
+    }
+  };
+
+  const calculateResult = (finalAnswers) => {
+    const winner = Object.entries(finalAnswers).reduce((a, b) =>
+      a[1] > b[1] ? a : b
+    )[0];
+    setResult(wineResults[winner]);
+  };
+
+  const resetQuiz = () => {
+    setCurrentQuestion(0);
+    setAnswers({});
+    setResult(null);
+  };
+
+  if (result) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg shadow-lg">
+          <div className="p-8 text-center">
+            <div className="text-6xl mb-4">{result.emoji}</div>
+            <h2 className="text-3xl font-bold text-purple-900 mb-2">
+              You're Carr's {result.name}!
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-6">
+              {result.description}
+            </p>
+            <div className="mb-6 p-4 bg-white rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">Ready to taste your match?</p>
+              <a
+                href="https://carrwinery.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:text-purple-800 font-semibold underline"
+              >
+                Visit Carr Winery in Santa Barbara
+              </a>
+            </div>
+            <button
+              onClick={resetQuiz}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              Take Quiz Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-center text-purple-900 mb-2">
+          🍷 Which Carr Wine Are You? 🍷
+        </h1>
+        <p className="text-center text-gray-600 mb-4">
+          Discover your wine personality from Carr Winery's Santa Barbara collection!
+        </p>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-center text-sm text-gray-500 mt-2">
+          Question {currentQuestion + 1} of {questions.length}
+        </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg">
+        <div className="p-6">
+          <h3 className="text-xl font-semibold text-gray-800 mb-6">
+            {questions[currentQuestion].question}
+          </h3>
+          <div className="space-y-3">
+            {questions[currentQuestion].options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswer(option)}
+                className="w-full p-4 text-left bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+              >
+                {option.text}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// QUIZ 2: THIRSTY THURSDAY
+// ============================================================
+
+function ThirstyThursdayQuiz() {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+
+  const questions = [
+    {
+      id: 'thursday',
+      question: "How do you typically spend your Thursday evenings?",
+      options: [
+        { text: "Happy hour with coworkers", points: { rose: 3, chardonnay: 1 } },
+        { text: "Date night downtown", points: { chardonnay: 3, ilpadrino: 2 } },
+        { text: "Catching up with old friends", points: { ilpadrino: 3, elguapo: 2 } },
+        { text: "Trying new restaurants", points: { elguapo: 3, rose: 1 } }
+      ]
+    },
+    {
+      id: 'mood',
+      question: "What's your current vibe?",
+      options: [
+        { text: "Light, breezy, and carefree", points: { rose: 3, chardonnay: 1 } },
+        { text: "Sophisticated and polished", points: { chardonnay: 3, ilpadrino: 1 } },
+        { text: "Bold and adventurous", points: { elguapo: 3, ilpadrino: 2 } },
+        { text: "Smooth and easygoing", points: { ilpadrino: 3, rose: 1 } }
+      ]
+    },
+    {
+      id: 'snack',
+      question: "Which $5 snack sounds best right now?",
+      options: [
+        { text: "Fresh bruschetta", points: { rose: 3, chardonnay: 2 } },
+        { text: "Truffle fries", points: { chardonnay: 3, ilpadrino: 1 } },
+        { text: "Spicy meatballs", points: { elguapo: 3, ilpadrino: 2 } },
+        { text: "Italian charcuterie", points: { ilpadrino: 3, elguapo: 1 } }
+      ]
+    },
+    {
+      id: 'celebration',
+      question: "You're celebrating making it to Thursday! What are you toasting to?",
+      options: [
+        { text: "The weekend is almost here!", points: { rose: 3, elguapo: 1 } },
+        { text: "A successful work week", points: { chardonnay: 3, ilpadrino: 1 } },
+        { text: "Good times with good people", points: { ilpadrino: 3, rose: 2 } },
+        { text: "Living in the moment", points: { elguapo: 3, rose: 2 } }
+      ]
+    },
+    {
+      id: 'energy',
+      question: "After a long week, your energy level is:",
+      options: [
+        { text: "Still going strong, ready to socialize!", points: { rose: 3, elguapo: 2 } },
+        { text: "Refined and ready for good conversation", points: { chardonnay: 3, ilpadrino: 2 } },
+        { text: "Fired up for something exciting", points: { elguapo: 3, ilpadrino: 1 } },
+        { text: "Relaxed and enjoying the evening", points: { ilpadrino: 3, chardonnay: 1 } }
+      ]
+    },
+    {
+      id: 'music',
+      question: "What's playing on the Thirsty Thursday playlist?",
+      options: [
+        { text: "Upbeat pop and feel-good hits", points: { rose: 3, elguapo: 1 } },
+        { text: "Smooth jazz or acoustic sets", points: { chardonnay: 3, ilpadrino: 2 } },
+        { text: "Classic rock with energy", points: { elguapo: 3, rose: 1 } },
+        { text: "Italian dinner party vibes", points: { ilpadrino: 3, chardonnay: 1 } }
+      ]
+    }
+  ];
+
+  const wineResults = {
+    chardonnay: {
+      name: "Chardonnay",
+      description: "You're sophisticated, smooth, and love the finer things! Like Carr's oak-aged Chardonnay on tap, you bring waves of toasted caramel, honey, and citrus to any Thursday gathering. At just $5 a glass, you prove that elegance doesn't have to break the bank. You're the perfect way to elevate your Thursday evening!",
+      emoji: "✨",
+      color: "from-yellow-50 to-amber-50"
+    },
+    rose: {
+      name: "Grenache Rosé",
+      description: "You're fresh, fun, and the life of Thirsty Thursday! Like Carr's crisp Grenache Rosé on tap, you're bursting with strawberry, tangerine, and honeysuckle notes. You're light, refreshing, and bring that carefree Thursday energy that makes everyone glad they came out. At $5 a glass, you're the perfect pour to kick off the weekend vibes early!",
+      emoji: "🌸",
+      color: "from-pink-50 to-rose-50"
+    },
+    elguapo: {
+      name: "El Guapo",
+      description: "You're bold, confident, and unforgettable! Like Carr's El Guapo Grenache/Syrah blend on tap, you burst with blackberries, white pepper, and baking spices. You bring the heat and the charm to Thirsty Thursday. At $5 a glass, you're the bold choice that makes the evening memorable!",
+      emoji: "🔥",
+      color: "from-red-50 to-orange-50"
+    },
+    ilpadrino: {
+      name: "Il Padrino",
+      description: "You're smooth, approachable, and perfectly balanced! Like Carr's Il Padrino red blend on tap (Merlot, Sangiovese, and Cabernet Sauvignon), you bring fresh cherry, plum, and hints of cola and licorice. You're bright, silky, and have that easygoing Italian style that makes Thursday nights special. At $5 a glass, you're the classic choice everyone loves!",
+      emoji: "🍒",
+      color: "from-purple-50 to-red-50"
+    }
+  };
+
+  const handleAnswer = (option) => {
+    const newAnswers = { ...answers };
+
+    Object.entries(option.points).forEach(([wine, points]) => {
+      newAnswers[wine] = (newAnswers[wine] || 0) + points;
+    });
+
+    setAnswers(newAnswers);
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      calculateResult(newAnswers);
+    }
+  };
+
+  const calculateResult = (finalAnswers) => {
+    const winner = Object.entries(finalAnswers).reduce((a, b) =>
+      a[1] > b[1] ? a : b
+    )[0];
+    setResult(wineResults[winner]);
+  };
+
+  const resetQuiz = () => {
+    setCurrentQuestion(0);
+    setAnswers({});
+    setResult(null);
+  };
+
+  if (result) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className={`bg-gradient-to-br ${result.color} rounded-lg shadow-lg`}>
+          <div className="p-8 text-center">
+            <div className="text-6xl mb-4">{result.emoji}</div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              You're {result.name}!
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-6">
+              {result.description}
+            </p>
+            <div className="mb-6 p-4 bg-white rounded-lg shadow-sm">
+              <p className="text-2xl font-bold text-purple-600 mb-2">$5 Glasses Every Thursday!</p>
+              <p className="text-sm text-gray-600 mb-3">
+                Join us for Thirsty Thursday at Carr Winery
+              </p>
+              <a
+                href="https://carrwinery.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              >
+                Visit Us in Santa Barbara
+              </a>
+            </div>
+            <button
+              onClick={resetQuiz}
+              className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            >
+              Take Quiz Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <div className="mb-8">
+        <div className="text-center mb-4">
+          <div className="inline-block bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
+            THIRSTY THURSDAY SPECIAL
+          </div>
+          <h1 className="text-3xl font-bold text-purple-900 mb-2">
+            🍷 Which $5 Glass Are You? 🍷
+          </h1>
+          <p className="text-gray-600 mb-2">
+            Find your perfect Thirsty Thursday pour at Carr Winery!
+          </p>
+          <p className="text-sm text-purple-700 font-semibold">
+            Every Thursday • $5 Glasses on Tap
+          </p>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-center text-sm text-gray-500 mt-2">
+          Question {currentQuestion + 1} of {questions.length}
+        </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg">
+        <div className="p-6">
+          <h3 className="text-xl font-semibold text-gray-800 mb-6">
+            {questions[currentQuestion].question}
+          </h3>
+          <div className="space-y-3">
+            {questions[currentQuestion].options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswer(option)}
+                className="w-full p-4 text-left bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+              >
+                {option.text}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Render both quizzes
+ReactDOM.render(<CarrWinePersonalityQuiz />, document.getElementById('main-quiz-app'));
+ReactDOM.render(<ThirstyThursdayQuiz />, document.getElementById('thursday-quiz-app'));
+
+</script>
+
+</body>
+</html>
