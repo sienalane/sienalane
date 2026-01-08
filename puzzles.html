@@ -232,6 +232,58 @@
             transform: translateY(-2px);
         }
 
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            max-width: 450px;
+            margin: 1.5rem auto;
+            padding: 1rem;
+            background: var(--sage-very-light);
+            border-radius: 12px;
+        }
+
+        .number-btn {
+            aspect-ratio: 1;
+            border: 2px solid var(--sage-dark);
+            background: white;
+            color: var(--sage-dark);
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .number-btn:hover {
+            background: var(--sage-light);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .number-btn:active {
+            transform: scale(0.95);
+        }
+
+        .number-btn.clear {
+            background: #d32f2f;
+            color: white;
+            border-color: #d32f2f;
+            font-size: 1.2rem;
+        }
+
+        .number-btn.clear:hover {
+            background: #b71c1c;
+        }
+
+        .sudoku-cell.selected {
+            background: var(--accent-gold) !important;
+            box-shadow: 0 0 0 3px var(--accent-gold);
+        }
+
         /* Word Search Styles */
         .word-search-grid {
             display: grid;
@@ -491,6 +543,19 @@
                 max-width: 200px;
             }
 
+            .number-pad {
+                gap: 0.4rem;
+                padding: 0.75rem;
+            }
+
+            .number-btn {
+                font-size: 1.3rem;
+            }
+
+            .number-btn.clear {
+                font-size: 1rem;
+            }
+
             .word-search-cell {
                 font-size: 1rem;
             }
@@ -551,6 +616,19 @@
 
             .sudoku-cell .pencil-marks {
                 font-size: 0.5rem;
+            }
+
+            .number-pad {
+                gap: 0.3rem;
+                padding: 0.5rem;
+            }
+
+            .number-btn {
+                font-size: 1.1rem;
+            }
+
+            .number-btn.clear {
+                font-size: 0.85rem;
             }
         }
     </style>
@@ -744,6 +822,7 @@
         }
 
         let isPencilMode = false;
+        let selectedCell = null;
 
         function renderSudoku(container, puzzle) {
             let html = '<div class="mode-toggle">';
@@ -764,6 +843,15 @@
             }
 
             html += '</div>';
+
+            // Number pad
+            html += '<div class="number-pad">';
+            for (let i = 1; i <= 9; i++) {
+                html += `<button class="number-btn" onclick="enterNumber(${i})">${i}</button>`;
+            }
+            html += '<button class="number-btn clear" onclick="clearCell()">Clear</button>';
+            html += '</div>';
+
             html += '<div class="puzzle-controls">';
             html += '<button class="btn btn-primary" onclick="checkSudoku()">Check Solution</button>';
             html += '<button class="btn btn-secondary" onclick="resetPuzzle()">Reset</button>';
@@ -774,7 +862,7 @@
             // Add click handlers to cells
             document.querySelectorAll('.sudoku-cell:not(.given)').forEach(cell => {
                 cell.addEventListener('click', function() {
-                    handleCellClick(this);
+                    selectCell(this);
                 });
             });
         }
@@ -785,51 +873,74 @@
             document.getElementById('pencil-mode-btn').classList.toggle('active', pencilMode);
         }
 
-        function handleCellClick(cell) {
+        function selectCell(cell) {
             if (cell.classList.contains('given')) return;
 
-            // Create input dialog
-            const currentValue = cell.textContent.trim();
-            const currentPencil = cell.dataset.pencil || '';
+            // Remove previous selection
+            if (selectedCell) {
+                selectedCell.classList.remove('selected');
+            }
+
+            // Select new cell
+            selectedCell = cell;
+            cell.classList.add('selected');
+        }
+
+        function enterNumber(number) {
+            if (!selectedCell) {
+                alert('Please select a cell first!');
+                return;
+            }
 
             if (isPencilMode) {
-                // Pencil mode - allow multiple small numbers
-                const number = prompt('Enter pencil marks (e.g., "135" for 1, 3, 5):', currentPencil);
-                if (number === null) return;
+                // Pencil mode - toggle number in pencil marks
+                const currentPencil = selectedCell.dataset.pencil || '';
+                let marks = currentPencil.split('');
 
-                const cleaned = number.replace(/[^1-9]/g, '').split('').filter((v, i, a) => a.indexOf(v) === i).sort().join('');
-                cell.dataset.pencil = cleaned;
+                if (marks.includes(number.toString())) {
+                    // Remove if already present
+                    marks = marks.filter(n => n !== number.toString());
+                } else {
+                    // Add number
+                    marks.push(number.toString());
+                }
 
-                if (cleaned) {
-                    const marks = cleaned.split('');
+                marks = marks.sort().join('');
+                selectedCell.dataset.pencil = marks;
+
+                if (marks) {
                     let html = '<div class="pencil-marks">';
                     for (let i = 1; i <= 9; i++) {
                         html += `<div class="pencil-mark">${marks.includes(i.toString()) ? i : ''}</div>`;
                     }
                     html += '</div>';
-                    cell.innerHTML = html;
-                    cell.classList.add('pencil-mode');
+                    selectedCell.innerHTML = html;
+                    selectedCell.classList.add('pencil-mode');
                 } else {
-                    cell.innerHTML = '';
-                    cell.classList.remove('pencil-mode');
+                    selectedCell.innerHTML = '';
+                    selectedCell.classList.remove('pencil-mode');
                 }
             } else {
                 // Normal mode - single number
-                const number = prompt('Enter number (1-9):', currentValue);
-                if (number === null) return;
-
-                const cleaned = number.replace(/[^1-9]/g, '');
-                if (cleaned) {
-                    cell.textContent = cleaned[0];
-                    cell.style.fontSize = '1.5rem';
-                    cell.style.fontWeight = '600';
-                    cell.classList.remove('pencil-mode');
-                    cell.dataset.pencil = '';
-                } else {
-                    cell.textContent = '';
-                    cell.classList.remove('pencil-mode');
-                }
+                selectedCell.textContent = number;
+                selectedCell.style.fontSize = '1.5rem';
+                selectedCell.style.fontWeight = '600';
+                selectedCell.classList.remove('pencil-mode');
+                selectedCell.dataset.pencil = '';
             }
+        }
+
+        function clearCell() {
+            if (!selectedCell) {
+                alert('Please select a cell first!');
+                return;
+            }
+
+            selectedCell.textContent = '';
+            selectedCell.innerHTML = '';
+            selectedCell.style.color = '';
+            selectedCell.classList.remove('pencil-mode');
+            selectedCell.dataset.pencil = '';
         }
 
         function renderWordSearch(container, puzzle) {
@@ -1011,8 +1122,12 @@
                 cell.innerHTML = '';
                 cell.style.color = '';
                 cell.classList.remove('pencil-mode');
+                cell.classList.remove('selected');
                 cell.dataset.pencil = '';
             });
+
+            // Clear selected cell
+            selectedCell = null;
 
             // Reset crossword inputs
             document.querySelectorAll('.crossword-cell input').forEach(input => {
