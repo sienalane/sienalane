@@ -437,6 +437,56 @@
                 font-size: 0.95rem;
             }
         }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .slide-in-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide-in-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .slide-in-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .scale-in {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .scale-in.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Stagger animation delays for cards */
+        .portfolio-card:nth-child(1) { transition-delay: 0.1s; }
+        .portfolio-card:nth-child(2) { transition-delay: 0.2s; }
+        .portfolio-card:nth-child(3) { transition-delay: 0.3s; }
     </style>
 </head>
 <body>
@@ -447,6 +497,7 @@
                 <a href="#about" class="nav-link">About</a>
                 <a href="#portfolio" class="nav-link">Portfolio</a>
                 <a href="puzzles.html" class="nav-link">Daily Puzzle</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
                 <a href="#contact" class="nav-link">Contact</a>
             </nav>
         </div>
@@ -461,7 +512,7 @@
     </section>
 
     <section id="about" class="about">
-        <div class="container">
+        <div class="container fade-in">
             <h2>About Me</h2>
             <p>I'm a digital marketing specialist with a passion for creating compelling campaigns that connect brands with their audiences. With expertise in social media strategy, email marketing, and analytics, I help businesses grow their online presence.</p>
         </div>
@@ -469,19 +520,19 @@
 
     <section id="portfolio" class="portfolio">
         <div class="container">
-            <h2>My Portfolio</h2>
+            <h2 class="fade-in">My Portfolio</h2>
             <div class="portfolio-grid">
-                <div class="portfolio-card">
+                <div class="portfolio-card scale-in">
                     <div class="card-image"></div>
                     <h3>Social Media Campaigns</h3>
                     <p>Designed and executed targeted social media campaigns that increased brand awareness and engagement</p>
                 </div>
-                <div class="portfolio-card">
+                <div class="portfolio-card scale-in">
                     <div class="card-image"></div>
                     <h3>Email Marketing</h3>
                     <p>Created strategic email campaigns with high conversion rates and customer retention</p>
                 </div>
-                <div class="portfolio-card">
+                <div class="portfolio-card scale-in">
                     <div class="card-image"></div>
                     <h3>Analytics & Insights</h3>
                     <p>Analyzed data to provide actionable insights and optimize marketing strategies</p>
@@ -491,7 +542,7 @@
     </section>
 
     <section id="contact" class="contact">
-        <div class="container">
+        <div class="container fade-in">
             <h2>Let's Work Together</h2>
             <p>Ready to elevate your digital marketing? Get in touch today!</p>
             <p>Email: sienalane6@gmail.com </p>
@@ -501,5 +552,26 @@
     <footer class="footer">
         <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
     </footer>
+
+    <script>
+        // Scroll Animation Observer
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all elements with animation classes
+        document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right, .scale-in').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
 </body>
 </html>
