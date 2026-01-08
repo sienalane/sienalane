@@ -177,6 +177,59 @@
             font-weight: 600;
             background: transparent;
             outline: none;
+            color: var(--dark-text);
+            padding: 0;
+        }
+
+        .sudoku-cell.pencil-mode {
+            font-size: 0.7rem;
+            padding: 2px;
+            line-height: 1.1;
+        }
+
+        .sudoku-cell .pencil-marks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            width: 100%;
+            height: 100%;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .pencil-mark {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .toggle-btn {
+            padding: 0.5rem 1.5rem;
+            border: 2px solid var(--sage-dark);
+            background: white;
+            color: var(--sage-dark);
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: var(--sage-dark);
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
         }
 
         /* Word Search Styles */
@@ -424,6 +477,20 @@
                 font-size: 1.2rem;
             }
 
+            .sudoku-cell .pencil-marks {
+                font-size: 0.55rem;
+            }
+
+            .mode-toggle {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .toggle-btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
             .word-search-cell {
                 font-size: 1rem;
             }
@@ -480,6 +547,10 @@
 
             .sudoku-cell input {
                 font-size: 1rem;
+            }
+
+            .sudoku-cell .pencil-marks {
+                font-size: 0.5rem;
             }
         }
     </style>
@@ -672,8 +743,14 @@
             }
         }
 
+        let isPencilMode = false;
+
         function renderSudoku(container, puzzle) {
-            let html = '<div class="sudoku-grid">';
+            let html = '<div class="mode-toggle">';
+            html += '<button class="toggle-btn active" id="normal-mode-btn" onclick="toggleMode(false)">✏️ Normal</button>';
+            html += '<button class="toggle-btn" id="pencil-mode-btn" onclick="toggleMode(true)">📝 Pencil</button>';
+            html += '</div>';
+            html += '<div class="sudoku-grid">';
 
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
@@ -681,7 +758,7 @@
                     if (value !== 0) {
                         html += `<div class="sudoku-cell given" data-row="${i}" data-col="${j}">${value}</div>`;
                     } else {
-                        html += `<div class="sudoku-cell" data-row="${i}" data-col="${j}"><input type="text" maxlength="1" pattern="[1-9]"></div>`;
+                        html += `<div class="sudoku-cell" data-row="${i}" data-col="${j}" data-pencil=""></div>`;
                     }
                 }
             }
@@ -694,12 +771,65 @@
 
             container.innerHTML = html;
 
-            // Add input validation
-            document.querySelectorAll('.sudoku-cell input').forEach(input => {
-                input.addEventListener('input', function(e) {
-                    this.value = this.value.replace(/[^1-9]/g, '');
+            // Add click handlers to cells
+            document.querySelectorAll('.sudoku-cell:not(.given)').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    handleCellClick(this);
                 });
             });
+        }
+
+        function toggleMode(pencilMode) {
+            isPencilMode = pencilMode;
+            document.getElementById('normal-mode-btn').classList.toggle('active', !pencilMode);
+            document.getElementById('pencil-mode-btn').classList.toggle('active', pencilMode);
+        }
+
+        function handleCellClick(cell) {
+            if (cell.classList.contains('given')) return;
+
+            // Create input dialog
+            const currentValue = cell.textContent.trim();
+            const currentPencil = cell.dataset.pencil || '';
+
+            if (isPencilMode) {
+                // Pencil mode - allow multiple small numbers
+                const number = prompt('Enter pencil marks (e.g., "135" for 1, 3, 5):', currentPencil);
+                if (number === null) return;
+
+                const cleaned = number.replace(/[^1-9]/g, '').split('').filter((v, i, a) => a.indexOf(v) === i).sort().join('');
+                cell.dataset.pencil = cleaned;
+
+                if (cleaned) {
+                    const marks = cleaned.split('');
+                    let html = '<div class="pencil-marks">';
+                    for (let i = 1; i <= 9; i++) {
+                        html += `<div class="pencil-mark">${marks.includes(i.toString()) ? i : ''}</div>`;
+                    }
+                    html += '</div>';
+                    cell.innerHTML = html;
+                    cell.classList.add('pencil-mode');
+                } else {
+                    cell.innerHTML = '';
+                    cell.classList.remove('pencil-mode');
+                }
+            } else {
+                // Normal mode - single number
+                const number = prompt('Enter number (1-9):', currentValue);
+                if (number === null) return;
+
+                const cleaned = number.replace(/[^1-9]/g, '');
+                if (cleaned) {
+                    cell.textContent = cleaned[0];
+                    cell.style.fontSize = '1.5rem';
+                    cell.style.fontWeight = '600';
+                    cell.classList.remove('pencil-mode');
+                    cell.dataset.pencil = '';
+                } else {
+                    cell.textContent = '';
+                    cell.classList.remove('pencil-mode');
+                }
+            }
         }
 
         function renderWordSearch(container, puzzle) {
@@ -825,26 +955,32 @@
 
         function checkSudoku() {
             let correct = true;
-            const cells = document.querySelectorAll('.sudoku-cell');
+            const cells = document.querySelectorAll('.sudoku-cell:not(.given)');
 
             cells.forEach(cell => {
                 const row = parseInt(cell.dataset.row);
                 const col = parseInt(cell.dataset.col);
-                const input = cell.querySelector('input');
+                const cellText = cell.textContent.trim();
 
-                if (input) {
-                    const value = parseInt(input.value);
-                    if (value !== todaysPuzzle.solution[row][col]) {
-                        correct = false;
-                        input.style.color = '#d32f2f';
-                    } else {
-                        input.style.color = '#2e7d32';
-                    }
+                // Skip cells with pencil marks
+                if (cell.classList.contains('pencil-mode')) {
+                    correct = false;
+                    return;
+                }
+
+                const value = parseInt(cellText);
+                if (isNaN(value) || value !== todaysPuzzle.solution[row][col]) {
+                    correct = false;
+                    cell.style.color = '#d32f2f';
+                } else {
+                    cell.style.color = '#2e7d32';
                 }
             });
 
             if (correct) {
                 document.getElementById('success-message').classList.add('show');
+            } else {
+                alert('Some numbers are incorrect. Keep trying!');
             }
         }
 
@@ -869,12 +1005,25 @@
         }
 
         function resetPuzzle() {
-            document.querySelectorAll('input').forEach(input => {
+            // Reset sudoku cells
+            document.querySelectorAll('.sudoku-cell:not(.given)').forEach(cell => {
+                cell.textContent = '';
+                cell.innerHTML = '';
+                cell.style.color = '';
+                cell.classList.remove('pencil-mode');
+                cell.dataset.pencil = '';
+            });
+
+            // Reset crossword inputs
+            document.querySelectorAll('.crossword-cell input').forEach(input => {
                 input.value = '';
                 input.style.color = '';
             });
+
+            // Reset word search
             document.querySelectorAll('.found').forEach(el => el.classList.remove('found'));
             document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+
             document.getElementById('success-message').classList.remove('show');
         }
 
