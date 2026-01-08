@@ -449,21 +449,41 @@
 
             let colorName = '';
 
-            // Determine base color
+            // Grayscale colors
             if (sat < 10) {
                 if (light > 90) colorName = 'White';
                 else if (light < 10) colorName = 'Black';
                 else if (light > 60) colorName = 'Light Gray';
                 else if (light > 40) colorName = 'Gray';
                 else colorName = 'Dark Gray';
-            } else {
-                if (hue < 30) colorName = 'Red';
-                else if (hue < 60) colorName = 'Orange';
-                else if (hue < 90) colorName = 'Yellow';
-                else if (hue < 150) colorName = 'Green';
-                else if (hue < 210) colorName = 'Cyan';
-                else if (hue < 270) colorName = 'Blue';
-                else if (hue < 330) colorName = 'Purple';
+            }
+            // Low saturation browns/olives/muted colors
+            else if (sat < 30) {
+                if (hue >= 40 && hue < 80) {
+                    colorName = light > 50 ? 'Beige' : 'Olive';
+                } else if (hue >= 20 && hue < 40) {
+                    colorName = light > 50 ? 'Tan' : 'Brown';
+                } else if (hue >= 0 && hue < 20 || hue >= 340) {
+                    colorName = light > 50 ? 'Pink' : 'Brown';
+                } else if (hue >= 80 && hue < 170) {
+                    colorName = light > 50 ? 'Sage' : 'Dark Olive';
+                } else if (hue >= 170 && hue < 250) {
+                    colorName = light > 50 ? 'Slate' : 'Dark Slate';
+                } else {
+                    colorName = light > 50 ? 'Lavender' : 'Dark Purple';
+                }
+            }
+            // Saturated colors
+            else {
+                if (hue >= 345 || hue < 15) colorName = 'Red';
+                else if (hue < 45) colorName = 'Orange';
+                else if (hue < 70) colorName = 'Yellow';
+                else if (hue < 100) colorName = 'Lime';
+                else if (hue < 165) colorName = 'Green';
+                else if (hue < 200) colorName = 'Cyan';
+                else if (hue < 255) colorName = 'Blue';
+                else if (hue < 285) colorName = 'Purple';
+                else if (hue < 320) colorName = 'Magenta';
                 else colorName = 'Pink';
 
                 // Add lightness modifier
