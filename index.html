@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SienaLane - Digital Marketing Portfolio</title>
+      <style>
+                * {
+                              margin: 0;
+                              padding: 0;
+                              box-sizing: border-box;
+                }
+
+                body {
+                              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                              line-height: 1.6;
+                              color: #333;
+                              background-color: #f9faf8;
+                }
+
+                :root {
+                              --sage-dark: #5a7c6d;
+                              --sage-medium: #7b9e8f;
+                              --sage-light: #a8c5ba;
+                              --cream: #f9faf8;
+                              --white: #ffffff;
+                              --dark-text: #2c3e2f;
+                }
+
+                header {
+                              background-color: var(--white);
+                              padding: 1.5rem 0;
+                              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                              position: sticky;
+                              top: 0;
+                              z-index: 100;
+                }
+
+                .header-content {
+                              max-width: 1200px;
+                              margin: 0 auto;
+                              display: flex;
+                              justify-content: space-between;
+                              align-items: center;
+                              padding: 0 2rem;
+                }
+
+                .logo {
+                              font-size: 1.8rem;
+                              font-weight: 700;
+                              color: var(--sage-dark);
+                              text-decoration: none;
+                              letter-spacing: 1px;
+                }
+
+                nav ul {
+                              display: flex;
+                              list-style: none;
+                              gap: 2.5rem;
+                }
+
+                nav a {
+                              text-decoration: none;
+                              color: var(--dark-text);
+                              font-weight: 500;
+                              transition: color 0.3s ease;
+                }
+
+                nav a:hover {
+                              color: var(--sage-medium);
+                }
+
+                .hero {
+                              background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage-light) 100%);
+                              padding: 6rem 2rem;
+                              text-align: center;
+                              min-height: 70vh;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                }
+
+                .hero-content {
+                              max-width: 800px;
+                }
+
+                .hero h1 {
+                              font-size: 3.5rem;
+                              color: var(--sage-dark);
+                              margin-bottom: 1rem;
+                              line-height: 1.2;
+                }
+
+                .hero p {
+                              font-size: 1.3rem;
+                              color: var(--dark-text);
+                              margin-bottom: 2rem;
+                }
+
+                .cta-button {
+                              display: inline-block;
+                              background-color: var(--sage-dark);
+                              color: var(--white);
+                              padding: 1rem 2.5rem;
+                              border-radius: 50px;
+                              text-decoration: none;
+                              font-weight: 600;
+                              transition: background-color 0.3s ease, transform 0.2s ease;
+                              border: none;
+                              cursor: pointer;
+                }
+
+                .cta-button:hover {
+                              background-color: var(--sage-medium);
+                              transform: translateY(-2px);
+                }
+
+                section {
+                              padding: 4rem 2rem;
+                              max-width: 1200px;
+                              margin: 0 auto;
+                }
+
+                section h2 {
+                              font-size: 2.5rem;
+                              color: var(--sage-dark);
+                              margin-bottom: 3rem;
+                              text-align: center;
+                }
+
+                .about {
+                              background-color: var(--white);
+                }
+
+                .about-content {
+                              display: grid;
+                              grid-template-columns: 1fr 1fr;
+                              gap: 3rem;
+                              align-items: center;
+                }
+
+                .about-text h3 {
+                              color: var(--sage-medium);
+                              font-size: 1.3rem;
+                              margin-bottom: 1rem;
+                }
+
+                .about-text p {
+                              margin-bottom: 1rem;
+                              line-height: 1.8;
+                              color: #555;
+                }
+
+                .skills {
+                              display: grid;
+                              grid-template-columns: 1fr 1fr;
+                              gap: 1.5rem;
+                              margin-top: 2rem;
+                }
+
+                .skill-item {
+                              background-color: var(--cream);
+                              padding: 1.5rem;
+                              border-radius: 8px;
+                              border-left: 4px solid var(--sage-light);
+                }
+
+                .skill-item h4 {
+                              color: var(--sage-dark);
+                              margin-bottom: 0.5rem;
+                }
+
+                .skill-item p {
+                              font-size: 0.95rem;
+                              color: #666;
+                }
+
+                .about-image {
+                              background: linear-gradient(135deg, var(--sage-light), var(--sage-medium));
+                              border-radius: 12px;
+                              height: 400px;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                              color: var(--white);
+                              font-size: 4rem;
+                }
+
+                .portfolio {
+                              background-color: var(--cream);
+                }
+
+                .portfolio-grid {
+                              display: grid;
+                              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                              gap: 2rem;
+                }
+
+                .portfolio-card {
+                              background-color: var(--white);
+                              border-radius: 12px;
+                              overflow: hidden;
+                              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                              transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
+
+                .portfolio-card:hover {
+                              transform: translateY(-5px);
+                              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+                }
+
+                .portfolio-image {
+                              background: linear-gradient(135deg, var(--sage-light), var(--sage-medium));
+                              height: 250px;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                              color: var(--white);
+                              font-size: 3rem;
+                }
+
+                .portfolio-content {
+                              padding: 2rem;
+                }
+
+                .portfolio-content h3 {
+                              color: var(--sage-dark);
+                              margin-bottom: 0.5rem;
+                              font-size: 1.3rem;
+                }
+
+                .portfolio-tag {
+                              display: inline-block;
+                              background-color: var(--sage-light);
+                              color: var(--white);
+                              padding: 0.4rem 0.8rem;
+                              border-radius: 20px;
+                              font-size: 0.85rem;
+                              margin-bottom: 1rem;
+                }
+
+                .portfolio-content p {
+                              color: #666;
+                              margin-bottom: 1rem;
+                              line-height: 1.6;
+                }
+
+                .contact {
+                              background-color: var(--white);
+                }
+
+                .contact-wrapper {
+                              max-width: 600px;
+                              margin: 0 auto;
+                }
+
+                .form-group {
+                              margin-bottom: 1.5rem;
+                }
+
+                .form-group label {
+                              display: block;
+                              margin-bottom: 0.5rem;
+                              color: var(--sage-dark);
+                              font-weight: 500;
+                }
+
+                .form-group input,
+                .form-group textarea {
+                              width: 100%;
+                              padding: 0.8rem;
+                              border: 2px solid var(--sage-light);
+                              border-radius: 6px;
+                              font-family: inherit;
+                              font-size: 1rem;
+                              transition: border-color 0.3s ease;
+                }
+
+                .form-group input:focus,
+                .form-group textarea:focus {
+                              outline: none;
+                              border-color: var(--sage-medium);
+                }
+
+                .form-group textarea {
+                              resize: vertical;
+                              min-height: 150px;
+                }
+
+                .contact-button {
+                              width: 100%;
+                              background-color: var(--sage-dark);
+                              color: var(--white);
+                              padding: 1rem;
+                              border: none;
+                              border-radius: 6px;
+                              font-size: 1rem;
+                              font-weight: 600;
+                              cursor: pointer;
+                              transition: background-color 0.3s ease;
+                }
+
+                .contact-button:hover {
+                              background-color: var(--sage-medium);
+                }
+
+                footer {
+                              background-color: var(--sage-dark);
+                              color: var(--white);
+                              padding: 3rem 2rem;
+                              text-align: center;
+                }
+
+                .footer-content {
+                              max-width: 1200px;
+                              margin: 0 auto;
+                }
+
+                .social-links {
+                              margin: 1.5rem 0;
+                              display: flex;
+                              justify-content: center;
+                              gap: 1.5rem;
+                }
+
+                .social-links a {
+                              color: var(--white);
+                              text-decoration: none;
+                              font-size: 1rem;
+                              transition: opacity 0.3s ease;
+                }
+
+                .social-links a:hover {
+                              opacity: 0.8;
+                }
+
+                footer p {
+                              margin-top: 1rem;
+                              opacity: 0.9;
+                }
+
+                @media (max-width: 768px) {
+                              .hero h1 {
+                                                font-size: 2.5rem;
+                              }
+
+                              .hero p {
+                                                font-size: 1.1rem;
+                              }
+
+                              .about-content {
+                                                grid-template-columns: 1fr;
+                              }
+
+                              nav ul {
+                                                gap: 1.5rem;
+                                                font-size: 0.9rem;
+                              }
+
+                              section h2 {
+                                                font-size: 2rem;
+                              }
+
+                              .skills {
+                                                grid-template-columns: 1fr;
+                              }
+                }
+            </style>
+  </head>
+  <body>
+        <header>
+                  <div class="header-content">
+                                <a href="#" class="logo">SienaLane</a>a>
+                                <nav>
+                                                  <ul>
+                                                                        <li><a href="#about">About</a>a></li>
+                                                                      <li><a href="#portfolio">Portfolio</a>a></li>
+                                                                      <li><a href="#contact">Contact</a>a></li>
+                                                  </ul>
+                                </nav>
+                  </div>div>
+        </header>
+  
+      <section class="hero">
+              <div class="hero-content">
+                          <h1>Digital Marketing Strategy & Execution</h1>
+                          <p>Specialized in social media marketing and email campaigns that drive engagement and results</p>
+                          <a href="#contact" class="cta-button">Get Started</a>a>
+              </div>div>
+      </section>section>
+  
+      <section id="about" class="about">
+              <h2>About Me</h2>
+              <div class="about-content">
+                          <div class="about-text">
+                                          <h3>Hi, I'm SienaLane</h3>
+                                          <p>I'm a digital marketing professional passionate about creating meaningful connections between brands and their audiences through strategic, data-driven marketing campaigns.</p>
+                                          <p>With expertise in social media marketing and email marketing, I help businesses build authentic relationships with their customers and drive measurable results.</p>
+                                          <div class="skills">
+                                                              <div class="skill-item">
+                                                                                      <h4>Social Media Marketing</h4>
+                                                                                      <p>Strategic content creation, community management, and campaign optimization</p>
+                                                              </div>div>
+                                                              <div class="skill-item">
+                                                                                      <h4>Email Marketing</h4>
+                                                                                      <p>Segmentation, automation, and personalized campaigns that convert</p>
+                                                              </div>div>
+                                                              <div class="skill-item">
+                                                                                      <h4>Analytics & Reporting</h4>
+                                                                                      <p>Data-driven insights and performance metrics</p>
+                                                              </div>div>
+                                                              <div class="skill-item">
+                                                                                      <h4>Strategy & Planning</h4>
+                                                                                      <p>Comprehensive marketing strategies tailored to business goals</p>
+                                                              </div>div>
+                                          </div>div>
+                          </div>div>
+                          <div class="about-image">💼</div>div>
+              </div>div>
+      </section>section>
+  
+      <section id="portfolio" class="portfolio">
+              <h2>Portfolio</h2>
+              <div class="portfolio-grid">
+                          <div class="portfolio-card">
+                                          <div class="portfolio-image">📱</div>div>
+                                          <div class="portfolio-content">
+                                                              <span class="portfolio-tag">Social Media Marketing</span>span>
+                                                              <h3>Social Media Campaign</h3>
+                                                              <p>Developed and executed a comprehensive social media strategy that increased engagement by 45% and grew followers by 30% in 3 months.</p>
+                                          </div>div>
+                          </div>div>
+              
+                          <div class="portfolio-card">
+                                          <div class="portfolio-image">📧</div>div>
+                                          <div class="portfolio-content">
+                                                              <span class="portfolio-tag">Email Marketing</span>span>
+                                                              <h3>Email Campaign Series</h3>
+                                                              <p>Created an automated email sequence with personalized messaging that achieved 28% open rate and 5.2% click-through rate.</p>
+                                          </div>div>
+                          </div>div>
+              
+                          <div class="portfolio-card">
+                                          <div class="portfolio-image">📈</div>div>
+                                          <div class="portfolio-content">
+                                                              <span class="portfolio-tag">Social Media Marketing</span>span>
+                                                              <h3>Brand Launch Strategy</h3>
+                                                              <p>Managed brand launch across multiple social platforms with integrated content calendar, resulting in 10K+ engaged followers in first month.</p>
+                                          </div>div>
+                          </div>div>
+              </div>div>
+      </section>section>
+  
+      <section id="contact" class="contact">
+              <h2>Let's Work Together</h2>
+              <div class="contact-wrapper">
+                          <form id="contactForm">
+                                          <div class="form-group">
+                                                              <label for="name">Name</label>label>
+                                                              <input type="text" id="name" name="name" required>
+                                          </div>div>
+                                          <div class="form-group">
+                                                              <label for="email">Email</label>label>
+                                                              <input type="email" id="email" name="email" required>
+                                          </div>div>
+                                          <div class="form-group">
+                                                              <label for="message">Message</label>label>
+                                                              <textarea id="message" name="message" required></textarea>
+                                          </div>div>
+                                          <button type="submit" class="contact-button">Send Message</button>button>
+                          </form>form>
+              </div>div>
+      </section>section>
+  
+      <footer>
+                <div class="footer-content">
+                              <h3>SienaLane</h3>
+                              <p>Digital Marketing Portfolio</p>p>
+                              <div class="social-links">
+                                                <a href="https://instagram.com" target="_blank">Instagram</a>a>
+                                                <a href="https://linkedin.com" target="_blank">LinkedIn</a>a>
+                                                <a href="https://twitter.com" target="_blank">Twitter</a>a>
+                                                <a href="mailto:your.email@example.com">Email</a>a>
+                              </div>div>
+                              <p>&copy; 2025 SienaLane. All rights reserved.</p>p>
+                </div>div>
+      </footer>
+
+        <script>
+                  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                                anchor.addEventListener('click', function (e) {
+                                                  e.preventDefault();
+                                                  const target = document.querySelector(this.getAttribute('href'));
+                                                  if (target) {
+                                                                        target.scrollIntoView({
+                                                                                                  behavior: 'smooth',
+                                                                                                  block: 'start'
+                                                                          });
+                                                  }
+                                });
+                  });
+
+                  document.getElementById('contactForm').addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                const name = document.getElementById('name').value;
+                                const email = document.getElementById('email').value;
+                                if (name && email) {
+                                                  alert('Thank you for reaching out! I will get back to you soon.');
+                                                  this.reset();
+                                }
+                  });
+        </script>
+  </body>
+</html>html>
+        </script>
+      </footer></p></p></h1></li></li>
+                                                  </ul>
+                                </nav>
+        </header>
+  </body>
+      </style></title>
+  </head>
