@@ -5,14 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carr Winery Quizzes - Siena Lane</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --sage-dark: #6B8E7F;
+            --sage-light: #A8C5B3;
+            --sage-very-light: #D4E5DC;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
 
 <div class="max-w-4xl mx-auto py-8 px-4">
     <!-- Back to Home Link -->
     <div class="mb-6 text-center">
-        <a href="index.html" class="text-purple-600 hover:text-purple-800 font-medium">
-            ← Back to Siena Lane
+        <a href="quizzes.html" style="color: var(--sage-dark);" class="hover:opacity-80 font-medium">
+            ← Back to Quizzes
         </a>
     </div>
 
@@ -48,13 +55,30 @@
         border: 2px solid #e5e7eb;
     }
     .tab-button.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
         color: white;
-        border-color: #667eea;
+        border-color: var(--sage-dark);
     }
     .tab-button:hover:not(.active) {
-        border-color: #9333ea;
-        color: #9333ea;
+        border-color: var(--sage-dark);
+        color: var(--sage-dark);
+    }
+    .quiz-button {
+        width: 100%;
+        padding: 1rem;
+        text-align: left;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .quiz-button:hover {
+        border-color: var(--sage-light);
+        background-color: var(--sage-very-light);
+    }
+    .quiz-button:active {
+        transform: scale(0.98);
     }
 </style>
 
@@ -242,10 +266,10 @@ function CarrWinePersonalityQuiz() {
   if (result) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg shadow-lg">
+        <div style={{background: 'linear-gradient(135deg, #D4E5DC 0%, #F5F1E8 100%)'}} className="rounded-lg shadow-lg">
           <div className="p-8 text-center">
             <div className="text-6xl mb-4">{result.emoji}</div>
-            <h2 className="text-3xl font-bold text-purple-900 mb-2">
+            <h2 className="text-3xl font-bold mb-2" style={{color: 'var(--sage-dark)'}}>
               You're Carr's {result.name}!
             </h2>
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
@@ -257,14 +281,16 @@ function CarrWinePersonalityQuiz() {
                 href="https://carrwinery.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-purple-600 hover:text-purple-800 font-semibold underline"
+                style={{color: 'var(--sage-dark)'}}
+                className="hover:opacity-80 font-semibold underline"
               >
                 Visit Carr Winery in Santa Barbara
               </a>
             </div>
             <button
               onClick={resetQuiz}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              style={{backgroundColor: 'var(--sage-dark)'}}
+              className="text-white px-6 py-3 rounded-lg hover:opacity-90 transition-all font-medium"
             >
               Take Quiz Again
             </button>
@@ -279,7 +305,7 @@ function CarrWinePersonalityQuiz() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-center text-purple-900 mb-2">
+        <h1 className="text-3xl font-bold text-center mb-2" style={{color: 'var(--sage-dark)'}}>
           🍷 Which Carr Wine Are You? 🍷
         </h1>
         <p className="text-center text-gray-600 mb-4">
@@ -287,8 +313,8 @@ function CarrWinePersonalityQuiz() {
         </p>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
+            style={{backgroundColor: 'var(--sage-dark)', width: `${progress}%`}}
+            className="h-2 rounded-full transition-all duration-300"
           />
         </div>
         <p className="text-center text-sm text-gray-500 mt-2">
@@ -304,9 +330,9 @@ function CarrWinePersonalityQuiz() {
           <div className="space-y-3">
             {questions[currentQuestion].options.map((option, index) => (
               <button
-                key={index}
+                key={`q${currentQuestion}-opt${index}`}
                 onClick={() => handleAnswer(option)}
-                className="w-full p-4 text-left bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                className="quiz-button"
               >
                 {option.text}
               </button>
@@ -459,7 +485,7 @@ function ThirstyThursdayQuiz() {
               {result.description}
             </p>
             <div className="mb-6 p-4 bg-white rounded-lg shadow-sm">
-              <p className="text-2xl font-bold text-purple-600 mb-2">$5 Glasses Every Thursday!</p>
+              <p className="text-2xl font-bold mb-2" style={{color: 'var(--sage-dark)'}}>$5 Glasses Every Thursday!</p>
               <p className="text-sm text-gray-600 mb-3">
                 Join us for Thirsty Thursday at Carr Winery
               </p>
@@ -467,7 +493,8 @@ function ThirstyThursdayQuiz() {
                 href="https://carrwinery.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                style={{backgroundColor: 'var(--sage-dark)'}}
+                className="inline-block text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all font-medium"
               >
                 Visit Us in Santa Barbara
               </a>
@@ -490,23 +517,23 @@ function ThirstyThursdayQuiz() {
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-8">
         <div className="text-center mb-4">
-          <div className="inline-block bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
+          <div style={{backgroundColor: 'var(--sage-dark)'}} className="inline-block text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
             THIRSTY THURSDAY SPECIAL
           </div>
-          <h1 className="text-3xl font-bold text-purple-900 mb-2">
+          <h1 className="text-3xl font-bold mb-2" style={{color: 'var(--sage-dark)'}}>
             🍷 Which $5 Glass Are You? 🍷
           </h1>
           <p className="text-gray-600 mb-2">
             Find your perfect Thirsty Thursday pour at Carr Winery!
           </p>
-          <p className="text-sm text-purple-700 font-semibold">
+          <p className="text-sm font-semibold" style={{color: 'var(--sage-dark)'}}>
             Every Thursday • $5 Glasses on Tap
           </p>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
+            style={{backgroundColor: 'var(--sage-dark)', width: `${progress}%`}}
+            className="h-2 rounded-full transition-all duration-300"
           />
         </div>
         <p className="text-center text-sm text-gray-500 mt-2">
@@ -522,9 +549,9 @@ function ThirstyThursdayQuiz() {
           <div className="space-y-3">
             {questions[currentQuestion].options.map((option, index) => (
               <button
-                key={index}
+                key={`q${currentQuestion}-opt${index}`}
                 onClick={() => handleAnswer(option)}
-                className="w-full p-4 text-left bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                className="quiz-button"
               >
                 {option.text}
               </button>
