@@ -20,18 +20,43 @@
             --lavender: #D9D0E8;
             --dark-text: #3D3D3D;
             --accent-gold: #C9A961;
+            --bg-primary: #F5F1E8;
+            --bg-secondary: #FFFFFF;
+            --text-primary: #3D3D3D;
+            --text-secondary: #6B8E7F;
+            --card-bg: #FFFFFF;
+            --shadow-color: rgba(107, 142, 127, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --cream: #1a1a1a;
+                --sage-dark: #8BA89C;
+                --sage-light: #6B8E7F;
+                --sage-very-light: #2a3a35;
+                --blush: #3a2f2e;
+                --lavender: #332f3a;
+                --dark-text: #e0e0e0;
+                --accent-gold: #D4AF6A;
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #242424;
+                --text-primary: #e0e0e0;
+                --text-secondary: #a8c5b3;
+                --card-bg: #2a2a2a;
+                --shadow-color: rgba(0, 0, 0, 0.3);
+            }
         }
 
         html {
             scroll-behavior: smooth;
-            background: var(--cream);
+            background: var(--bg-primary);
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            color: var(--dark-text);
-            background-color: var(--cream);
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
         }
 
         .navbar {
@@ -246,20 +271,20 @@
         }
 
         .portfolio-card {
-            background: var(--cream);
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 2rem;
             text-align: center;
-            box-shadow: 0 5px 20px rgba(107, 142, 127, 0.08);
+            box-shadow: 0 5px 20px var(--shadow-color);
             transition: all 0.3s ease;
             border: 1px solid var(--sage-very-light);
         }
 
         .portfolio-card:hover {
             transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(107, 142, 127, 0.15);
+            box-shadow: 0 20px 40px var(--shadow-color);
             border-color: var(--sage-light);
-            background: linear-gradient(135deg, var(--cream) 0%, var(--sage-very-light) 100%);
+            background: linear-gradient(135deg, var(--card-bg) 0%, var(--sage-very-light) 100%);
         }
 
         .card-image {
