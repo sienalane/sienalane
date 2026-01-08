@@ -5,11 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Siena Lane - Digital Marketing Portfolio</title>
       <style>
-                /* Force white background everywhere */
-                body, html, .about, .portfolio, .contact {
-                              background-color: white !important;
-                }
-
                 * {
                               margin: 0;
                               padding: 0;
@@ -17,33 +12,33 @@
                 }
 
                 :root {
-                              --primary: #6366f1;
-                              --primary-dark: #4f46e5;
-                              --secondary: #10b981;
-                              --accent: #f59e0b;
-                              --dark: #1f2937;
-                              --light: #ffffff;
-                              --gray: #6b7280;
-                              --bg-light: #f8fafc;
+                              --cream: #F5F1E8;
+                              --sage-dark: #6B8E7F;
+                              --sage-light: #A8C5B3;
+                              --sage-very-light: #D4E5DC;
+                              --blush: #E8D4D0;
+                              --lavender: #D9D0E8;
+                              --dark-text: #3D3D3D;
+                              --accent-gold: #C9A961;
                 }
 
                 html {
                               scroll-behavior: smooth;
-                              background: white !important;
+                              background: var(--cream);
                 }
 
                 body {
                               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                               line-height: 1.6;
-                              color: var(--dark);
-                              background-color: white !important;
+                              color: var(--dark-text);
+                              background-color: var(--cream);
                 }
 
                 .navbar {
                               position: sticky;
                               top: 0;
-                              background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-                              box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+                              background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
+                              box-shadow: 0 4px 15px rgba(107, 142, 127, 0.1);
                               z-index: 1000;
                               padding: 1.2rem 0;
                 }
@@ -60,7 +55,7 @@
                 .logo {
                               font-size: 1.8rem;
                               font-weight: 700;
-                              color: white;
+                              color: var(--cream);
                               letter-spacing: -0.5px;
                 }
 
@@ -71,7 +66,7 @@
                 }
 
                 .nav-link {
-                              color: white;
+                              color: var(--cream);
                               text-decoration: none;
                               font-weight: 500;
                               font-size: 0.95rem;
@@ -86,7 +81,7 @@
                               left: 0;
                               width: 0;
                               height: 2px;
-                              background: var(--accent);
+                              background: var(--accent-gold);
                               transition: width 0.3s ease;
                 }
 
@@ -95,8 +90,9 @@
                 }
 
                 .hero {
-                              background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, var(--secondary) 100%);
-                              color: white;
+                              background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 50%, rgba(212, 229, 220, 0.3) 100%), 
+                                                        linear-gradient(to bottom, var(--cream), var(--cream));
+                              color: var(--dark-text);
                               padding: 120px 2rem;
                               text-align: center;
                               position: relative;
@@ -110,7 +106,7 @@
                               right: -10%;
                               width: 600px;
                               height: 600px;
-                              background: rgba(255, 255, 255, 0.1);
+                              background: rgba(232, 212, 208, 0.15);
                               border-radius: 50%;
                               animation: float 6s ease-in-out infinite;
                 }
@@ -122,7 +118,7 @@
                               left: -5%;
                               width: 400px;
                               height: 400px;
-                              background: rgba(255, 255, 255, 0.08);
+                              background: rgba(217, 208, 232, 0.15);
                               border-radius: 50%;
                               animation: float 8s ease-in-out infinite reverse;
                 }
@@ -144,54 +140,57 @@
                               font-weight: 800;
                               margin-bottom: 1.5rem;
                               line-height: 1.2;
-                              text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                              color: var(--sage-dark);
+                              text-shadow: 0 2px 10px rgba(245, 241, 232, 0.3);
                 }
 
                 .hero-subtitle {
                               font-size: 1.25rem;
                               margin-bottom: 2.5rem;
-                              opacity: 0.95;
+                              opacity: 0.9;
                               font-weight: 300;
                               max-width: 600px;
                               margin-left: auto;
                               margin-right: auto;
+                              color: var(--dark-text);
                 }
 
                 .cta-button {
                               display: inline-block;
-                              background: var(--accent);
-                              color: white;
+                              background: var(--sage-dark);
+                              color: var(--cream);
                               padding: 1rem 2.5rem;
                               border-radius: 50px;
                               text-decoration: none;
                               font-weight: 600;
                               font-size: 1.1rem;
                               transition: all 0.3s ease;
-                              box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+                              box-shadow: 0 10px 30px rgba(107, 142, 127, 0.2);
                               border: none;
                               cursor: pointer;
                 }
 
                 .cta-button:hover {
                               transform: translateY(-3px);
-                              box-shadow: 0 15px 40px rgba(245, 158, 11, 0.4);
-                              background: #e5900f;
+                              box-shadow: 0 15px 40px rgba(107, 142, 127, 0.3);
+                              background: var(--sage-light);
+                              color: var(--dark-text);
                 }
 
                 .about {
                               padding: 80px 2rem;
-                              background: white !important;
+                              background: var(--cream);
                 }
 
                 .contact {
                               padding: 80px 2rem;
-                              background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-                              color: white;
+                              background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
+                              color: var(--cream);
                 }
 
                 .portfolio {
                               padding: 80px 2rem;
-                              background: var(--bg-light);
+                              background: var(--sage-very-light);
                 }
 
                 .container {
@@ -202,7 +201,7 @@
                 h2 {
                               font-size: 2.5rem;
                               margin-bottom: 1.5rem;
-                              color: var(--dark);
+                              color: var(--sage-dark);
                               text-align: center;
                               font-weight: 700;
                               position: relative;
@@ -215,22 +214,22 @@
                               display: block;
                               width: 60px;
                               height: 4px;
-                              background: linear-gradient(90deg, var(--primary), var(--secondary));
+                              background: linear-gradient(90deg, var(--sage-light), var(--accent-gold));
                               margin: 1rem auto 0;
                 }
 
                 .contact h2 {
-                              color: white;
+                              color: var(--cream);
                 }
 
                 .contact h2::after {
-                              background: rgba(255, 255, 255, 0.3);
+                              background: rgba(245, 241, 232, 0.4);
                 }
 
                 .about p {
                               font-size: 1.1rem;
                               line-height: 1.8;
-                              color: var(--gray);
+                              color: var(--dark-text);
                               max-width: 700px;
                               margin: 2rem auto;
                               text-align: center;
@@ -244,25 +243,26 @@
                 }
 
                 .portfolio-card {
-                              background: white;
+                              background: var(--cream);
                               border-radius: 12px;
                               padding: 2rem;
                               text-align: center;
-                              box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+                              box-shadow: 0 5px 20px rgba(107, 142, 127, 0.08);
                               transition: all 0.3s ease;
-                              border: 1px solid #e5e7eb;
+                              border: 1px solid var(--sage-very-light);
                 }
 
                 .portfolio-card:hover {
                               transform: translateY(-10px);
-                              box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
-                              border-color: var(--primary);
+                              box-shadow: 0 20px 40px rgba(107, 142, 127, 0.15);
+                              border-color: var(--sage-light);
+                              background: linear-gradient(135deg, var(--cream) 0%, var(--sage-very-light) 100%);
                 }
 
                 .card-image {
                               width: 100%;
                               height: 200px;
-                              background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+                              background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage-very-light) 50%, var(--blush) 100%);
                               border-radius: 8px;
                               margin-bottom: 1.5rem;
                 }
@@ -270,23 +270,23 @@
                 .portfolio-card h3 {
                               font-size: 1.3rem;
                               margin-bottom: 0.8rem;
-                              color: var(--dark);
+                              color: var(--sage-dark);
                 }
 
                 .portfolio-card p {
-                              color: var(--gray);
+                              color: var(--dark-text);
                               line-height: 1.6;
                 }
 
                 .contact p {
-                              color: rgba(255, 255, 255, 0.9);
+                              color: var(--cream);
                               font-size: 1.1rem;
                               margin: 1rem auto 2.5rem;
                 }
 
                 .footer {
-                              background: var(--dark);
-                              color: white;
+                              background: var(--sage-dark);
+                              color: var(--cream);
                               text-align: center;
                               padding: 2rem;
                               font-size: 0.95rem;
