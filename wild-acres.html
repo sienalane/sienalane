@@ -219,7 +219,7 @@
                 <li>Your first animal of each kind gets a name. Tap the name to change it.</li>
                 <li>Come back every day for a gift. It grows the more days in a row you visit.</li>
                 <li><strong>Visitor requests</strong> pop up now and then. Meet them in 10 minutes for a reward. <strong>Rare animals</strong> also appear for a few minutes. Adopt them for a permanent bonus.</li>
-                <li><strong>Keepers</strong> adopt animals for you and keep their habitat earning at full speed while you're away.</li>
+                <li><strong>Keepers</strong> adopt animals for you and keep their habitat earning at full speed while you're away. They stop spending while a rare animal is waiting, and you can pause them any time.</li>
                 <li>Every new species unlocks a <strong>fact card</strong>. Every achievement adds 2% to your earnings for good.</li>
                 <li>The zoo follows your real clock. At night it gets dark and the music slows down.</li>
                 <li>When a 🍼 pops up, tap it fast. A baby was born and visitors are lining up.</li>
@@ -316,7 +316,7 @@
         function freshRun(keep) {
             return Object.assign({
                 v: 2, coins: 0, lifetime: 0, levels: Array(ANIMALS.length).fill(0), habs: [true].concat(Array(HABITATS.length - 1).fill(false)),
-                upg: {}, stars: 0, last: Date.now(), boostUntil: 0, taps: 0, keepers: {},
+                upg: {}, stars: 0, last: Date.now(), boostUntil: 0, taps: 0, keepers: {}, keepOn: true, keepPaused: {},
                 // these survive a Conservation Fund reset
                 names: {}, rares: {}, cardsEver: {}, ach: {}, login: { day: -1, streak: 0 }, candy: 0, bat: false,
                 babies: 0, reqDone: 0, renamed: false,
@@ -533,15 +533,29 @@
         // ---------- keepers view ----------
         function buildKeep() {
             const v = document.getElementById('view-keep');
-            v.innerHTML = '<div class="panel-card"><h2>🧑‍🌾 Keepers</h2><p>A keeper adopts animals for their habitat on their own, spending up to 10% of your coins at a time. Their habitat also earns at full speed while you’re away, instead of half.</p></div>' +
+            const any = Object.keys(G.keepers).length > 0;
+            const status = !G.keepOn ? '☕ All keepers are on break. They won\u2019t spend any coins.'
+                : keepersSaving() ? '💰 Your keepers stopped spending so you can save for the rare animal.'
+                : '🧑‍🌾 Your keepers are working. Together they spend at most 5% of your coins every few seconds.';
+            v.innerHTML = '<div class="panel-card"><h2>🧑‍🌾 Keepers</h2><p>A keeper adopts animals for their habitat on their own. Their habitat also earns at full speed while you\u2019re away, instead of half. Keepers pause on their own while a rare animal is waiting, so you can save up.</p>' +
+                (any ? '<p class="a-sub" id="keepStatus">' + status + '</p><button class="btn ' + (G.keepOn ? 'btn-secondary' : 'btn-primary') + '" id="keepAll">' + (G.keepOn ? '☕ Send everyone on break' : '🧑‍🌾 Back to work') + '</button>' : '') + '</div>' +
                 HABITATS.map((h, hi) => {
                     if (!G.habs[hi]) return '';
                     const hired = G.keepers[hi];
-                    return '<div class="upg' + (hired ? ' done' : '') + '"><div class="emo">' + h.a[0][0] + '</div><div><div class="a-name">' + (hired ? 'Keeper ' + KEEPER_NAMES[hi] : h.n + ' keeper') + '</div><div class="a-sub">' +
-                        (hired ? 'Looking after the ' + h.n + '. Auto-adopting and keeping things running overnight.' : 'Auto-adopts ' + h.a.map(x => x[1].toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1') + '.') + '</div></div>' +
-                        (hired ? '<span class="a-sub">Hired ✓</span>' : '<button class="buy" data-k="' + hi + '"><span>Hire</span><small>' + fmt(keeperCost(hi)) + ' coins</small></button>') + '</div>';
+                    const paused = G.keepPaused[hi];
+                    return '<div class="upg' + (hired && (paused || !G.keepOn) ? ' done' : '') + '"><div class="emo">' + h.a[0][0] + '</div><div><div class="a-name">' + (hired ? 'Keeper ' + KEEPER_NAMES[hi] + (paused ? ' (paused)' : '') : h.n + ' keeper') + '</div><div class="a-sub">' +
+                        (hired ? (paused ? 'Not adopting right now. Still keeps the ' + h.n + ' running overnight.' : 'Adopting ' + h.a.map(x => x[1].toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1') + ' and keeping things running overnight.') : 'Auto-adopts ' + h.a.map(x => x[1].toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1') + '.') + '</div></div>' +
+                        (hired ? '<button class="buy" data-kp="' + hi + '" style="background:var(--sage-very-light);color:var(--sage-dark)"><span>' + (paused ? 'Resume' : 'Pause') + '</span><small>' + (paused ? 'start adopting' : 'stop adopting') + '</small></button>'
+                            : '<button class="buy" data-k="' + hi + '"><span>Hire</span><small>' + fmt(keeperCost(hi)) + ' coins</small></button>') + '</div>';
                 }).join('');
             v.querySelectorAll('button[data-k]').forEach(b => b.addEventListener('click', () => hireKeeper(+b.dataset.k)));
+            v.querySelectorAll('button[data-kp]').forEach(b => b.addEventListener('click', () => {
+                const hi = +b.dataset.kp;
+                if (G.keepPaused[hi]) delete G.keepPaused[hi]; else G.keepPaused[hi] = true;
+                buildKeep(); save();
+            }));
+            const all = document.getElementById('keepAll');
+            if (all) all.addEventListener('click', () => { G.keepOn = !G.keepOn; K.toast(G.keepOn ? '🧑‍🌾 Keepers are back to work' : '☕ Keepers are on break'); buildKeep(); renderNotices(); save(); });
             updateKeep();
         }
         function updateKeep() {
@@ -555,15 +569,20 @@
             K.toast('🧑‍🌾 Keeper ' + KEEPER_NAMES[hi] + ' joined the ' + HABITATS[hi].n + '!', 2200);
             buildKeep(); buildZoo(); save();
         }
+        // Keepers share one small budget, and they stop spending while a rare animal is waiting
+        function keepersSaving() { return !!G.rare; }
         function keeperWork() {
+            if (!G.keepOn || keepersSaving()) return;
+            let budget = G.coins * 0.05;
             Object.keys(G.keepers).forEach(k => {
                 const hi = +k;
-                if (!G.habs[hi]) return;
+                if (!G.habs[hi] || G.keepPaused[hi]) return;
                 const opts = ANIMALS.filter(a => a.h === hi).map(a => ({ a, c: costFor(a, 1) })).sort((x, y) => x.c - y.c);
                 const best = opts[0];
-                if (best && best.c <= G.coins * 0.1) {
+                if (best && best.c <= budget) {
                     const before = G.levels[best.a.i];
                     G.coins -= best.c;
+                    budget -= best.c;
                     G.levels[best.a.i]++;
                     afterAdopt(best.a, before, true);
                 }
@@ -952,9 +971,10 @@
             G.nextRareAt = Date.now() + (10 + Math.random() * 10) * 60000;
             if (!left.length || totalRate() <= 0) return;
             const r = pick(left);
-            G.rare = { k: r.k, until: Date.now() + 5 * 60000, cost: income(400, 400) };
+            G.rare = { k: r.k, until: Date.now() + 5 * 60000, cost: income(240, 300) };
             K.toast('✨ A rare ' + r.n.toLowerCase() + ' needs a home! You have 5 minutes.', 3000);
             renderNotices();
+            if (tab === 'keep') buildKeep();
         }
         function adoptRare() {
             const o = G.rare;
@@ -979,7 +999,7 @@
             }
             if (G.rare) {
                 const r = RARES.find(x => x.k === G.rare.k);
-                html += '<div class="notice rare"><div class="emo">' + rareIcon(r.k, '1.9rem') + '</div><div><b>A rare ' + r.n.toLowerCase() + ' needs a home!</b><small>Adopt for a permanent +15% boost. Leaves in <span class="timer" id="rareT"></span></small></div>' +
+                html += '<div class="notice rare"><div class="emo">' + rareIcon(r.k, '1.9rem') + '</div><div><b>A rare ' + r.n.toLowerCase() + ' needs a home!</b><small>Adopt for a permanent +15% boost. Leaves in <span class="timer" id="rareT"></span>' + (Object.keys(G.keepers).length && G.keepOn ? ' · Keepers paused so you can save' : '') + '</small></div>' +
                     '<div class="mini"><button id="rareGo">Adopt · ' + fmt(G.rare.cost) + '</button></div></div>';
             }
             if (G.req) {
@@ -1090,7 +1110,8 @@
             else if (tab === 'upg') updateUpg();
             else if (tab === 'keep') updateKeep();
             else if (tab === 'boo') updateBoo();
-            if (ticks % 10 === 0) { keeperWork(); checkAch(); checkRequest(); }
+            if (ticks % 10 === 0) { checkAch(); checkRequest(); }
+            if (ticks % 20 === 0) keeperWork();
             if (ticks % 25 === 0) {
                 if (!G.req && now > G.nextReqAt && totalSpecies() > 0) newRequest();
                 if (!G.rare && now > G.nextRareAt) newRare();
