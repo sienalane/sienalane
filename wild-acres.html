@@ -52,6 +52,9 @@
         .mbar i { display: block; height: 100%; background: var(--accent-gold); }
         .buy { min-width: 112px; padding: 0.45rem 0.7rem; border: none; border-radius: 10px; background: var(--sage-dark); color: var(--cream); font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; line-height: 1.2; }
         .buy small { display: block; font-weight: 500; font-size: 0.72rem; opacity: 0.85; }
+        .buy { touch-action: manipulation; transition: transform 0.06s ease; }
+        .buy:active:not(:disabled) { transform: scale(0.95); }
+        .tour { touch-action: manipulation; }
         .buy:disabled { background: var(--tile-border); color: var(--muted); cursor: not-allowed; }
 
         .upg { display: grid; grid-template-columns: 44px 1fr auto; gap: 0.7rem; align-items: center; padding: 0.7rem; border-radius: 10px; background: var(--card-bg); box-shadow: 0 3px 10px var(--shadow-color); margin-bottom: 0.6rem; }
@@ -247,7 +250,7 @@
                     sec.innerHTML = head + '<div class="hab-body">' + ANIMALS.filter(a => a.h === hi).map(a =>
                         '<div class="animal"><div class="emo" id="emo' + a.i + '">' + a.e + '</div>' +
                         '<div><div class="a-name">' + a.n + '<em id="lvl' + a.i + '"></em></div><div class="a-sub" id="sub' + a.i + '"></div><div class="mbar"><i id="mb' + a.i + '"></i></div></div>' +
-                        '<button class="buy" data-a="' + a.i + '" id="buy' + a.i + '"></button></div>').join('') + '</div>';
+                        '<button class="buy" data-a="' + a.i + '" id="buy' + a.i + '"><span></span><small></small></button></div>').join('') + '</div>';
                 }
                 v.appendChild(sec);
             });
@@ -256,29 +259,34 @@
             updateZoo();
         }
 
+        // Only touch the DOM when something changed, so buttons never get swapped out mid-click
+        function setText(el, v) { if (el && el.textContent !== v) el.textContent = v; }
+        function setProp(el, k, v) { if (el && el[k] !== v) el[k] = v; }
         function updateZoo() {
+            const gm = globalMult();
             ANIMALS.forEach(a => {
                 const btn = document.getElementById('buy' + a.i);
                 if (!btn) return;
                 const lvl = G.levels[a.i];
                 const n = buyCount(a);
                 const c = costFor(a, n);
-                btn.innerHTML = (lvl ? 'Adopt' : 'Adopt first') + (n > 1 ? ' x' + n : '') + '<small>' + fmt(c) + ' coins</small>';
-                btn.disabled = G.coins < c;
-                document.getElementById('lvl' + a.i).textContent = lvl ? '× ' + lvl : '';
-                const rate = animalRate(a) * globalMult();
+                setText(btn.firstChild, (lvl ? 'Adopt' : 'Adopt first') + (n > 1 ? ' x' + n : ''));
+                setText(btn.lastChild, fmt(c) + ' coins');
+                setProp(btn, 'disabled', G.coins < c);
+                setText(document.getElementById('lvl' + a.i), lvl ? '× ' + lvl : '');
                 const nm = nextMilestone(lvl);
-                document.getElementById('sub' + a.i).textContent = lvl ? fmt(rate) + '/sec' + (nm ? ' · 2x at ' + nm : '') : 'Earns ' + fmt(a.inc0 * globalMult()) + '/sec each';
+                setText(document.getElementById('sub' + a.i), lvl ? fmt(animalRate(a) * gm) + '/sec' + (nm ? ' · 2x at ' + nm : '') : 'Earns ' + fmt(a.inc0 * gm) + '/sec each');
                 const prev = [0].concat(MILESTONES).filter(t => t <= lvl).pop() || 0;
-                document.getElementById('mb' + a.i).style.width = nm ? ((lvl - prev) / (nm - prev) * 100) + '%' : '100%';
-                const emo = document.getElementById('emo' + a.i);
-                emo.className = 'emo ' + (lvl ? 'live' : 'off');
+                const w = nm ? ((lvl - prev) / (nm - prev) * 100).toFixed(1) + '%' : '100%';
+                const mb = document.getElementById('mb' + a.i);
+                if (mb.style.width !== w) mb.style.width = w;
+                setProp(document.getElementById('emo' + a.i), 'className', 'emo ' + (lvl ? 'live' : 'off'));
             });
             HABITATS.forEach((h, hi) => {
                 const el = document.getElementById('hrate' + hi);
-                if (el) el.textContent = G.habs[hi] ? fmt(ANIMALS.filter(a => a.h === hi).reduce((s, a) => s + animalRate(a), 0) * globalMult()) + '/sec' : 'Locked';
+                if (el) setText(el, G.habs[hi] ? fmt(ANIMALS.filter(a => a.h === hi).reduce((s, a) => s + animalRate(a), 0) * gm) + '/sec' : 'Locked');
             });
-            document.querySelectorAll('button[data-hab]').forEach(b => b.disabled = G.coins < habCost(+b.dataset.hab));
+            document.querySelectorAll('button[data-hab]').forEach(b => setProp(b, 'disabled', G.coins < habCost(+b.dataset.hab)));
         }
 
         function buildUpg() {
@@ -290,7 +298,7 @@
             updateUpg();
         }
         function updateUpg() {
-            document.querySelectorAll('#upgView button[data-u]').forEach(b => { const u = UPGRADES.find(x => x.k === b.dataset.u); b.disabled = G.coins < u.c; });
+            document.querySelectorAll('#upgView button[data-u]').forEach(b => { const u = UPGRADES.find(x => x.k === b.dataset.u); setProp(b, 'disabled', G.coins < u.c); });
         }
 
         function starsAvailable() { return Math.floor(Math.cbrt(G.lifetime / 1e15)); }
@@ -418,12 +426,12 @@
 
         // ---------- loop ----------
         function updateTop() {
-            document.getElementById('coins').textContent = fmt(G.coins);
+            setText(document.getElementById('coins'), fmt(G.coins));
             const r = totalRate();
-            document.getElementById('rate').textContent = fmt(r);
-            document.getElementById('visitors').textContent = fmt(Math.floor(r * 4 + G.levels.reduce((s, l) => s + l, 0) * 3));
+            setText(document.getElementById('rate'), fmt(r));
+            setText(document.getElementById('visitors'), fmt(Math.floor(r * 4 + G.levels.reduce((s, l) => s + l, 0) * 3)));
             const left = G.boostUntil - Date.now();
-            document.getElementById('boostTag').textContent = left > 0 ? '🍼 Baby boom! 3x for ' + Math.ceil(left / 1000) + 's' : (G.stars ? '⭐ ' + G.stars + ' stars (+' + G.stars * 10 + '%)' : '');
+            setText(document.getElementById('boostTag'), left > 0 ? '🍼 Baby boom! 3x for ' + Math.ceil(left / 1000) + 's' : (G.stars ? '⭐ ' + G.stars + ' stars (+' + G.stars * 10 + '%)' : ''));
         }
 
         let lastTick = Date.now();

@@ -288,7 +288,7 @@
         }
 
         .stream {
-            position: fixed;
+            position: absolute;
             width: 6px;
             height: 0;
             border-radius: 3px;
@@ -534,7 +534,8 @@
         let selected = null;
         let extraUsed = false;
         let won = false;
-        let animating = false;
+        const busy = new Set(); // flasks in the middle of a pour animation
+        let shelfEls = [];
         let best = { normal: null, extra: null };
         let solverId = 0;
 
@@ -728,42 +729,55 @@
             selected = null;
             extraUsed = false;
             won = false;
-            animating = false;
+            busy.clear();
             solverId++;
             best = { normal: null, extra: null };
             document.getElementById('win-banner').classList.remove('show');
+            buildShelf();
             render();
             requestBest('normal', startFlasks);
         }
 
-        function render() {
+        // Build the flask elements once per level, then update them in place
+        function buildShelf() {
             const shelf = document.getElementById('shelf');
             shelf.innerHTML = '';
-            flasks.forEach((flask, index) => {
+            shelfEls = flasks.map((flask, index) => {
                 const el = document.createElement('div');
                 el.className = 'flask';
-                if (index === selected) el.classList.add('selected');
-                if (flask.length === CAPACITY && flask.every(c => c === flask[0])) el.classList.add('complete');
                 el.setAttribute('role', 'button');
-                el.setAttribute('aria-label', `Flask ${index + 1}: ` +
-                    (flask.length ? flask.map(c => POTIONS[c].name).reverse().join(', ') + ' (top first)' : 'empty'));
-
                 const neck = document.createElement('div');
                 neck.className = 'flask-neck';
                 const body = document.createElement('div');
                 body.className = 'flask-body';
-                flask.forEach(c => {
-                    const layer = document.createElement('div');
-                    layer.className = 'layer';
-                    layer.style.background = POTIONS[c].color;
-                    body.appendChild(layer);
-                });
-
                 el.appendChild(neck);
                 el.appendChild(body);
                 el.addEventListener('click', () => handleFlask(index, el));
                 shelf.appendChild(el);
+                return el;
             });
+        }
+
+        function drawFlask(index) {
+            const el = shelfEls[index];
+            const flask = flasks[index];
+            el.classList.toggle('selected', index === selected);
+            el.classList.toggle('complete', flask.length === CAPACITY && flask.every(c => c === flask[0]));
+            el.setAttribute('aria-label', `Flask ${index + 1}: ` +
+                (flask.length ? flask.map(c => POTIONS[c].name).reverse().join(', ') + ' (top first)' : 'empty'));
+            const body = el.querySelector('.flask-body');
+            body.innerHTML = '';
+            flask.forEach(c => {
+                const layer = document.createElement('div');
+                layer.className = 'layer';
+                layer.style.background = POTIONS[c].color;
+                body.appendChild(layer);
+            });
+        }
+
+        function render() {
+            if (shelfEls.length !== flasks.length) buildShelf();
+            flasks.forEach((_, i) => { if (!busy.has(i)) drawFlask(i); });
 
             document.getElementById('level').textContent = level;
             document.getElementById('moves').textContent = moves;
@@ -779,7 +793,7 @@
         const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
         // Tilts the source flask over the target and pours a stream of potion into it
-        async function animatePour(from, to, done) {
+        async function animatePour(from, to, info, done) {
             const reduceMotion = window.matchMedia &&
                 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (reduceMotion) {
@@ -787,15 +801,9 @@
                 return;
             }
 
-            animating = true;
-            const els = document.querySelectorAll('.flask');
-            const src = els[from];
-            const dst = els[to];
-
-            // How much will move, and what color
-            const preview = flasks.map(f => f.slice());
-            const count = pour(preview, from, to);
-            const color = POTIONS[flasks[from][flasks[from].length - 1]].color;
+            const src = shelfEls[from];
+            const dst = shelfEls[to];
+            const { count, color, toLen } = info;
 
             // Measure the source flask in its resting position
             src.style.transition = 'none';
@@ -803,6 +811,7 @@
             const srcRect = src.getBoundingClientRect();
             const dstRect = dst.getBoundingClientRect();
             const dstBody = dst.querySelector('.flask-body').getBoundingClientRect();
+            const sx = window.scrollX, sy = window.scrollY;
             void src.offsetWidth;
             src.style.transition = '';
 
@@ -820,12 +829,12 @@
 
             // Stream from the mouth down to the potion surface in the target
             const innerHeight = dstBody.height - 6;
-            const surfaceY = dstBody.bottom - 3 - flasks[to].length * (innerHeight / CAPACITY);
+            const surfaceY = dstBody.bottom - 3 - toLen * (innerHeight / CAPACITY);
             const stream = document.createElement('div');
             stream.className = 'stream';
             stream.style.background = color;
-            stream.style.left = `${mouthX + dir * 4 - 3}px`;
-            stream.style.top = `${mouthY}px`;
+            stream.style.left = `${mouthX + dir * 4 - 3 + sx}px`;
+            stream.style.top = `${mouthY + sy}px`;
             document.body.appendChild(stream);
             void stream.offsetWidth;
             stream.style.height = `${Math.max(0, surfaceY - mouthY)}px`;
@@ -852,52 +861,65 @@
             }
             void dstBodyEl.offsetWidth;
             filling.forEach(layer => { layer.style.height = `${100 / CAPACITY}%`; });
-            const finalSurface = dstBody.bottom - 3 - (flasks[to].length + count) * (innerHeight / CAPACITY);
+            const finalSurface = dstBody.bottom - 3 - (toLen + count) * (innerHeight / CAPACITY);
             stream.style.transition = `height ${duration}ms linear`;
             stream.style.height = `${Math.max(0, finalSurface - mouthY)}px`;
             await wait(duration);
 
             // Last drops fall, then the flask goes back to the shelf
             stream.style.transition = 'height 0.15s linear, top 0.15s linear';
-            stream.style.top = `${finalSurface}px`;
+            stream.style.top = `${finalSurface + sy}px`;
             stream.style.height = '0';
             await wait(150);
             stream.remove();
             src.style.transform = '';
             await wait(360);
-
-            animating = false;
+            src.classList.remove('pouring');
             done();
         }
 
         function handleFlask(index, el) {
-            if (won || animating) return;
+            if (won || busy.has(index)) return;
             if (selected === null) {
                 if (flasks[index].length === 0) return;
                 selected = index;
-                render();
+                drawFlask(index);
                 return;
             }
             if (selected === index) {
                 selected = null;
-                render();
+                drawFlask(index);
                 return;
             }
             if (canPour(flasks, selected, index)) {
                 const from = selected;
                 selected = null;
-                animatePour(from, index, () => {
-                    history.push(flasks.map(f => f.slice()));
-                    pour(flasks, from, index);
-                    moves++;
-                    render();
+                // Apply the move right away so other flasks can be played while this one pours
+                const info = {
+                    color: POTIONS[flasks[from][flasks[from].length - 1]].color,
+                    toLen: flasks[index].length,
+                    count: 0
+                };
+                history.push(flasks.map(f => f.slice()));
+                info.count = pour(flasks, from, index);
+                moves++;
+                busy.add(from);
+                busy.add(index);
+                render();
+                animatePour(from, index, info, () => {
+                    busy.delete(from);
+                    busy.delete(index);
+                    if (shelfEls[from]) drawFlask(from);
+                    if (shelfEls[index]) drawFlask(index);
                     checkWin();
                 });
             } else {
                 // Not a valid pour: switch selection if possible, otherwise shake
                 if (flasks[index].length > 0) {
+                    const old = selected;
                     selected = index;
-                    render();
+                    drawFlask(old);
+                    drawFlask(index);
                 } else {
                     el.classList.add('shake');
                     setTimeout(() => el.classList.remove('shake'), 350);
@@ -906,7 +928,7 @@
         }
 
         function checkWin() {
-            if (!isSolved(flasks)) return;
+            if (busy.size || won || !isSolved(flasks)) return;
             won = true;
             showWinText();
             document.getElementById('win-banner').classList.add('show');
@@ -929,7 +951,7 @@
         }
 
         function undo() {
-            if (!history.length || won || animating) return;
+            if (!history.length || won || busy.size) return;
             flasks = history.pop();
             moves = Math.max(0, moves - 1);
             selected = null;
@@ -937,7 +959,7 @@
         }
 
         function restartLevel() {
-            if (animating) return;
+            if (busy.size) return;
             flasks = startFlasks.map(f => f.slice());
             history = [];
             moves = 0;
@@ -949,7 +971,7 @@
         }
 
         function addFlask() {
-            if (extraUsed || won || animating) return;
+            if (extraUsed || won || busy.size) return;
             flasks.push([]);
             // Keep undo history in sync with the new flask
             history.forEach(snapshot => snapshot.push([]));
