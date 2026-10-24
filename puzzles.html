@@ -669,6 +669,7 @@
             <nav class="nav-menu">
                 <a href="index.html#about" class="nav-link">About</a>
                 <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link">Games</a>
                 <a href="puzzles.html" class="nav-link active">Daily Puzzle</a>
                 <a href="colors.html" class="nav-link">Color Generator</a>
                 <a href="quizzes.html" class="nav-link">Quizzes</a>
@@ -745,19 +746,8 @@
             {
                 type: 'Word Search',
                 difficulty: 'Medium',
-                grid: [
-                    ['M','A','R','K','E','T','I','N','G','P'],
-                    ['E','S','O','C','I','A','L','X','Q','R'],
-                    ['D','T','B','R','A','N','D','W','Z','O'],
-                    ['I','R','R','E','A','C','H','Y','V','M'],
-                    ['A','A','S','T','R','A','T','E','G','Y'],
-                    ['L','T','K','L','E','A','D','S','U','T'],
-                    ['C','E','G','N','O','I','T','A','C','E'],
-                    ['O','G','R','O','W','T','H','P','D','N'],
-                    ['N','Y','A','N','A','L','Y','T','I','C'],
-                    ['T','M','E','T','R','I','C','S','F','S']
-                ],
-                words: ['MARKETING', 'SOCIAL', 'BRAND', 'STRATEGY', 'MEDIA', 'GROWTH', 'LEADS', 'CONTENT', 'ANALYTIC', 'METRICS', 'REACH']
+                size: 10,
+                words: ['MARKETING', 'SOCIAL', 'BRAND', 'STRATEGY', 'MEDIA', 'GROWTH', 'LEADS', 'CONTENT', 'ANALYTICS', 'METRICS', 'REACH']
             },
             // Mini Crossword
             {
@@ -814,18 +804,7 @@
             {
                 type: 'Word Search',
                 difficulty: 'Easy',
-                grid: [
-                    ['E','M','A','I','L','T','R','E','N','D'],
-                    ['C','A','M','P','A','I','G','N','O','S'],
-                    ['L','I','N','K','S','H','A','R','E','T'],
-                    ['I','M','P','A','C','T','W','E','B','A'],
-                    ['C','O','N','V','E','R','T','N','O','T'],
-                    ['K','N','T','E','N','G','A','G','E','S'],
-                    ['S','T','E','N','T','O','P','E','N','D'],
-                    ['V','I','R','A','L','N','T','A','R','A'],
-                    ['T','R','A','F','F','I','C','L','E','T'],
-                    ['M','E','T','R','I','C','S','E','N','A']
-                ],
+                size: 10,
                 words: ['EMAIL', 'CAMPAIGN', 'CLICK', 'VIRAL', 'CONVERT', 'TRAFFIC', 'ENGAGE', 'CONTENT', 'METRICS', 'TREND', 'STATS']
             }
         ];
@@ -974,7 +953,83 @@
             selectedCell.dataset.pencil = '';
         }
 
+        // Builds a word search grid from the word list so every word is always
+        // placed in full. Seeded by the date so everyone gets the same grid all day.
+        function seededRandom(seed) {
+            return function() {
+                seed = (seed * 1664525 + 1013904223) % 4294967296;
+                return seed / 4294967296;
+            };
+        }
+
+        function findWord(grid, word) {
+            const n = grid.length;
+            const dirs = [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
+            for (let r = 0; r < n; r++) {
+                for (let c = 0; c < n; c++) {
+                    for (const [dr, dc] of dirs) {
+                        let k = 0;
+                        while (k < word.length) {
+                            const rr = r + dr * k, cc = c + dc * k;
+                            if (rr < 0 || rr >= n || cc < 0 || cc >= n || grid[rr][cc] !== word[k]) break;
+                            k++;
+                        }
+                        if (k === word.length) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function buildWordSearch(words, size, seed) {
+            const dirs = [[0,1],[1,0],[1,1],[-1,1]]; // right, down, diagonal down, diagonal up
+            const letters = 'ABCDEFGHIJKLMNOPRSTUVWY';
+            for (let attempt = 0; attempt < 500; attempt++) {
+                const rand = seededRandom(seed + attempt * 7919);
+                const grid = Array.from({ length: size }, () => Array(size).fill(''));
+                const sorted = [...words].sort((a, b) => b.length - a.length);
+                let ok = true;
+
+                for (const word of sorted) {
+                    if (word.length > size) { ok = false; break; }
+                    let placed = false;
+                    for (let tries = 0; tries < 300 && !placed; tries++) {
+                        const [dr, dc] = dirs[Math.floor(rand() * dirs.length)];
+                        const r = Math.floor(rand() * size);
+                        const c = Math.floor(rand() * size);
+                        const endR = r + dr * (word.length - 1);
+                        const endC = c + dc * (word.length - 1);
+                        if (endR < 0 || endR >= size || endC < 0 || endC >= size) continue;
+                        let fits = true;
+                        for (let k = 0; k < word.length; k++) {
+                            const ch = grid[r + dr * k][c + dc * k];
+                            if (ch !== '' && ch !== word[k]) { fits = false; break; }
+                        }
+                        if (!fits) continue;
+                        for (let k = 0; k < word.length; k++) grid[r + dr * k][c + dc * k] = word[k];
+                        placed = true;
+                    }
+                    if (!placed) { ok = false; break; }
+                }
+                if (!ok) continue;
+
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        if (grid[r][c] === '') grid[r][c] = letters[Math.floor(rand() * letters.length)];
+                    }
+                }
+
+                // Final check: every listed word must be in the grid in full
+                if (words.every(w => findWord(grid, w))) return grid;
+            }
+            // Grid too small for the list: grow it rather than show a broken puzzle
+            return buildWordSearch(words, size + 1, seed);
+        }
+
         function renderWordSearch(container, puzzle) {
+            const now = new Date();
+            const seed = now.getFullYear() * 1000 + getDayOfYear();
+            puzzle.grid = buildWordSearch(puzzle.words, puzzle.size || 10, seed);
             const size = puzzle.grid.length;
             let html = `<div class="word-search-grid" style="grid-template-columns: repeat(${size}, 1fr);">`;
 
