@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Ladder - Siena Lane</title>
+    <meta name="description" content="Change one letter at a time to climb from the start word to the goal.">
+    <link rel="stylesheet" href="game-common.css">
+    <style>
+        .ladder { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0.5rem 0 1rem; }
+        .rung { display: flex; gap: 5px; }
+        .rung span {
+            width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 700; text-transform: uppercase; border-radius: 6px;
+            background: var(--tile-bg); border: 2px solid var(--tile-border);
+        }
+        .rung.start span { background: var(--sage-dark); border-color: var(--sage-dark); color: #fff; }
+        .rung.goal span { background: var(--accent-gold); border-color: var(--accent-gold); color: #fff; }
+        .rung span.chg { border-color: var(--accent-gold); color: var(--accent-gold); }
+        .rung.hint span { border-style: dashed; }
+        .rung.goal.reached span { animation: pop 0.4s ease; }
+        @keyframes pop { 50% { transform: scale(1.12); } }
+        .dots { color: var(--muted); font-size: 1.2rem; line-height: 1; }
+        .entry { display: flex; gap: 0.5rem; max-width: 360px; margin: 0 auto 0.75rem; }
+        .entry input {
+            flex: 1; min-width: 0; padding: 0.65rem 1rem; font: inherit; font-size: 1.15rem; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase; border: 2px solid var(--tile-border); border-radius: 25px; background: var(--tile-bg); color: var(--text-primary); text-align: center;
+        }
+        .entry input:focus { outline: none; border-color: var(--sage-dark); }
+        .info { text-align: center; color: var(--muted); font-size: 0.92rem; margin-bottom: 0.75rem; }
+        .len-pick { display: none; gap: 4px; }
+        .len-pick.show { display: inline-flex; }
+        .len-pick button { border: none; background: var(--sage-very-light); color: var(--sage-dark); border-radius: 14px; padding: 0.2rem 0.7rem; font: inherit; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+        .len-pick button.on { background: var(--sage-dark); color: var(--cream); }
+        @media (max-width: 400px) { .rung span { width: 40px; height: 40px; font-size: 1.2rem; } }
+</style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="quizzes.html" class="nav-link">Quizzes</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <a href="games.html" class="back-link">&larr; All games</a>
+            <h1>Word Ladder</h1>
+            <p>Change one letter at a time to get from the green word to the gold word.</p>
+        </div>
+
+        <div class="game-card">
+            <div class="mode-bar">
+                <div class="mode-tabs" id="tabs">
+                    <button data-mode="daily" class="on">Daily</button>
+                    <button data-mode="free">Unlimited</button>
+                </div>
+                <span class="len-pick" id="lenPick"><button data-n="4" class="on">4 letters</button><button data-n="5">5 letters</button></span>
+                <span class="mode-label" id="modeLabel"></span>
+            </div>
+
+            <div class="info" id="info"></div>
+            <div class="ladder" id="ladder"></div>
+
+            <form class="entry" id="form" autocomplete="off">
+                <input id="input" type="text" aria-label="Next word" autocapitalize="none" spellcheck="false">
+                <button class="btn btn-primary" type="submit">Add</button>
+            </form>
+            <div class="btn-row" id="controls">
+                <button class="btn btn-secondary" id="undoBtn" type="button">Undo</button>
+                <button class="btn btn-secondary" id="hintBtn" type="button">Hint</button>
+                <button class="btn btn-secondary" id="giveBtn" type="button">Show answer</button>
+            </div>
+
+            <div class="result-box" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="shareBtn">Share</button>
+                    <button class="btn btn-secondary" id="nextBtn">New ladder</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <h2>How to play</h2>
+            <ul>
+                <li>Type a real word that changes exactly one letter from the word above it.</li>
+                <li>Keep the letters in the same order. No adding, removing or swapping letters.</li>
+                <li>Reach the gold word to win. Try to match par, the fewest steps possible.</li>
+                <li>Stuck? A hint fills in the next word on a shortest path.</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script src="game-common.js"></script>
+    <script src="word-ladder-data.js"></script>
+    <script>
+    (function () {
+        const K = GameKit;
+        const D = {};
+        ['4', '5'].forEach(n => {
+            D[n] = {
+                pairs: LADDER[n].p.map(s => { const [a, b, d] = s.split(' '); return { a, b, par: +d }; }),
+                all: new Set(LADDER[n].w.split(' ')),
+                common: new Set(LADDER[n].c.split(' '))
+            };
+        });
+        let mode = 'daily', len = '4', pIndex, puzzle, steps, hints, done, gaveUp;
+
+        function oneApart(a, b) {
+            if (a.length !== b.length) return false;
+            let d = 0;
+            for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+            return d === 1;
+        }
+
+        function shortestPath(from, to) {
+            const dict = D[len].common;
+            const prev = new Map([[from, null]]);
+            const q = [from];
+            const abc = 'abcdefghijklmnopqrstuvwxyz';
+            while (q.length) {
+                const u = q.shift();
+                if (u === to) break;
+                for (let i = 0; i < u.length; i++) for (const c of abc) {
+                    if (c === u[i]) continue;
+                    const v = u.slice(0, i) + c + u.slice(i + 1);
+                    if ((dict.has(v) || v === to) && !prev.has(v)) { prev.set(v, u); q.push(v); }
+                }
+            }
+            if (!prev.has(to)) return null;
+            const path = [];
+            for (let x = to; x !== null; x = prev.get(x)) path.unshift(x);
+            return path;
+        }
+
+        function start(m, idx) {
+            mode = m;
+            const day = K.dayNumber();
+            document.getElementById('lenPick').classList.toggle('show', mode === 'free');
+            if (mode === 'daily') {
+                len = '4';
+                const P = D[len].pairs;
+                pIndex = ((day % P.length) + P.length) % P.length;
+                document.getElementById('modeLabel').textContent = 'Puzzle #' + (day + 1) + ' · ' + K.dateLabel();
+            } else {
+                const P = D[len].pairs;
+                pIndex = idx !== undefined && idx !== null ? idx : Math.floor(Math.random() * P.length);
+                document.getElementById('modeLabel').textContent = '';
+            }
+            puzzle = D[len].pairs[pIndex];
+            steps = []; hints = 0; done = false; gaveUp = false;
+            const saved = K.load('ladder_' + mode, null);
+            if (saved && saved.p === pIndex && saved.len === len && (mode === 'free' || saved.day === day)) {
+                steps = saved.steps; hints = saved.hints; done = saved.done; gaveUp = saved.gaveUp;
+            }
+            document.getElementById('input').maxLength = +len;
+            document.getElementById('input').placeholder = 'Change one letter';
+            document.getElementById('result').classList.remove('show');
+            render();
+            if (done) showResult();
+        }
+
+        function persist() { K.save('ladder_' + mode, { p: pIndex, len, day: K.dayNumber(), steps, hints, done, gaveUp }); }
+
+        function rungHTML(word, prevWord, cls) {
+            return '<div class="rung ' + cls + '">' + word.split('').map((c, i) =>
+                '<span class="' + (prevWord && prevWord[i] !== c && !cls.includes('start') && !cls.includes('goal') ? 'chg' : '') + '">' + c + '</span>').join('') + '</div>';
+        }
+
+        function render() {
+            const reached = steps.length && steps[steps.length - 1].w === puzzle.b;
+            let html = rungHTML(puzzle.a, null, 'start');
+            let prev = puzzle.a;
+            steps.forEach(s => {
+                if (s.w === puzzle.b) return;
+                html += rungHTML(s.w, prev, s.hint ? 'hint' : '');
+                prev = s.w;
+            });
+            if (!reached) html += '<div class="dots">⋮</div>';
+            html += rungHTML(puzzle.b, null, 'goal' + (reached ? ' reached' : ''));
+            document.getElementById('ladder').innerHTML = html;
+            const used = steps.length;
+            document.getElementById('info').textContent = 'Par: ' + puzzle.par + ' steps · You: ' + used + (hints ? ' · Hints: ' + hints : '');
+            document.getElementById('input').disabled = done;
+            ['undoBtn', 'hintBtn', 'giveBtn'].forEach(id => document.getElementById(id).disabled = done);
+            document.getElementById('undoBtn').disabled = done || !steps.length;
+        }
+
+        function current() { return steps.length ? steps[steps.length - 1].w : puzzle.a; }
+
+        function add(raw, isHint) {
+            if (done) return;
+            const w = raw.trim().toLowerCase();
+            const inp = document.getElementById('input');
+            const fail = msg => { K.shake(inp); K.toast(msg); return false; };
+            if (w.length !== +len) return fail('Use ' + len + ' letters');
+            if (!oneApart(current(), w)) return fail('Change exactly one letter');
+            if (w !== puzzle.b && !D[len].all.has(w)) return fail('Not in word list');
+            if (w === puzzle.a || steps.some(s => s.w === w)) return fail('Already used');
+            steps.push({ w, hint: !!isHint });
+            if (w === puzzle.b) {
+                done = true;
+                const st = K.load('ladder_stats_' + mode, { played: 0, wins: 0, pars: 0 });
+                st.played++; st.wins++; if (steps.length <= puzzle.par) st.pars++;
+                K.save('ladder_stats_' + mode, st);
+                showResult();
+            }
+            persist();
+            render();
+            return true;
+        }
+
+        function showResult() {
+            document.getElementById('input').value = '';
+            const n = steps.length;
+            let title;
+            if (gaveUp) title = 'Here is one way up';
+            else if (hints) title = 'You made it!';
+            else if (n < puzzle.par) title = 'Under par!';
+            else if (n === puzzle.par) title = 'Perfect ladder!';
+            else title = 'You made it!';
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultText').textContent = gaveUp
+                ? 'A shortest path takes ' + puzzle.par + ' steps.'
+                : 'You climbed from ' + puzzle.a.toUpperCase() + ' to ' + puzzle.b.toUpperCase() + ' in ' + n + ' steps (par ' + puzzle.par + ')' + (hints ? ' with ' + hints + (hints === 1 ? ' hint.' : ' hints.') : '.');
+            document.getElementById('nextBtn').textContent = mode === 'daily' ? 'Play unlimited' : 'New ladder';
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('form').addEventListener('submit', e => {
+            e.preventDefault();
+            const inp = document.getElementById('input');
+            if (add(inp.value, false)) inp.value = '';
+            inp.focus();
+        });
+        document.getElementById('undoBtn').addEventListener('click', () => { if (!done && steps.length) { steps.pop(); persist(); render(); } });
+        document.getElementById('hintBtn').addEventListener('click', () => {
+            let path = shortestPath(current(), puzzle.b);
+            if (!path) {
+                // dead end: step back until a path exists
+                while (steps.length && !path) { steps.pop(); path = shortestPath(current(), puzzle.b); }
+                K.toast('That route was a dead end. Backing up.');
+            }
+            if (!path || path.length < 2) return;
+            hints++;
+            add(path[1], true);
+            persist();
+            render();
+        });
+        document.getElementById('giveBtn').addEventListener('click', () => {
+            if (!confirm('Show the answer? This ends the puzzle.')) return;
+            const path = shortestPath(puzzle.a, puzzle.b) || [puzzle.a, puzzle.b];
+            steps = path.slice(1).map(w => ({ w, hint: true }));
+            done = true; gaveUp = true;
+            const st = K.load('ladder_stats_' + mode, { played: 0, wins: 0, pars: 0 });
+            st.played++;
+            K.save('ladder_stats_' + mode, st);
+            persist(); render(); showResult();
+        });
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const rungs = steps.map(s => s.hint ? '💡' : '🟩').join('');
+            K.share('Word Ladder ' + (mode === 'daily' ? '#' + (K.dayNumber() + 1) + ' ' : '') + puzzle.a.toUpperCase() + ' → ' + puzzle.b.toUpperCase() + '\n' +
+                (gaveUp ? 'Gave up' : steps.length + ' steps (par ' + puzzle.par + ')') + '\n' + rungs + '\n' + location.href.split('?')[0]);
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'free'));
+            K.save('ladder_free', null);
+            start('free');
+        });
+        document.querySelectorAll('#lenPick button').forEach(b => b.addEventListener('click', () => {
+            document.querySelectorAll('#lenPick button').forEach(x => x.classList.toggle('on', x === b));
+            len = b.dataset.n;
+            K.save('ladder_free', null);
+            start('free');
+        }));
+        K.modeTabs(document.getElementById('tabs'), m => {
+            if (m === 'free') {
+                const s = K.load('ladder_free', null);
+                if (s) { len = s.len; document.querySelectorAll('#lenPick button').forEach(x => x.classList.toggle('on', x.dataset.n === len)); }
+                start('free', s ? s.p : undefined);
+            } else start('daily');
+        });
+        start('daily');
+    })();
+    </script>
+</body>
+</html>

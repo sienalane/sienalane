@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blind Tasting - Siena Lane</title>
+    <meta name="description" content="Read the tasting note, then name the grape and the region.">
+    <link rel="stylesheet" href="game-common.css">
+    <style>
+        .progress { display: flex; gap: 6px; justify-content: center; margin-bottom: 1rem; }
+        .progress span { width: 28px; height: 8px; border-radius: 4px; background: var(--sage-very-light); }
+        .progress span.on { background: var(--sage-light); }
+        .progress span.r3 { background: var(--good); } .progress span.r2 { background: var(--sage-light); } .progress span.r1 { background: var(--close); } .progress span.r0 { background: #c98a7d; }
+        .glass-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+        .glass { width: 64px; height: 92px; flex: none; }
+        .note-title { font-size: 1.15rem; font-weight: 700; color: var(--sage-dark); }
+        .note-sub { color: var(--muted); font-size: 0.9rem; }
+        .sat { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .sat h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 0.3rem; }
+        .sat p { font-size: 0.97rem; }
+        .meters { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; font-size: 0.85rem; }
+        .meters .m { height: 7px; border-radius: 4px; background: var(--sage-very-light); position: relative; overflow: hidden; }
+        .meters .m i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sage-dark); border-radius: 4px; }
+        .meters em { font-style: normal; color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+        .question { font-weight: 700; margin: 0.5rem 0 0.6rem; text-align: center; }
+        .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .opt {
+            border: 2px solid var(--tile-border); background: var(--bg-primary); color: var(--text-primary); border-radius: 10px;
+            padding: 0.7rem; font: inherit; font-weight: 600; cursor: pointer; text-align: center;
+        }
+        .opt:hover:not(:disabled) { border-color: var(--sage-dark); }
+        .opt.right { background: var(--good); border-color: var(--good); color: #fff; }
+        .opt.wrong { background: #c98a7d; border-color: #c98a7d; color: #fff; }
+        .opt:disabled { cursor: default; }
+        .reveal { display: none; margin-top: 1rem; padding: 1rem; border-radius: 10px; background: var(--sage-very-light); }
+        .reveal.show { display: block; }
+        .reveal h3 { color: var(--sage-dark); margin-bottom: 0.3rem; }
+        .reveal p { margin-bottom: 0.4rem; font-size: 0.95rem; }
+        .scoreline { text-align: right; font-weight: 700; color: var(--sage-dark); }
+        @media (max-width: 640px) { .sat { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="quizzes.html" class="nav-link">Quizzes</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <a href="games.html" class="back-link">&larr; All games</a>
+            <h1>Blind Tasting</h1>
+            <p>Read the tasting note like a sommelier. Name the grape, then the region.</p>
+        </div>
+
+        <div class="game-card">
+            <div class="mode-bar">
+                <div class="mode-tabs" id="tabs">
+                    <button data-mode="daily" class="on">Daily flight</button>
+                    <button data-mode="free">Unlimited</button>
+                </div>
+                <span class="mode-label" id="modeLabel"></span>
+            </div>
+            <div class="progress" id="progress"></div>
+
+            <div id="stage">
+                <div class="glass-row">
+                    <svg class="glass" id="glass" viewBox="0 0 64 92" aria-hidden="true"></svg>
+                    <div>
+                        <div class="note-title" id="noteTitle"></div>
+                        <div class="note-sub" id="noteSub"></div>
+                    </div>
+                    <div class="scoreline" id="scoreline" style="margin-left:auto"></div>
+                </div>
+                <div class="sat">
+                    <div>
+                        <h3>Appearance</h3><p id="look"></p>
+                        <h3 style="margin-top:0.7rem">Nose</h3><p id="nose"></p>
+                        <h3 style="margin-top:0.7rem">Palate</h3><p id="palate"></p>
+                    </div>
+                    <div>
+                        <h3>Structure</h3>
+                        <div class="meters" id="meters"></div>
+                    </div>
+                </div>
+                <div class="question" id="question"></div>
+                <div class="opts" id="opts"></div>
+                <div class="reveal" id="reveal"></div>
+            </div>
+
+            <div class="result-box" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="shareBtn">Share</button>
+                    <button class="btn btn-secondary" id="nextBtn">Play unlimited</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <h2>How to play</h2>
+            <ul>
+                <li>Each wine comes with a tasting note in the style used by wine students: appearance, nose, palate and structure.</li>
+                <li>First guess the grape (2 points), then the region (1 point).</li>
+                <li>The daily flight is 5 wines, the same for everyone. Unlimited keeps pouring as long as you like.</li>
+                <li>Notes describe a classic example of each style. Real bottles vary with the producer and vintage.</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script src="game-common.js"></script>
+    <script>
+    (function () {
+        const K = GameKit;
+        // structure levels: 1 low, 2 medium-, 3 medium, 4 medium+, 5 high. sweetness: 1 dry, 2 off-dry, 3 medium, 4 sweet, 5 luscious
+        // c = color group for distractors: w white, r red. look = glass color.
+        const WINES = [
+            { g: 'Sauvignon Blanc', r: 'Marlborough, New Zealand', c: 'w', col: '#efe9a8', look: 'Pale lemon with a green tint.', nose: 'Pronounced passion fruit, gooseberry, freshly cut grass and green bell pepper.', pal: 'Bursting with tropical and green fruit. Crisp, clean and unoaked.', s: [1, 5, 0, 3, 2], pair: 'Goat cheese salad, asparagus, or anything with fresh herbs.', fact: 'Sunny days and cool nights in Marlborough keep the aromas loud and the acidity high.' },
+            { g: 'Sauvignon Blanc', r: 'Sancerre, Loire Valley, France', c: 'w', col: '#efeab8', look: 'Pale lemon.', nose: 'Gooseberry, lemon, grass and a flinty, wet stone note.', pal: 'Citrus and green fruit with a mineral edge. Restrained, crisp and unoaked.', s: [1, 5, 0, 3, 2], pair: 'Local Crottin de Chavignol goat cheese.', fact: 'Grown on chalk, clay and flint soils near the town of Sancerre.' },
+            { g: 'Chardonnay', r: 'Chablis, Burgundy, France', c: 'w', col: '#efebb5', look: 'Pale lemon with green hints.', nose: 'Green apple, lemon and wet stone.', pal: 'Lean and steely with green apple and citrus. Usually little or no new oak.', s: [1, 5, 0, 3, 3], pair: 'Oysters and simple shellfish.', fact: 'Chablis sits in the cool north of Burgundy on Kimmeridgian limestone, full of ancient fossilized oyster shells.' },
+            { g: 'Chardonnay', r: 'Napa Valley, California', c: 'w', col: '#e7cf6a', look: 'Medium gold.', nose: 'Ripe peach, pineapple, butter, vanilla and toast.', pal: 'Rich and creamy with ripe stone and tropical fruit, butter and toasty oak.', s: [1, 3, 0, 5, 5], pair: 'Lobster with butter, roast chicken.', fact: 'The buttery note comes from malolactic conversion. New oak barrels add the vanilla and toast.' },
+            { g: 'Riesling', r: 'Mosel, Germany', c: 'w', col: '#ecebb0', look: 'Pale lemon-green.', nose: 'Green apple, lime, white blossom and a stony note.', pal: 'A touch of sweetness balanced by racy acidity. Very light and delicate.', s: [3, 5, 0, 1, 1], pair: 'Spicy Thai food or pork with apples.', fact: 'Many Mosel Rieslings are only around 8 to 9% alcohol. The vineyards are some of the steepest in the world.' },
+            { g: 'Riesling', r: 'Clare Valley, Australia', c: 'w', col: '#ece6a0', look: 'Pale lemon.', nose: 'Lime, lemon zest and toast, with a hint of petrol.', pal: 'Bone dry and zesty with lime cordial flavors. Unoaked.', s: [1, 5, 0, 3, 3], pair: 'Vietnamese spring rolls, fish tacos.', fact: 'The petrol (kerosene) note grows as Riesling ages. Collectors love it.' },
+            { g: 'Pinot Grigio', r: 'Veneto, Italy', c: 'w', col: '#f1eec6', look: 'Very pale lemon.', nose: 'Light pear, lemon and green apple.', pal: 'Neutral and refreshing with delicate citrus and pear. Unoaked.', s: [1, 4, 0, 3, 1], pair: 'Light seafood, salads, antipasti.', fact: 'The same grape is called Pinot Gris in Alsace, where it makes richer, spicier wines.' },
+            { g: 'Gewürztraminer', r: 'Alsace, France', c: 'w', col: '#e2c45b', look: 'Medium to deep gold.', nose: 'Lychee, rose petal, ginger and sweet spice.', pal: 'Oily and rich with lychee and floral flavors. Can be dry or off-dry.', s: [2, 1, 0, 5, 5], pair: 'Munster cheese, mild curries, Moroccan food.', fact: 'Gewürz means spice in German. It is one of the easiest grapes to spot blind because of the lychee and rose.' },
+            { g: 'Chenin Blanc', r: 'Vouvray, Loire Valley, France', c: 'w', col: '#ead98a', look: 'Medium lemon.', nose: 'Baked apple, quince, honey and beeswax.', pal: 'Orchard fruit and honey with a gentle sweetness and bright acidity.', s: [2, 5, 0, 3, 3], pair: 'Pork with apples, Asian dishes with a little heat.', fact: 'Vouvray can be dry, off-dry, sweet or sparkling. The label usually says which.' },
+            { g: 'Viognier', r: 'Condrieu, Northern Rhône, France', c: 'w', col: '#e6cd6b', look: 'Medium lemon-gold.', nose: 'Apricot, peach and honeysuckle.', pal: 'Lush stone fruit and blossom. Full and soft with gentle acidity.', s: [1, 2, 0, 5, 5], pair: 'Apricot chicken tagine, lobster.', fact: 'In the 1960s only a few hectares of Viognier were left in Condrieu. It nearly disappeared.' },
+            { g: 'Albariño', r: 'Rías Baixas, Spain', c: 'w', col: '#efeab0', look: 'Pale lemon.', nose: 'Grapefruit, lemon, peach and a salty sea breeze.', pal: 'Zesty citrus and stone fruit with a saline finish. Unoaked.', s: [1, 5, 0, 3, 2], pair: 'Grilled octopus, shellfish.', fact: 'Rías Baixas sits on the rainy Atlantic coast of Galicia. Vines are often trained high on pergolas.' },
+            { g: 'Grüner Veltliner', r: 'Lower Austria', c: 'w', col: '#ebe9ad', look: 'Pale lemon-green.', nose: 'Green apple, lime and a distinctive white pepper note.', pal: 'Crisp and peppery with citrus and green fruit.', s: [1, 4, 0, 3, 3], pair: 'Wiener schnitzel, vegetable dishes.', fact: 'It is Austria’s signature white grape. The peppery note is a giveaway.' },
+            { g: 'Sémillon', r: 'Sauternes, Bordeaux, France', c: 'w', col: '#d9a53a', look: 'Deep gold.', nose: 'Honey, apricot, marmalade, ginger and vanilla.', pal: 'Lusciously sweet and rich, held up by fresh acidity.', s: [5, 4, 0, 4, 5], pair: 'Roquefort and other blue cheeses, fruit tarts.', fact: 'Noble rot (botrytis) shrivels the grapes and concentrates the sugar. Sauvignon Blanc is usually blended in.' },
+            { g: 'Pinot Noir', r: 'Burgundy, France', c: 'r', col: '#a8323a', look: 'Pale ruby.', nose: 'Red cherry, raspberry, mushroom and forest floor.', pal: 'Silky red fruit and earthy notes. Elegant, with soft tannins.', s: [1, 5, 2, 3, 3], pair: 'Roast duck, mushroom risotto.', fact: 'Thin skins give Pinot Noir its pale color and light tannins. Burgundy has hundreds of individual vineyard names.' },
+            { g: 'Pinot Noir', r: 'Central Otago, New Zealand', c: 'r', col: '#9a2a36', look: 'Pale to medium ruby.', nose: 'Ripe dark cherry, plum, wild thyme and spice.', pal: 'Juicy, fruit-forward and plush with fine tannins.', s: [1, 4, 2, 4, 3], pair: 'Lamb, salmon, mushroom dishes.', fact: 'It is among the southernmost wine regions on Earth.' },
+            { g: 'Gamay', r: 'Beaujolais, France', c: 'r', col: '#8e2a55', look: 'Pale purple.', nose: 'Red cherry, raspberry, banana and bubblegum.', pal: 'Light and juicy with bright red fruit. Very low tannin.', s: [1, 4, 1, 3, 1], pair: 'Charcuterie, picnics. Serve slightly chilled.', fact: 'Carbonic maceration ferments whole berries and creates the banana and bubblegum aromas.' },
+            { g: 'Cabernet Sauvignon', r: 'Pauillac, Bordeaux, France', c: 'r', col: '#5e1626', look: 'Deep ruby.', nose: 'Blackcurrant, cedar, graphite, tobacco and vanilla.', pal: 'Structured and firm with black fruit and savory, oaky notes.', s: [1, 5, 5, 4, 4], pair: 'Roast lamb, steak.', fact: 'Pauillac is on Bordeaux’s Left Bank, where gravel soils suit Cabernet Sauvignon.' },
+            { g: 'Cabernet Sauvignon', r: 'Napa Valley, California', c: 'r', col: '#4f1222', look: 'Deep ruby.', nose: 'Ripe blackcurrant, black cherry, mint, vanilla and mocha.', pal: 'Bold and ripe with plush black fruit and toasty oak. Big, firm tannins.', s: [1, 4, 5, 5, 5], pair: 'Ribeye, burgers.', fact: 'Napa’s warm, sunny climate makes riper, fuller Cabernet than Bordeaux.' },
+            { g: 'Merlot', r: 'Pomerol, Bordeaux, France', c: 'r', col: '#621a2c', look: 'Medium to deep ruby.', nose: 'Plum, black cherry, fruitcake and cocoa.', pal: 'Round and velvety with ripe plum. Smooth tannins.', s: [1, 3, 3, 4, 4], pair: 'Roast beef, mushroom dishes.', fact: 'Pomerol is on the Right Bank, where cooler clay soils suit Merlot.' },
+            { g: 'Syrah', r: 'Northern Rhône, France', c: 'r', col: '#4a1430', look: 'Deep ruby with purple tints.', nose: 'Blackberry, black pepper, violet, smoked meat and olive.', pal: 'Savory and peppery with dark fruit and firm tannins.', s: [1, 4, 4, 3, 4], pair: 'Grilled lamb, venison.', fact: 'In Côte-Rôtie a small amount of the white grape Viognier is sometimes cofermented with the Syrah.' },
+            { g: 'Shiraz', r: 'Barossa Valley, Australia', c: 'r', col: '#3f0f28', look: 'Deep purple, almost opaque.', nose: 'Very ripe blackberry, plum, chocolate, licorice and vanilla.', pal: 'Rich, jammy and full with sweet spice from American oak.', s: [1, 3, 4, 5, 5], pair: 'Barbecue, smoky brisket.', fact: 'Shiraz and Syrah are the same grape. The name often hints at the riper, richer style.' },
+            { g: 'Grenache', r: 'Châteauneuf-du-Pape, Southern Rhône, France', c: 'r', col: '#8c2232', look: 'Medium ruby.', nose: 'Strawberry, raspberry, dried herbs and white pepper.', pal: 'Warm and generous red fruit with herbal notes. High alcohol.', s: [1, 3, 3, 5, 5], pair: 'Lamb stew, grilled sausages.', fact: 'Up to 13 grape varieties are allowed in Châteauneuf-du-Pape, but Grenache usually leads.' },
+            { g: 'Nebbiolo', r: 'Barolo, Piedmont, Italy', c: 'r', col: '#8a3a2c', look: 'Pale garnet with an orange rim.', nose: 'Rose, tar, sour cherry and licorice.', pal: 'Powerful and grippy with sour cherry. Very high tannin and acidity.', s: [1, 5, 5, 4, 4], pair: 'Truffle pasta, braised beef.', fact: 'Nicknamed the wine of kings. Its pale color hides huge tannins.' },
+            { g: 'Sangiovese', r: 'Chianti Classico, Tuscany, Italy', c: 'r', col: '#7e2430', look: 'Medium ruby.', nose: 'Sour red cherry, plum, dried oregano and earth.', pal: 'Tart cherry and savory herbs with firm tannins and bright acidity.', s: [1, 5, 4, 3, 3], pair: 'Pizza, pasta with tomato sauce.', fact: 'The black rooster on the neck of the bottle marks Chianti Classico.' },
+            { g: 'Tempranillo', r: 'Rioja, Spain', c: 'r', col: '#7a2a2e', look: 'Medium ruby with a garnet rim.', nose: 'Strawberry, plum, vanilla, coconut, dill and leather.', pal: 'Smooth red fruit with sweet oak spice from long barrel aging.', s: [1, 3, 3, 4, 3], pair: 'Roast lamb, chorizo, Manchego.', fact: 'American oak gives the coconut and dill notes. Reserva wines must age at least three years before release.' },
+            { g: 'Malbec', r: 'Mendoza, Argentina', c: 'r', col: '#3e0c2e', look: 'Deep purple.', nose: 'Blackberry, plum, violet and milk chocolate.', pal: 'Plush dark fruit with soft, ripe tannins.', s: [1, 3, 4, 4, 5], pair: 'Argentine asado, grilled steak.', fact: 'High-altitude vineyards near the Andes get intense sun and cool nights.' },
+            { g: 'Zinfandel', r: 'Lodi, California', c: 'r', col: '#5a1530', look: 'Deep ruby.', nose: 'Jammy blackberry, raspberry jam, raisin and sweet spice.', pal: 'Bold and fruity with high alcohol and a warm finish.', s: [1, 3, 3, 5, 5], pair: 'BBQ ribs, pulled pork.', fact: 'DNA testing showed Zinfandel is the same grape as Croatia’s Tribidrag and Italy’s Primitivo.' },
+            { g: 'Carménère', r: 'Colchagua Valley, Chile', c: 'r', col: '#4a1029', look: 'Deep ruby.', nose: 'Blackcurrant, green bell pepper, herbs and spice.', pal: 'Dark fruit and herbal notes with smooth tannins.', s: [1, 3, 3, 4, 4], pair: 'Grilled meats, dishes with peppers.', fact: 'For years Chilean growers thought their Carménère vines were Merlot.' },
+            { g: 'Pinotage', r: 'Stellenbosch, South Africa', c: 'r', col: '#4d1428', look: 'Deep ruby.', nose: 'Blackberry, plum, smoke and coffee.', pal: 'Dark fruit and smoky, roasted notes.', s: [1, 3, 4, 4, 4], pair: 'Braai (South African barbecue).', fact: 'Created in South Africa in 1925 by crossing Pinot Noir with Cinsault.' },
+            { g: 'Cabernet Franc', r: 'Chinon, Loire Valley, France', c: 'r', col: '#7a2238', look: 'Medium ruby.', nose: 'Raspberry, red currant, green bell pepper, violet and pencil shavings.', pal: 'Fresh red fruit with a leafy note.', s: [1, 4, 3, 3, 3], pair: 'Roast pork, grilled vegetables.', fact: 'Cabernet Franc is one of the parents of Cabernet Sauvignon.' },
+            { g: 'Chardonnay & Pinot Noir', r: 'Champagne, France', c: 'w', col: '#efe2a2', look: 'Pale lemon with fine, persistent bubbles.', nose: 'Lemon, green apple, brioche, toast and biscuit.', pal: 'Dry (Brut), crisp citrus and creamy toastiness.', s: [1, 5, 0, 3, 2], pair: 'Fried chicken, oysters, potato chips.', fact: 'Aging on dead yeast cells (lees) in the bottle creates the bready, toasty notes. Pinot Meunier often goes in the blend too.', bubbles: true },
+            { g: 'Glera', r: 'Prosecco, Veneto, Italy', c: 'w', col: '#f1ecc0', look: 'Pale lemon, light and frothy bubbles.', nose: 'Pear, green apple, white flowers and melon.', pal: 'Light, fruity and fresh with a hint of sweetness.', s: [2, 4, 0, 2, 1], pair: 'Aperitivo snacks, a Bellini.', fact: 'The second fermentation happens in big tanks, not bottles, which keeps the fruit fresh.', bubbles: true },
+            { g: 'Touriga Nacional', r: 'Douro Valley, Portugal (Port)', c: 'r', col: '#2c0718', look: 'Deep ruby, nearly opaque.', nose: 'Blackberry, black cherry, chocolate and sweet spice.', pal: 'Sweet, rich and warming with ripe black fruit and big tannins.', s: [4, 3, 5, 5, 5], pair: 'Stilton, dark chocolate.', fact: 'Grape spirit is added during fermentation, stopping it early and leaving natural sweetness.' },
+            { g: 'Grenache & Cinsault', r: 'Provence, France (rosé)', c: 'r', col: '#f1b6a3', look: 'Pale salmon pink.', nose: 'Strawberry, red currant, peach and dried herbs.', pal: 'Dry and delicate with red fruit and a refreshing finish.', s: [1, 4, 0, 3, 2], pair: 'Niçoise salad, grilled fish.', fact: 'The pale color comes from very brief contact between juice and grape skins.' },
+            { g: 'Palomino', r: 'Jerez, Spain (Fino Sherry)', c: 'w', col: '#efe4a8', look: 'Pale lemon.', nose: 'Almond, bread dough, green apple and a salty tang.', pal: 'Bone dry, tangy and savory.', s: [1, 3, 0, 4, 2], pair: 'Olives, almonds, jamón.', fact: 'A layer of yeast called flor grows on the wine in the barrel, protecting it from air and adding nutty, bready flavors.' },
+        ];
+        const SLABELS = ['', 'Low', 'Medium-', 'Medium', 'Medium+', 'High'];
+        const SWEET = ['', 'Dry', 'Off-dry', 'Medium', 'Sweet', 'Luscious'];
+        const FLIGHT = 5;
+        let mode = 'daily', flight, idx, picks, phase, score, results;
+
+        function makeFlight(seed) {
+            const rand = K.rng(seed);
+            return K.shuffle(WINES.map((_, i) => i), rand).slice(0, FLIGHT);
+        }
+
+        function start(m) {
+            mode = m;
+            const day = K.dayNumber();
+            if (mode === 'daily') {
+                document.getElementById('modeLabel').textContent = 'Flight #' + (day + 1) + ' · ' + K.dateLabel();
+                flight = makeFlight(day * 7919 + 13);
+                const saved = K.load('wine_daily', null);
+                if (saved && saved.day === day) { idx = saved.idx; results = saved.results; score = saved.score; }
+                else { idx = 0; results = []; score = 0; }
+            } else {
+                document.getElementById('modeLabel').textContent = '';
+                const saved = K.load('wine_free', null);
+                flight = null;
+                if (saved) { results = saved.results; score = saved.score; idx = saved.idx; }
+                else { results = []; score = 0; idx = 0; }
+            }
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('stage').style.display = '';
+            if (mode === 'daily' && idx >= FLIGHT) return finish();
+            pour();
+        }
+
+        function currentWine() {
+            if (mode === 'daily') return WINES[flight[idx]];
+            const saved = K.load('wine_free', null);
+            if (saved && saved.cur !== undefined && saved.idx === idx) return WINES[saved.cur];
+            let pickI;
+            const recent = (saved && saved.recent) || [];
+            do { pickI = Math.floor(Math.random() * WINES.length); } while (recent.includes(pickI) && recent.length < WINES.length - 1);
+            const rec = recent.concat([pickI]).slice(-12);
+            K.save('wine_free', { results, score, idx, cur: pickI, recent: rec });
+            return WINES[pickI];
+        }
+
+        let wine;
+        function pour() {
+            wine = currentWine();
+            phase = 'grape';
+            picks = {};
+            drawGlass(wine);
+            document.getElementById('noteTitle').textContent = 'Wine ' + (mode === 'daily' ? (idx + 1) + ' of ' + FLIGHT : '#' + (idx + 1));
+            document.getElementById('noteSub').textContent = wine.bubbles ? 'Sparkling' : wine.s[0] >= 4 ? 'Sweet' : (wine.c === 'w' ? 'Still white' : wine.col === '#f1b6a3' ? 'Still rosé' : 'Still red');
+            if (wine.r.includes('Port')) document.getElementById('noteSub').textContent = 'Fortified';
+            if (wine.r.includes('Sherry')) document.getElementById('noteSub').textContent = 'Fortified';
+            document.getElementById('look').textContent = wine.look;
+            document.getElementById('nose').textContent = wine.nose;
+            document.getElementById('palate').textContent = wine.pal;
+            const rows = [['Sweetness', wine.s[0], SWEET[wine.s[0]]], ['Acidity', wine.s[1], SLABELS[wine.s[1]]]];
+            if (wine.c === 'r' && wine.s[2]) rows.push(['Tannin', wine.s[2], SLABELS[wine.s[2]]]);
+            rows.push(['Alcohol', wine.s[3], SLABELS[wine.s[3]]], ['Body', wine.s[4], SLABELS[wine.s[4]]]);
+            document.getElementById('meters').innerHTML = rows.map(([l, v, t]) => '<span>' + l + '</span><span class="m"><i style="width:' + (v * 20) + '%"></i></span><em>' + t + '</em>').join('');
+            document.getElementById('reveal').classList.remove('show');
+            renderProgress();
+            ask();
+        }
+
+        function drawGlass(w) {
+            document.getElementById('glass').innerHTML =
+                '<path d="M10 6 H54 C56 34 46 50 32 52 C18 50 8 34 10 6 Z" fill="none" stroke="currentColor" stroke-width="2" opacity="0.5"/>' +
+                '<path d="M12 24 H52 C51 40 43 48 32 49.5 C21 48 13 40 12 24 Z" fill="' + w.col + '"/>' +
+                (w.bubbles ? '<circle cx="26" cy="38" r="1.5" fill="#fff" opacity="0.8"/><circle cx="35" cy="33" r="1.2" fill="#fff" opacity="0.8"/><circle cx="30" cy="29" r="1" fill="#fff" opacity="0.8"/><circle cx="38" cy="42" r="1.3" fill="#fff" opacity="0.8"/>' : '') +
+                '<line x1="32" y1="52" x2="32" y2="84" stroke="currentColor" stroke-width="2" opacity="0.5"/>' +
+                '<line x1="20" y1="86" x2="44" y2="86" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.5"/>';
+            document.getElementById('glass').style.color = 'var(--text-primary)';
+        }
+
+        function options(field) {
+            const right = wine[field];
+            const same = WINES.filter(x => x.c === wine.c && x[field] !== right).map(x => x[field]);
+            const other = WINES.filter(x => x[field] !== right).map(x => x[field]);
+            const pool = Array.from(new Set(K.shuffle(same))).slice(0, 3);
+            while (pool.length < 3) { const o = pick(other); if (!pool.includes(o)) pool.push(o); }
+            return K.shuffle(pool.concat([right]));
+        }
+        const pick = a => a[Math.floor(Math.random() * a.length)];
+
+        function ask() {
+            const field = phase === 'grape' ? 'g' : 'r';
+            document.getElementById('question').textContent = phase === 'grape' ? 'Which grape is it?' : 'Now, where is it from?';
+            const box = document.getElementById('opts');
+            box.innerHTML = '';
+            options(field).forEach(o => {
+                const b = document.createElement('button');
+                b.className = 'opt';
+                b.textContent = o;
+                b.addEventListener('click', () => answer(field, o, b));
+                box.appendChild(b);
+            });
+            document.getElementById('scoreline').textContent = score + ' pts';
+        }
+
+        function answer(field, choice, btn) {
+            const right = wine[field];
+            const ok = choice === right;
+            picks[field] = ok;
+            document.querySelectorAll('#opts .opt').forEach(b => {
+                b.disabled = true;
+                if (b.textContent === right) b.classList.add('right');
+                else if (b === btn) b.classList.add('wrong');
+            });
+            if (ok) score += field === 'g' ? 2 : 1;
+            document.getElementById('scoreline').textContent = score + ' pts';
+            setTimeout(() => {
+                if (field === 'g') { phase = 'region'; ask(); }
+                else reveal();
+            }, 700);
+        }
+
+        function reveal() {
+            const pts = (picks.g ? 2 : 0) + (picks.r ? 1 : 0);
+            results.push(pts);
+            const el = document.getElementById('reveal');
+            el.innerHTML = '<h3>' + wine.g + ' · ' + wine.r + '</h3>' +
+                '<p><strong>Try it with:</strong> ' + wine.pair + '</p>' +
+                '<p><strong>Did you know?</strong> ' + wine.fact + '</p>' +
+                '<div class="btn-row" style="margin-top:0.6rem"><button class="btn btn-primary" id="nextWine">' + (mode === 'daily' && idx === FLIGHT - 1 ? 'See results' : 'Next wine') + '</button></div>';
+            el.classList.add('show');
+            document.getElementById('opts').innerHTML = '';
+            document.getElementById('question').textContent = pts === 3 ? 'Spot on!' : pts === 2 ? 'Right grape!' : pts === 1 ? 'Right region!' : 'Not this time.';
+            idx++;
+            if (mode === 'daily') K.save('wine_daily', { day: K.dayNumber(), idx, results, score });
+            else K.save('wine_free', { results, score, idx, recent: (K.load('wine_free', {}) || {}).recent || [] });
+            renderProgress();
+            document.getElementById('nextWine').addEventListener('click', () => {
+                if (mode === 'daily' && idx >= FLIGHT) finish();
+                else pour();
+            });
+        }
+
+        function renderProgress() {
+            const el = document.getElementById('progress');
+            if (mode !== 'daily') {
+                const last = results.slice(-10);
+                el.innerHTML = last.map(r => '<span class="r' + r + '"></span>').join('');
+                return;
+            }
+            el.innerHTML = Array.from({ length: FLIGHT }, (_, i) => '<span class="' + (i < results.length ? 'r' + results[i] : i === idx ? 'on' : '') + '"></span>').join('');
+        }
+
+        function finish() {
+            document.getElementById('stage').style.display = 'none';
+            const max = FLIGHT * 3;
+            const best = K.load('wine_best', 0);
+            const first = !K.load('wine_daily_recorded_' + K.dayNumber(), false);
+            if (first) { K.save('wine_daily_recorded_' + K.dayNumber(), true); if (score > best) K.save('wine_best', score); }
+            const rank = score >= 14 ? 'Master Sommelier material' : score >= 11 ? 'Seasoned sommelier' : score >= 8 ? 'Wine enthusiast' : score >= 5 ? 'Curious taster' : 'Just getting started';
+            document.getElementById('resultTitle').textContent = rank;
+            document.getElementById('resultText').textContent = 'You scored ' + score + ' out of ' + max + ' on today’s flight. Come back tomorrow for five new wines.';
+            renderProgress();
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const em = ['🟥', '🟨', '🟩', '🍷'];
+            K.share('Blind Tasting ' + (mode === 'daily' ? '#' + (K.dayNumber() + 1) + ' ' : '') + score + '/' + (results.length * 3) + '\n' + results.map(r => em[r]).join('') + '\n' + location.href.split('?')[0]);
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'free'));
+            start('free');
+        });
+        K.modeTabs(document.getElementById('tabs'), m => start(m));
+        start('daily');
+    })();
+    </script>
+</body>
+</html>
