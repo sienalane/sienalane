@@ -8,17 +8,19 @@
     <link rel="stylesheet" href="game-common.css">
     <style>
         .topbar {
-            position: sticky; top: 76px; z-index: 50; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+            position: sticky; top: 76px; z-index: 50; display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 0.5rem; align-items: center;
             background: var(--card-bg); border-radius: 12px; box-shadow: 0 5px 20px var(--shadow-color); padding: 0.8rem 1rem; margin-bottom: 1rem;
         }
         .topbar div { text-align: center; }
         .topbar strong { display: block; font-size: 1.35rem; color: var(--sage-dark); font-variant-numeric: tabular-nums; }
         .topbar span { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .topbar .clock { font-size: 1.6rem; line-height: 1; cursor: default; }
         .tour-row { display: flex; gap: 0.6rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
         .tour {
             position: relative; border: none; border-radius: 50%; width: 110px; height: 110px; cursor: pointer;
             background: radial-gradient(circle at 35% 30%, var(--sage-light), var(--sage-dark)); color: #fff;
             font: inherit; font-weight: 700; font-size: 0.9rem; box-shadow: 0 6px 18px var(--shadow-color); transition: transform 0.08s ease;
+            touch-action: manipulation;
         }
         .tour:active { transform: scale(0.94); }
         .tour b { display: block; font-size: 2rem; line-height: 1.1; }
@@ -27,18 +29,32 @@
         .buy-amt { display: inline-flex; background: var(--sage-very-light); border-radius: 20px; padding: 2px; }
         .buy-amt button { border: none; background: none; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--sage-dark); padding: 0.25rem 0.75rem; border-radius: 18px; cursor: pointer; }
         .buy-amt button.on { background: var(--sage-dark); color: var(--cream); }
+        .boost-tag { font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); text-align: center; }
         .sound-row { display: flex; gap: 0.5rem; align-items: center; }
         .sound-btn { border: none; background: var(--sage-very-light); color: var(--sage-dark); border-radius: 20px; padding: 0.3rem 0.9rem; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; touch-action: manipulation; }
         .sound-btn.on { background: var(--accent-gold); color: #fff; }
         #vol { width: 90px; accent-color: var(--sage-dark); }
-        .band { font-size: 0.8rem; color: var(--muted); }
-        .emo.beat { animation: beat 0.25s ease; }
-        @keyframes beat { 50% { transform: scale(1.25); } }
-        .boost-tag { font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); }
+        .band { font-size: 0.8rem; color: var(--muted); text-align: center; }
+
+        .notices { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+        .notice { display: grid; grid-template-columns: 44px 1fr auto; gap: 0.7rem; align-items: center; padding: 0.75rem 1rem; border-radius: 12px; background: var(--card-bg); box-shadow: 0 4px 14px var(--shadow-color); border-left: 5px solid var(--sage-dark); }
+        .notice .emo { font-size: 1.9rem; text-align: center; }
+        .notice.rare { border-left-color: var(--accent-gold); }
+        .notice.event { border-left-color: #d9772b; background: linear-gradient(90deg, #f6dcc3, var(--card-bg)); }
+        @media (prefers-color-scheme: dark) { .notice.event { background: linear-gradient(90deg, #4a3220, var(--card-bg)); } }
+        .notice b { display: block; }
+        .notice small { color: var(--muted); }
+        .timer { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent-gold); }
+        .mini { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+        .mini button { border: none; border-radius: 10px; padding: 0.4rem 0.8rem; font: inherit; font-weight: 700; font-size: 0.82rem; cursor: pointer; background: var(--sage-dark); color: var(--cream); touch-action: manipulation; }
+        .mini button.ghost { background: var(--sage-very-light); color: var(--sage-dark); }
+        .mini button:disabled { background: var(--tile-border); color: var(--muted); cursor: not-allowed; }
 
         .tabs2 { display: flex; gap: 6px; margin-bottom: 0.8rem; flex-wrap: wrap; }
-        .tabs2 button { border: none; background: var(--sage-very-light); color: var(--sage-dark); border-radius: 20px; padding: 0.35rem 1rem; font: inherit; font-weight: 600; cursor: pointer; }
+        .tabs2 button { border: none; background: var(--sage-very-light); color: var(--sage-dark); border-radius: 20px; padding: 0.35rem 0.9rem; font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
         .tabs2 button.on { background: var(--sage-dark); color: var(--cream); }
+        .tabs2 button.boo { background: #f1c49a; color: #6b3410; }
+        .tabs2 button.boo.on { background: #d9772b; color: #fff; }
 
         .habitat { border-radius: 12px; margin-bottom: 1rem; overflow: hidden; background: var(--card-bg); box-shadow: 0 5px 20px var(--shadow-color); }
         .hab-head { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 1rem; gap: 0.5rem; }
@@ -48,28 +64,68 @@
         .locked-hab { padding: 1.2rem; text-align: center; color: var(--muted); }
         .animal { display: grid; grid-template-columns: 52px 1fr auto; gap: 0.7rem; align-items: center; padding: 0.55rem 0.2rem; border-bottom: 1px solid var(--tile-border); }
         .animal:last-child { border-bottom: none; }
-        .emo { font-size: 2.1rem; text-align: center; line-height: 1; }
+        .emo { font-size: 2.1rem; text-align: center; line-height: 1; position: relative; }
         .emo.live { animation: bob 2.4s ease-in-out infinite; }
         @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-4deg); } }
         .emo.off { filter: grayscale(1); opacity: 0.35; }
+        .costume { position: absolute; right: -6px; top: -8px; font-size: 1rem; }
         .a-name { font-weight: 700; }
         .a-name em { font-style: normal; font-weight: 600; color: var(--muted); font-size: 0.85rem; margin-left: 4px; }
+        .pet { font-size: 0.82rem; color: var(--text-secondary); cursor: pointer; border: none; background: none; font-family: inherit; padding: 0; text-decoration: underline dotted; }
         .a-sub { font-size: 0.82rem; color: var(--muted); }
         .mbar { height: 5px; background: var(--sage-very-light); border-radius: 3px; margin-top: 4px; overflow: hidden; }
         .mbar i { display: block; height: 100%; background: var(--accent-gold); }
-        .buy { min-width: 112px; padding: 0.45rem 0.7rem; border: none; border-radius: 10px; background: var(--sage-dark); color: var(--cream); font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; line-height: 1.2; }
+        .buy { min-width: 112px; padding: 0.45rem 0.7rem; border: none; border-radius: 10px; background: var(--sage-dark); color: var(--cream); font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; line-height: 1.2; touch-action: manipulation; transition: transform 0.06s ease; }
         .buy small { display: block; font-weight: 500; font-size: 0.72rem; opacity: 0.85; }
-        .buy { touch-action: manipulation; transition: transform 0.06s ease; }
         .buy:active:not(:disabled) { transform: scale(0.95); }
-        .tour { touch-action: manipulation; }
         .buy:disabled { background: var(--tile-border); color: var(--muted); cursor: not-allowed; }
 
         .upg { display: grid; grid-template-columns: 44px 1fr auto; gap: 0.7rem; align-items: center; padding: 0.7rem; border-radius: 10px; background: var(--card-bg); box-shadow: 0 3px 10px var(--shadow-color); margin-bottom: 0.6rem; }
         .upg .emo { font-size: 1.7rem; }
         .upg.done { opacity: 0.55; }
-        .prestige { background: var(--card-bg); border-radius: 12px; padding: 1.2rem; box-shadow: 0 5px 20px var(--shadow-color); }
-        .prestige h2 { color: var(--sage-dark); margin-bottom: 0.4rem; }
-        .prestige p { margin-bottom: 0.6rem; }
+        .panel-card { background: var(--card-bg); border-radius: 12px; padding: 1.2rem; box-shadow: 0 5px 20px var(--shadow-color); margin-bottom: 1rem; }
+        .panel-card h2 { color: var(--sage-dark); margin-bottom: 0.4rem; font-size: 1.2rem; }
+        .panel-card p { margin-bottom: 0.6rem; }
+
+        /* map */
+        .map {
+            position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden;
+            background: #cfe3b4; box-shadow: 0 5px 20px var(--shadow-color);
+        }
+        .zone { position: absolute; border-radius: 14px; overflow: hidden; border: 3px solid rgba(255,255,255,0.7); }
+        .zone .lbl { position: absolute; left: 6px; top: 4px; font-size: 0.72rem; font-weight: 700; color: #2b2b2b; background: rgba(255,255,255,0.7); padding: 0 6px; border-radius: 8px; z-index: 2; white-space: nowrap; }
+        .zone.locked { background: repeating-linear-gradient(45deg, #d8d4c8, #d8d4c8 8px, #cbc6b8 8px, #cbc6b8 16px) !important; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; opacity: 0.8; }
+        .sprite { position: absolute; font-size: clamp(1.1rem, 3.2vw, 1.8rem); transition: left 3s linear, top 3s linear; z-index: 1; cursor: default; line-height: 1; }
+        .sprite > span { display: inline-block; transition: transform 0.3s; }
+        .sprite.flip > span { transform: scaleX(-1); }
+        .sprite .costume { font-size: 0.6em; right: -4px; top: -6px; }
+        .sprite .zz { animation: zz 2s ease-in-out infinite; }
+        @keyframes zz { 50% { transform: translateY(-4px); opacity: 0.5; } }
+        .sprite.sl > span { filter: grayscale(0.85) brightness(1.2); }
+        .person { position: absolute; font-size: clamp(0.8rem, 2vw, 1.1rem); transition: left 4s linear, top 4s linear; z-index: 1; }
+        .sky { position: absolute; inset: 0; pointer-events: none; z-index: 3; transition: background 2s; }
+        .sky.dusk { background: rgba(255, 140, 60, 0.18); }
+        .sky.night { background: rgba(15, 25, 70, 0.45); }
+        .moon { position: absolute; right: 3%; top: 2%; font-size: 1.8rem; z-index: 4; pointer-events: none; }
+        .deco { position: absolute; z-index: 2; pointer-events: none; font-size: 1.2rem; }
+        .flybat { position: absolute; z-index: 4; pointer-events: none; font-size: 1.2rem; animation: fly 9s linear infinite; }
+        @keyframes fly { 0% { left: -8%; top: 20%; } 25% { top: 8%; } 50% { top: 28%; } 75% { top: 12%; } 100% { left: 105%; top: 22%; } }
+        .map-note { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+
+        /* cards and achievements */
+        .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.8rem; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 0.9rem; box-shadow: 0 4px 14px var(--shadow-color); }
+        .card .big { font-size: 2.4rem; text-align: center; }
+        .card h3 { font-size: 1rem; color: var(--sage-dark); text-align: center; }
+        .card .st { display: block; width: fit-content; margin: 0.3rem auto 0.5rem; font-size: 0.72rem; font-weight: 700; padding: 1px 8px; border-radius: 10px; color: #fff; }
+        .card p { font-size: 0.85rem; }
+        .card.locked { opacity: 0.55; }
+        .card.locked .big { filter: brightness(0); opacity: 0.35; }
+        .ach { display: grid; grid-template-columns: 40px 1fr auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0.8rem; border-radius: 10px; background: var(--card-bg); box-shadow: 0 3px 10px var(--shadow-color); margin-bottom: 0.5rem; }
+        .ach .emo { font-size: 1.5rem; }
+        .ach.locked .emo { filter: grayscale(1); opacity: 0.4; }
+        .ach .prog { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+        .ach.done .prog { color: var(--sage-dark); font-weight: 700; }
 
         .baby {
             position: fixed; z-index: 2500; border: none; background: var(--card-bg); border-radius: 50%; width: 64px; height: 64px;
@@ -78,10 +134,18 @@
         @keyframes wiggle { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.08); } }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 1rem; }
         .overlay.show { display: flex; }
-        .modal { background: var(--card-bg); color: var(--text-primary); border-radius: 14px; max-width: 400px; width: 100%; padding: 1.4rem; text-align: center; }
+        .modal { background: var(--card-bg); color: var(--text-primary); border-radius: 14px; max-width: 420px; width: 100%; padding: 1.4rem; text-align: center; }
         .modal h2 { color: var(--sage-dark); margin-bottom: 0.4rem; }
         .modal p { margin-bottom: 1rem; }
-        @media (max-width: 768px) { .topbar { top: 128px; padding: 0.6rem; } .topbar strong { font-size: 1.1rem; } .buy { min-width: 96px; } }
+        .streak { display: flex; gap: 6px; justify-content: center; margin-bottom: 1rem; }
+        .streak span { width: 34px; height: 34px; border-radius: 8px; background: var(--sage-very-light); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: var(--sage-dark); }
+        .streak span.got { background: var(--accent-gold); color: #fff; }
+        @media (max-width: 768px) {
+            .topbar { top: 128px; padding: 0.6rem; } .topbar strong { font-size: 1.05rem; }
+            .buy { min-width: 96px; }
+            .map { aspect-ratio: 3 / 4; }
+            .notice { grid-template-columns: 36px 1fr; } .notice .mini { grid-column: 1 / -1; justify-content: flex-start; }
+        }
 </style>
 </head>
 <body>
@@ -110,6 +174,7 @@
             <div><strong id="coins">0</strong><span>Coins</span></div>
             <div><strong id="rate">0</strong><span>Per second</span></div>
             <div><strong id="visitors">0</strong><span>Visitors / day</span></div>
+            <div class="clock" id="clock" title=""></div>
         </div>
 
         <div class="tour-row">
@@ -125,27 +190,41 @@
             </div>
         </div>
 
+        <div class="notices" id="notices"></div>
+
         <div class="tabs2" id="tabs2">
             <button data-t="zoo" class="on">Exhibits</button>
+            <button data-t="map">Map</button>
             <button data-t="upg">Upgrades</button>
+            <button data-t="keep">Keepers</button>
+            <button data-t="cards">Fact Cards</button>
+            <button data-t="ach">Achievements</button>
             <button data-t="fund">Conservation Fund</button>
         </div>
 
-        <div id="zooView"></div>
-        <div id="upgView" style="display:none"></div>
-        <div id="fundView" style="display:none"></div>
+        <div id="view-zoo"></div>
+        <div id="view-map" style="display:none"></div>
+        <div id="view-upg" style="display:none"></div>
+        <div id="view-keep" style="display:none"></div>
+        <div id="view-cards" style="display:none"></div>
+        <div id="view-ach" style="display:none"></div>
+        <div id="view-fund" style="display:none"></div>
+        <div id="view-boo" style="display:none"></div>
 
         <div class="how-to">
             <h2>How to play</h2>
             <ul>
-                <li>Tap <strong>Lead a tour</strong> to earn your first coins.</li>
-                <li>Adopt animals to bring in visitors. Each animal earns coins every second, even while you're away.</li>
-                <li>Every 10, 25, 50, 100 and 200 animals of a kind doubles what they earn.</li>
-                <li>Open new habitats to unlock bigger animals. Buy upgrades to multiply your earnings.</li>
-                <li>When a 🍼 pops up, tap it fast. A baby animal was born and visitors are lining up.</li>
-                <li>Later on, donate your zoo to the Conservation Fund to start over with permanent bonus stars.</li>
-                <li>Turn on <strong>Sound</strong> to hear your zoo. Every kind of animal you adopt adds its own part to the song.</li>
-                <li>Your zoo saves automatically in this browser.</li>
+                <li>Tap <strong>Lead a tour</strong> to earn your first coins. Adopt animals to bring in visitors. Animals earn coins every second, even while you're away.</li>
+                <li>Every 10, 25, 50, 100 and 200 animals of a kind doubles what they earn. Open new habitats for bigger animals, and buy upgrades to multiply your earnings.</li>
+                <li>Your first animal of each kind gets a name. Tap the name to change it.</li>
+                <li>Come back every day for a gift. It grows the more days in a row you visit.</li>
+                <li><strong>Visitor requests</strong> pop up now and then. Meet them in 10 minutes for a reward. <strong>Rare animals</strong> also appear for a few minutes. Adopt them for a permanent bonus.</li>
+                <li><strong>Keepers</strong> adopt animals for you and keep their habitat earning at full speed while you're away.</li>
+                <li>Every new species unlocks a <strong>fact card</strong>. Every achievement adds 2% to your earnings for good.</li>
+                <li>The zoo follows your real clock. At night it gets dark and the music slows down.</li>
+                <li>When a 🍼 pops up, tap it fast. A baby was born and visitors are lining up.</li>
+                <li>Later on, donate your zoo to the Conservation Fund to start over with permanent bonus stars. Rare animals, cards and achievements stay with you.</li>
+                <li>Turn on <strong>Sound</strong> to hear your zoo. Every kind of animal adds its own part to the song. Your zoo saves automatically in this browser.</li>
             </ul>
         </div>
     </div>
@@ -161,6 +240,8 @@
     (function () {
         const K = GameKit;
         const SAVE = 'wild_acres';
+
+        // ---------- data ----------
         const HABITATS = [
             { n: 'Petting Barn', col: '#e9d9a8', a: [['🐐', 'Goats'], ['🐔', 'Chickens'], ['🐑', 'Sheep']] },
             { n: 'Wetlands', col: '#b9d9c9', a: [['🦩', 'Flamingos'], ['🦦', 'Otters'], ['🐊', 'Alligators']] },
@@ -171,13 +252,49 @@
             { n: 'Asian Forest', col: '#cfdcae', a: [['🐼', 'Pandas'], ['🐅', 'Tigers'], ['🐘', 'Elephants']] },
             { n: 'Aquarium', col: '#a9c8e4', a: [['🐢', 'Sea Turtles'], ['🐙', 'Octopuses'], ['🦈', 'Sharks']] },
         ];
+        // [species shown on the card, IUCN Red List status (simplified), fact, default names]
+        const INFO = [
+            ['Domestic goat', 'Domesticated', 'Goats have rectangular pupils that give them a wide view, so they can watch for predators while they graze.', ['Gus', 'Clover', 'Pepper']],
+            ['Domestic chicken', 'Domesticated', 'Chickens descend from the red junglefowl of Southeast Asia. Hens cluck to their chicks before they even hatch.', ['Henrietta', 'Nugget', 'Peep']],
+            ['Domestic sheep', 'Domesticated', 'Sheep can recognize the faces of at least 50 other sheep and remember them for up to two years.', ['Dolly', 'Woolly', 'Cotton']],
+            ['Greater flamingo', 'Least Concern', 'Flamingos are born gray. Their pink color comes from pigments in the algae and tiny shrimp they eat.', ['Rosie', 'Flora', 'Blush']],
+            ['Asian small-clawed otter', 'Vulnerable', 'The smallest otter in the world. They find food by feel, using their nimble paws to search under rocks.', ['Ollie', 'Pebbles', 'River']],
+            ['American alligator', 'Least Concern', 'Once endangered, alligators recovered under legal protection and came off the U.S. endangered species list in 1987.', ['Chomp', 'Bayou', 'Wally']],
+            ['Grevy’s zebra', 'Endangered', 'No two zebras have the same stripe pattern. Grevy’s zebras have the narrowest stripes of any zebra.', ['Zara', 'Ziggy', 'Domino']],
+            ['Giraffe', 'Vulnerable', 'A giraffe’s tongue is about 45 to 50 cm long. Its dark color may help protect it from sunburn.', ['Stretch', 'Juniper', 'Twiga']],
+            ['African lion', 'Vulnerable', 'Lions are the only cats that live in family groups, called prides.', ['Leo', 'Sunny', 'Amara']],
+            ['Two-toed sloth', 'Least Concern', 'Sloths come down from the trees only about once a week, to go to the bathroom.', ['Moss', 'Snooze', 'Maple']],
+            ['Hyacinth macaw', 'Vulnerable', 'The largest flying parrot. Habitat loss and the illegal pet trade threaten macaws in the wild.', ['Kiwi', 'Mango', 'Papaya']],
+            ['Western lowland gorilla', 'Critically Endangered', 'Gorillas share about 98% of their DNA with humans and live in family groups led by a silverback.', ['Bruno', 'Hazel', 'Boulder']],
+            ['Red kangaroo', 'Least Concern', 'A newborn kangaroo is about the size of a jellybean. It crawls into its mother’s pouch to keep growing.', ['Skip', 'Bounce', 'Matilda']],
+            ['Koala', 'Vulnerable', 'Koalas sleep up to 18 to 22 hours a day because their eucalyptus diet gives them very little energy.', ['Gumnut', 'Willow', 'Eucy']],
+            ['Komodo dragon', 'Endangered', 'The world’s largest lizard. Komodo dragons can grow to about 3 meters (10 feet) long.', ['Rex', 'Scales', 'Dash']],
+            ['Humboldt penguin', 'Vulnerable', 'Humboldt penguins nest in burrows dug into guano, thick layers of old seabird droppings.', ['Waddles', 'Tux', 'Pebble']],
+            ['California sea lion', 'Least Concern', 'California sea lions can swim at about 40 km/h (25 mph) and are famous for their loud barks.', ['Splash', 'Barker', 'Marina']],
+            ['Polar bear', 'Vulnerable', 'Polar bears hunt seals from the sea ice, so shrinking Arctic ice is the biggest threat they face.', ['Frost', 'Aurora', 'Igloo']],
+            ['Giant panda', 'Vulnerable', 'Pandas moved from Endangered to Vulnerable in 2016, thanks to decades of forest protection in China.', ['Bao', 'Mei', 'Bamboo']],
+            ['Tiger', 'Endangered', 'No two tigers have the same stripes, and the stripes are on their skin as well as their fur.', ['Raja', 'Ember', 'Stripe']],
+            ['Asian elephant', 'Endangered', 'Asian elephants can recognize themselves in a mirror, a sign of self-awareness seen in only a few animals.', ['Peanut', 'Ellie', 'Tusker']],
+            ['Hawksbill sea turtle', 'Critically Endangered', 'Female sea turtles usually return to the beach where they hatched to lay their own eggs.', ['Shelly', 'Coral', 'Tide']],
+            ['Giant Pacific octopus', 'Not Evaluated', 'Octopuses have three hearts and blue blood, and they can change color in a fraction of a second.', ['Inky', 'Otto', 'Squish']],
+            ['Zebra shark', 'Endangered', 'Sharks have been around for over 400 million years. That’s longer than trees have existed.', ['Finn', 'Reef', 'Bubbles']],
+        ];
         const ANIMALS = [];
         HABITATS.forEach((h, hi) => h.a.forEach(([e, n]) => {
             const i = ANIMALS.length;
-            ANIMALS.push({ i, h: hi, e, n, cost0: 12 * Math.pow(10, i), inc0: 0.6 * Math.pow(7, i) });
+            ANIMALS.push({ i, h: hi, e, n, cost0: 12 * Math.pow(10, i), inc0: 0.6 * Math.pow(7, i), info: INFO[i] });
         }));
+        const RARES = [
+            { k: 'redpanda', n: 'Red Panda', sp: 'Red panda', st: 'Endangered', voice: 24, name: 'Ginger', fact: 'Red panda tails are long and bushy. They use them for balance and wrap them around themselves like a blanket in the cold.' },
+            { k: 'snowleopard', n: 'Snow Leopard', sp: 'Snow leopard', st: 'Vulnerable', voice: 25, name: 'Misha', fact: 'Snow leopards can’t roar. They chuff, hiss and mew instead, and use their thick tails as scarves.' },
+            { k: 'okapi', n: 'Okapi', sp: 'Okapi', st: 'Endangered', voice: 26, name: 'Kito', fact: 'The okapi is the giraffe’s only living relative. It lives only in the rainforests of the Democratic Republic of the Congo.' },
+        ];
+        const BAT = { k: 'bat', n: 'Vampire Bat', sp: 'Common vampire bat', st: 'Least Concern', voice: 27, name: 'Vlad', e: '🦇', fact: 'Vampire bats share meals with roost-mates who went hungry, and they remember who shared with them.' };
+        const STATUS_COL = { 'Domesticated': '#8a8a8a', 'Least Concern': '#5a9a5a', 'Not Evaluated': '#8a8a8a', 'Vulnerable': '#c9a020', 'Endangered': '#d9772b', 'Critically Endangered': '#c0392b' };
         const MILESTONES = [10, 25, 50, 100, 150, 200, 300, 400, 500];
         const habCost = hi => hi === 0 ? 0 : ANIMALS[hi * 3].cost0 * (hi === 1 ? 1 : 20);
+        const keeperCost = hi => hi === 0 ? 2500 : habCost(hi) * 8;
+        const KEEPER_NAMES = ['Maya', 'Jonah', 'Priya', 'Luis', 'Tess', 'Kenji', 'Amara', 'Rowan'];
         const UC = i => ANIMALS[i].cost0 * 30;
         const UPGRADES = [
             { k: 'snack', e: '🍿', n: 'Snack Stand', d: 'All exhibits earn 50% more', c: UC(1), m: 1.5 },
@@ -195,11 +312,26 @@
         HABITATS.forEach((h, hi) => UPGRADES.push({ k: 'talk' + hi, e: '🎤', n: 'Keeper Talks: ' + h.n, d: h.n + ' earns 3x', c: ANIMALS[hi * 3 + 2].cost0 * 30, hab: hi, m: 3 }));
         UPGRADES.sort((a, b) => a.c - b.c);
 
+        // ---------- save data ----------
+        function freshRun(keep) {
+            return Object.assign({
+                v: 2, coins: 0, lifetime: 0, levels: Array(ANIMALS.length).fill(0), habs: [true].concat(Array(HABITATS.length - 1).fill(false)),
+                upg: {}, stars: 0, last: Date.now(), boostUntil: 0, taps: 0, keepers: {},
+                // these survive a Conservation Fund reset
+                names: {}, rares: {}, cardsEver: {}, ach: {}, login: { day: -1, streak: 0 }, candy: 0, bat: false,
+                babies: 0, reqDone: 0, renamed: false,
+                req: null, nextReqAt: Date.now() + 90000, rare: null, nextRareAt: Date.now() + 6 * 60000
+            }, keep || {});
+        }
         let G = K.load(SAVE, null);
-        if (!G || G.v !== 1) G = { v: 1, coins: 0, lifetime: 0, levels: Array(ANIMALS.length).fill(0), habs: [true].concat(Array(HABITATS.length - 1).fill(false)), upg: {}, stars: 0, last: Date.now(), boostUntil: 0, taps: 0 };
+        if (!G) G = freshRun();
+        else if (G.v === 1) G = Object.assign(freshRun(), G, { v: 2 });
+        G = Object.assign(freshRun(), G);
+        ANIMALS.forEach(a => { if (G.levels[a.i] > 0) G.cardsEver[a.i] = true; });
+
         let buyN = '1', tab = 'zoo';
 
-        // ---------- numbers ----------
+        // ---------- helpers ----------
         const SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
         function fmt(n) {
             if (n < 1000) return n < 10 && n % 1 ? n.toFixed(1) : Math.floor(n).toLocaleString();
@@ -207,12 +339,50 @@
             const v = n / Math.pow(1000, e);
             return (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)) + SUF[e];
         }
+        function mmss(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+        function setText(el, v) { if (el && el.textContent !== v) el.textContent = v; }
+        function setProp(el, k, v) { if (el && el[k] !== v) el[k] = v; }
+        function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function singular(n) {
+            n = n.toLowerCase();
+            if (n === 'sheep') return n;
+            if (n.endsWith('uses')) return n.slice(0, -2);
+            return n.endsWith('s') ? n.slice(0, -1) : n;
+        }
+        const petName = a => G.names[a.i] || a.info[3][0];
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+        // rare animal icons (no emoji exists for these)
+        function rareIcon(k, size) {
+            size = size || '1em';
+            if (k === 'snowleopard') return '<span class="sl-wrap" style="filter:grayscale(0.85) brightness(1.2)">🐆</span>';
+            if (k === 'bat') return '🦇';
+            if (k === 'redpanda') return '<svg viewBox="0 0 40 40" width="' + size + '" height="' + size + '" style="vertical-align:-0.15em"><path d="M6 10 L12 4 L16 12 Z M34 10 L28 4 L24 12 Z" fill="#b5441f"/><circle cx="20" cy="22" r="14" fill="#c8562a"/><path d="M8 22 Q12 14 18 18 Q14 24 10 28 Z M32 22 Q28 14 22 18 Q26 24 30 28 Z" fill="#fff"/><path d="M14 28 Q20 36 26 28 Q20 32 14 28 Z" fill="#fff"/><circle cx="14.5" cy="21" r="2" fill="#2b1a10"/><circle cx="25.5" cy="21" r="2" fill="#2b1a10"/><ellipse cx="20" cy="27" rx="2.2" ry="1.6" fill="#2b1a10"/></svg>';
+            if (k === 'okapi') return '<svg viewBox="0 0 40 40" width="' + size + '" height="' + size + '" style="vertical-align:-0.15em"><path d="M14 6 L15 13 M26 6 L25 13" stroke="#3a2418" stroke-width="2.5" stroke-linecap="round"/><path d="M8 13 L14 11 L13 17 Z M32 13 L26 11 L27 17 Z" fill="#4a2c1d"/><path d="M13 12 Q20 8 27 12 L25 30 Q20 36 15 30 Z" fill="#5a3322"/><path d="M15 28 Q20 34 25 28 L24 32 Q20 37 16 32 Z" fill="#e8dccb"/><circle cx="16.5" cy="18" r="1.8" fill="#111"/><circle cx="23.5" cy="18" r="1.8" fill="#111"/><path d="M6 36 h4 M12 36 h4 M24 36 h4 M30 36 h4" stroke="#f2ead9" stroke-width="2"/><path d="M6 38 h4 M12 38 h4 M24 38 h4 M30 38 h4" stroke="#3a2418" stroke-width="2"/></svg>';
+            return '❓';
+        }
+
+        // ---------- time of day and events ----------
+        function phase() {
+            const h = new Date().getHours();
+            if (h >= 7 && h < 18) return 'day';
+            if ((h >= 18 && h < 20) || (h >= 5 && h < 7)) return 'dusk';
+            return 'night';
+        }
+        function booActive() {
+            const d = new Date();
+            return d.getMonth() === 9 && d.getDate() >= 17;
+        }
+        const COSTUMES = ['🎃', '👻', '🕸️', '🧙', '🦴'];
+        const costume = i => booActive() ? '<span class="costume">' + COSTUMES[i % COSTUMES.length] + '</span>' : '';
 
         // ---------- economy ----------
-        function globalMult() {
-            let m = 1 + G.stars * 0.1;
+        function achCount() { return Object.keys(G.ach).length; }
+        function rareCount() { return Object.keys(G.rares).length + (G.bat ? 1 : 0); }
+        function globalMult(noBoost) {
+            let m = (1 + G.stars * 0.1) * (1 + achCount() * 0.02) * (1 + rareCount() * 0.15);
             UPGRADES.forEach(u => { if (G.upg[u.k] && u.m && u.hab === undefined) m *= u.m; });
-            if (Date.now() < G.boostUntil) m *= 3;
+            if (!noBoost && Date.now() < G.boostUntil) m *= 3;
             return m;
         }
         function animalRate(a) {
@@ -223,59 +393,98 @@
             UPGRADES.forEach(u => { if (G.upg[u.k] && u.hab === a.h) m *= u.m; });
             return a.inc0 * lvl * m;
         }
-        function totalRate() { return ANIMALS.reduce((s, a) => s + animalRate(a), 0) * globalMult(); }
+        function habRate(hi) { return ANIMALS.filter(a => a.h === hi).reduce((s, a) => s + animalRate(a), 0); }
+        function totalRate(noBoost) { return ANIMALS.reduce((s, a) => s + animalRate(a), 0) * globalMult(noBoost); }
         function tapValue() {
             let t = 1;
             UPGRADES.forEach(u => { if (G.upg[u.k] && u.tap) t *= u.tap; });
             return t + totalRate() * 0.05 * (t > 1 ? 2 : 1);
         }
         function costFor(a, n) {
-            // geometric series for n levels starting at current level
             const r = 1.15, L = G.levels[a.i];
             return a.cost0 * Math.pow(r, L) * (Math.pow(r, n) - 1) / (r - 1);
         }
         function maxAffordable(a) {
             const r = 1.15, L = G.levels[a.i];
             const base = a.cost0 * Math.pow(r, L);
-            const n = Math.floor(Math.log(G.coins * (r - 1) / base + 1) / Math.log(r));
-            return Math.max(0, n);
+            return Math.max(0, Math.floor(Math.log(G.coins * (r - 1) / base + 1) / Math.log(r)));
         }
-        function buyCount(a) {
-            if (buyN === 'max') return Math.max(1, maxAffordable(a));
-            return +buyN;
-        }
+        function buyCount(a) { return buyN === 'max' ? Math.max(1, maxAffordable(a)) : +buyN; }
         function nextMilestone(lvl) { return MILESTONES.find(t => t > lvl) || null; }
-
         function earn(amount) { G.coins += amount; G.lifetime += amount; }
+        // a reward worth roughly this many seconds of income, with a floor for brand new zoos
+        function income(sec, floor) { return Math.max(floor || 50, totalRate(true) * sec); }
 
-        // ---------- views ----------
+        // ---------- achievements ----------
+        const totalSpecies = () => G.levels.filter(l => l > 0).length;
+        const ACH = [
+            { k: 'first', e: '🐣', n: 'First friend', d: 'Adopt your first animal', p: () => [Math.min(1, totalSpecies()), 1] },
+            { k: 'named', e: '✏️', n: 'What’s in a name', d: 'Rename one of your animals', p: () => [G.renamed ? 1 : 0, 1] },
+            { k: 'goats100', e: '🐐', n: 'Goat army', d: 'Adopt 100 goats', p: () => [Math.min(100, G.levels[0]), 100] },
+            { k: 'tours100', e: '🎟️', n: 'Tour guide', d: 'Lead 100 tours', p: () => [Math.min(100, G.taps), 100] },
+            { k: 'tours1000', e: '📣', n: 'Head guide', d: 'Lead 1,000 tours', p: () => [Math.min(1000, G.taps), 1000] },
+            { k: 'babies10', e: '🍼', n: 'Baby boom', d: 'Welcome 10 babies', p: () => [Math.min(10, G.babies), 10] },
+            { k: 'req5', e: '🧑‍🏫', n: 'Crowd pleaser', d: 'Complete 5 visitor requests', p: () => [Math.min(5, G.reqDone), 5] },
+            { k: 'req25', e: '🏆', n: 'Five-star zoo', d: 'Complete 25 visitor requests', p: () => [Math.min(25, G.reqDone), 25] },
+            { k: 'keeper', e: '🧑‍🌾', n: 'Help wanted', d: 'Hire your first keeper', p: () => [Math.min(1, Object.keys(G.keepers).length), 1] },
+            { k: 'keepers8', e: '👥', n: 'Full staff', d: 'Hire a keeper for every habitat', p: () => [Object.keys(G.keepers).length, 8] },
+            { k: 'hab4', e: '🗺️', n: 'Growing zoo', d: 'Open 4 habitats', p: () => [Math.min(4, G.habs.filter(Boolean).length), 4] },
+            { k: 'habs', e: '🏞️', n: 'World tour', d: 'Open every habitat', p: () => [G.habs.filter(Boolean).length, 8] },
+            { k: 'band', e: '🎼', n: 'Full symphony', d: 'Have all 24 kinds of animals playing together', p: () => [totalSpecies(), 24] },
+            { k: 'rare1', e: '✨', n: 'Lucky find', d: 'Adopt a rare animal', p: () => [Math.min(1, Object.keys(G.rares).length), 1] },
+            { k: 'rare3', e: '💎', n: 'Rare collector', d: 'Adopt all three rare animals', p: () => [Object.keys(G.rares).length, 3] },
+            { k: 'cards12', e: '🃏', n: 'Fact finder', d: 'Collect 12 fact cards', p: () => [Math.min(12, cardCount()), 12] },
+            { k: 'cardsAll', e: '📚', n: 'Walking encyclopedia', d: 'Collect every fact card', p: () => [cardCount(), CARD_TOTAL] },
+            { k: 'streak7', e: '📅', n: 'Regular', d: 'Visit 7 days in a row', p: () => [Math.min(7, G.login.streak), 7] },
+            { k: 'm1', e: '💰', n: 'Millionaire', d: 'Earn 1 million coins in total', p: () => [Math.min(1e6, G.lifetime), 1e6] },
+            { k: 'b1', e: '🏦', n: 'Billionaire', d: 'Earn 1 billion coins in total', p: () => [Math.min(1e9, G.lifetime), 1e9] },
+            { k: 'upgAll', e: '🛠️', n: 'Fully loaded', d: 'Buy every upgrade', p: () => [Object.keys(G.upg).length, UPGRADES.length] },
+            { k: 'star', e: '⭐', n: 'Conservation hero', d: 'Earn a Conservation Star', p: () => [Math.min(1, G.stars), 1] },
+            { k: 'owl', e: '🦉', n: 'Night owl', d: 'Visit your zoo at night', p: () => [phase() === 'night' ? 1 : (G.ach.owl ? 1 : 0), 1] },
+            { k: 'boo', e: '🎃', n: 'Boo crew', d: 'Adopt the vampire bat during Boo at the Zoo', p: () => [G.bat ? 1 : 0, 1] },
+        ];
+        const CARD_TOTAL = ANIMALS.length + RARES.length + 1;
+        function cardCount() { return Object.keys(G.cardsEver).length + Object.keys(G.rares).length + (G.bat ? 1 : 0); }
+        function checkAch() {
+            ACH.forEach(a => {
+                if (G.ach[a.k]) return;
+                const [have, need] = a.p();
+                if (have >= need) {
+                    G.ach[a.k] = Date.now();
+                    K.toast(a.e + ' Achievement: ' + a.n + ' (+2% earnings)', 2600);
+                    ZooSymphony.fanfare();
+                    if (tab === 'ach') buildAch();
+                }
+            });
+        }
+
+        // ---------- exhibits view ----------
         function buildZoo() {
-            const v = document.getElementById('zooView');
+            const v = document.getElementById('view-zoo');
             v.innerHTML = '';
             HABITATS.forEach((h, hi) => {
-                if (hi > 0 && !G.habs[hi - 1] && !G.habs[hi]) return; // show only the next locked habitat
+                if (hi > 0 && !G.habs[hi - 1] && !G.habs[hi]) return;
                 const sec = document.createElement('div');
                 sec.className = 'habitat';
-                const head = '<div class="hab-head" style="background:' + h.col + '"><h2>' + h.a.map(x => x[0]).join(' ') + ' ' + h.n + '</h2><small id="hrate' + hi + '"></small></div>';
+                const head = '<div class="hab-head" style="background:' + h.col + '"><h2>' + h.a.map(x => x[0]).join(' ') + ' ' + h.n + (G.keepers[hi] ? ' 🧑‍🌾' : '') + '</h2><small id="hrate' + hi + '"></small></div>';
                 if (!G.habs[hi]) {
                     sec.innerHTML = head + '<div class="locked-hab"><p style="margin-bottom:0.6rem">Build the ' + h.n + ' to adopt ' + h.a.map(x => x[1].toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1') + '.</p>' +
-                        '<button class="buy" data-hab="' + hi + '">Build<small>' + fmt(habCost(hi)) + ' coins</small></button></div>';
+                        '<button class="buy" data-hab="' + hi + '"><span>Build</span><small>' + fmt(habCost(hi)) + ' coins</small></button></div>';
                 } else {
                     sec.innerHTML = head + '<div class="hab-body">' + ANIMALS.filter(a => a.h === hi).map(a =>
-                        '<div class="animal"><div class="emo" id="emo' + a.i + '">' + a.e + '</div>' +
-                        '<div><div class="a-name">' + a.n + '<em id="lvl' + a.i + '"></em></div><div class="a-sub" id="sub' + a.i + '"></div><div class="mbar"><i id="mb' + a.i + '"></i></div></div>' +
+                        '<div class="animal"><div class="emo" id="emo' + a.i + '">' + a.e + costume(a.i) + '</div>' +
+                        '<div><div class="a-name">' + a.n + '<em id="lvl' + a.i + '"></em></div>' +
+                        '<button class="pet" data-rename="' + a.i + '" id="pet' + a.i + '" style="display:none"></button>' +
+                        '<div class="a-sub" id="sub' + a.i + '"></div><div class="mbar"><i id="mb' + a.i + '"></i></div></div>' +
                         '<button class="buy" data-a="' + a.i + '" id="buy' + a.i + '"><span></span><small></small></button></div>').join('') + '</div>';
                 }
                 v.appendChild(sec);
             });
             v.querySelectorAll('button[data-a]').forEach(b => b.addEventListener('click', () => buyAnimal(ANIMALS[+b.dataset.a])));
             v.querySelectorAll('button[data-hab]').forEach(b => b.addEventListener('click', () => buildHab(+b.dataset.hab)));
+            v.querySelectorAll('button[data-rename]').forEach(b => b.addEventListener('click', () => rename(ANIMALS[+b.dataset.rename])));
             updateZoo();
         }
-
-        // Only touch the DOM when something changed, so buttons never get swapped out mid-click
-        function setText(el, v) { if (el && el.textContent !== v) el.textContent = v; }
-        function setProp(el, k, v) { if (el && el[k] !== v) el[k] = v; }
         function updateZoo() {
             const gm = globalMult();
             ANIMALS.forEach(a => {
@@ -288,57 +497,304 @@
                 setText(btn.lastChild, fmt(c) + ' coins');
                 setProp(btn, 'disabled', G.coins < c);
                 setText(document.getElementById('lvl' + a.i), lvl ? '× ' + lvl : '');
+                const pet = document.getElementById('pet' + a.i);
+                setProp(pet.style, 'display', lvl ? '' : 'none');
+                setText(pet, lvl ? 'Meet ' + petName(a) + ' ✏️' : '');
                 const nm = nextMilestone(lvl);
                 setText(document.getElementById('sub' + a.i), lvl ? fmt(animalRate(a) * gm) + '/sec' + (nm ? ' · 2x at ' + nm : '') : 'Earns ' + fmt(a.inc0 * gm) + '/sec each');
                 const prev = [0].concat(MILESTONES).filter(t => t <= lvl).pop() || 0;
                 const w = nm ? ((lvl - prev) / (nm - prev) * 100).toFixed(1) + '%' : '100%';
                 const mb = document.getElementById('mb' + a.i);
                 if (mb.style.width !== w) mb.style.width = w;
-                setProp(document.getElementById('emo' + a.i), 'className', 'emo ' + (lvl ? 'live' : 'off'));
+                const emo = document.getElementById('emo' + a.i);
+                const cls = 'emo ' + (lvl ? 'live' : 'off');
+                if (emo.className !== cls) emo.className = cls;
             });
             HABITATS.forEach((h, hi) => {
                 const el = document.getElementById('hrate' + hi);
-                if (el) setText(el, G.habs[hi] ? fmt(ANIMALS.filter(a => a.h === hi).reduce((s, a) => s + animalRate(a), 0) * gm) + '/sec' : 'Locked');
+                if (el) setText(el, G.habs[hi] ? fmt(habRate(hi) * gm) + '/sec' : 'Locked');
             });
             document.querySelectorAll('button[data-hab]').forEach(b => setProp(b, 'disabled', G.coins < habCost(+b.dataset.hab)));
         }
 
+        // ---------- upgrades view ----------
         function buildUpg() {
-            const v = document.getElementById('upgView');
+            const v = document.getElementById('view-upg');
             const list = UPGRADES.filter(u => u.hab === undefined || G.habs[u.hab]);
             v.innerHTML = list.map(u => '<div class="upg' + (G.upg[u.k] ? ' done' : '') + '"><div class="emo">' + u.e + '</div><div><div class="a-name">' + u.n + '</div><div class="a-sub">' + u.d + '</div></div>' +
-                (G.upg[u.k] ? '<span class="a-sub">Owned ✓</span>' : '<button class="buy" data-u="' + u.k + '">Buy<small>' + fmt(u.c) + ' coins</small></button>') + '</div>').join('');
+                (G.upg[u.k] ? '<span class="a-sub">Owned ✓</span>' : '<button class="buy" data-u="' + u.k + '"><span>Buy</span><small>' + fmt(u.c) + ' coins</small></button>') + '</div>').join('');
             v.querySelectorAll('button[data-u]').forEach(b => b.addEventListener('click', () => buyUpg(b.dataset.u)));
             updateUpg();
         }
         function updateUpg() {
-            document.querySelectorAll('#upgView button[data-u]').forEach(b => { const u = UPGRADES.find(x => x.k === b.dataset.u); setProp(b, 'disabled', G.coins < u.c); });
+            document.querySelectorAll('#view-upg button[data-u]').forEach(b => { const u = UPGRADES.find(x => x.k === b.dataset.u); setProp(b, 'disabled', G.coins < u.c); });
         }
 
+        // ---------- keepers view ----------
+        function buildKeep() {
+            const v = document.getElementById('view-keep');
+            v.innerHTML = '<div class="panel-card"><h2>🧑‍🌾 Keepers</h2><p>A keeper adopts animals for their habitat on their own, spending up to 10% of your coins at a time. Their habitat also earns at full speed while you’re away, instead of half.</p></div>' +
+                HABITATS.map((h, hi) => {
+                    if (!G.habs[hi]) return '';
+                    const hired = G.keepers[hi];
+                    return '<div class="upg' + (hired ? ' done' : '') + '"><div class="emo">' + h.a[0][0] + '</div><div><div class="a-name">' + (hired ? 'Keeper ' + KEEPER_NAMES[hi] : h.n + ' keeper') + '</div><div class="a-sub">' +
+                        (hired ? 'Looking after the ' + h.n + '. Auto-adopting and keeping things running overnight.' : 'Auto-adopts ' + h.a.map(x => x[1].toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1') + '.') + '</div></div>' +
+                        (hired ? '<span class="a-sub">Hired ✓</span>' : '<button class="buy" data-k="' + hi + '"><span>Hire</span><small>' + fmt(keeperCost(hi)) + ' coins</small></button>') + '</div>';
+                }).join('');
+            v.querySelectorAll('button[data-k]').forEach(b => b.addEventListener('click', () => hireKeeper(+b.dataset.k)));
+            updateKeep();
+        }
+        function updateKeep() {
+            document.querySelectorAll('#view-keep button[data-k]').forEach(b => setProp(b, 'disabled', G.coins < keeperCost(+b.dataset.k)));
+        }
+        function hireKeeper(hi) {
+            const c = keeperCost(hi);
+            if (G.coins < c || G.keepers[hi]) return;
+            G.coins -= c;
+            G.keepers[hi] = true;
+            K.toast('🧑‍🌾 Keeper ' + KEEPER_NAMES[hi] + ' joined the ' + HABITATS[hi].n + '!', 2200);
+            buildKeep(); buildZoo(); save();
+        }
+        function keeperWork() {
+            Object.keys(G.keepers).forEach(k => {
+                const hi = +k;
+                if (!G.habs[hi]) return;
+                const opts = ANIMALS.filter(a => a.h === hi).map(a => ({ a, c: costFor(a, 1) })).sort((x, y) => x.c - y.c);
+                const best = opts[0];
+                if (best && best.c <= G.coins * 0.1) {
+                    const before = G.levels[best.a.i];
+                    G.coins -= best.c;
+                    G.levels[best.a.i]++;
+                    afterAdopt(best.a, before, true);
+                }
+            });
+        }
+
+        // ---------- fact cards ----------
+        function cardHTML(icon, title, sp, st, fact, name, owned) {
+            if (!owned) return '<div class="card locked"><div class="big">' + icon + '</div><h3>???</h3><p style="text-align:center">Adopt this animal to unlock its card.</p></div>';
+            return '<div class="card"><div class="big">' + icon + '</div><h3>' + esc(title) + '</h3><span class="st" style="background:' + STATUS_COL[st] + '">' + st + '</span>' +
+                '<p><strong>' + sp + '.</strong> ' + fact + '</p>' + (name ? '<p class="a-sub" style="margin-top:0.4rem">Your ' + esc(singular(title)) + ': ' + esc(name) + '</p>' : '') + '</div>';
+        }
+        function buildCards() {
+            const v = document.getElementById('view-cards');
+            v.innerHTML = '<div class="panel-card"><h2>🃏 Fact Cards</h2><p>You have ' + cardCount() + ' of ' + CARD_TOTAL + ' cards. Conservation status comes from the IUCN Red List, simplified. Cards stay with you even after a Conservation Fund reset.</p></div>' +
+                '<div class="cards">' +
+                ANIMALS.map(a => cardHTML(a.e, a.n, a.info[0], a.info[1], a.info[2], G.cardsEver[a.i] ? petName(a) : '', G.cardsEver[a.i])).join('') +
+                RARES.map(r => cardHTML(rareIcon(r.k, '2.4rem'), r.n + ' ✨', r.sp, r.st, r.fact, r.name, G.rares[r.k])).join('') +
+                cardHTML('🦇', BAT.n + ' 🎃', BAT.sp, BAT.st, BAT.fact, BAT.name, G.bat) +
+                '</div>';
+        }
+
+        // ---------- achievements view ----------
+        function buildAch() {
+            const v = document.getElementById('view-ach');
+            v.innerHTML = '<div class="panel-card"><h2>🏅 Achievements</h2><p>' + achCount() + ' of ' + ACH.length + ' unlocked. Each one adds 2% to your earnings for good (now +' + achCount() * 2 + '%).</p></div>' +
+                ACH.map(a => {
+                    const done = !!G.ach[a.k];
+                    const [have, need] = a.p();
+                    return '<div class="ach' + (done ? ' done' : ' locked') + '"><div class="emo">' + a.e + '</div><div><div class="a-name">' + a.n + '</div><div class="a-sub">' + a.d + '</div></div>' +
+                        '<span class="prog">' + (done ? 'Done ✓' : (need > 1 ? fmt(have) + ' / ' + fmt(need) : 'Not yet')) + '</span></div>';
+                }).join('');
+        }
+
+        // ---------- conservation fund ----------
         function starsAvailable() { return Math.floor(Math.cbrt(G.lifetime / 1e15)); }
         function buildFund() {
-            const v = document.getElementById('fundView');
+            const v = document.getElementById('view-fund');
             const total = starsAvailable();
             const gain = Math.max(0, total - G.stars);
-            v.innerHTML = '<div class="prestige"><h2>🌍 Conservation Fund</h2>' +
-                '<p>Donate your whole zoo to protect animals in the wild. You start over with an empty barn, but every <strong>Conservation Star</strong> permanently boosts all earnings by 10%.</p>' +
+            v.innerHTML = '<div class="panel-card"><h2>🌍 Conservation Fund</h2>' +
+                '<p>Donate your whole zoo to protect animals in the wild. You start over with an empty barn, but every <strong>Conservation Star</strong> permanently boosts all earnings by 10%. You keep your rare animals, names, fact cards and achievements.</p>' +
                 '<p>Stars now: <strong>' + G.stars + '</strong> (+' + (G.stars * 10) + '% earnings)<br>Lifetime coins: <strong>' + fmt(G.lifetime) + '</strong><br>Donating now earns: <strong>' + gain + (gain === 1 ? ' star' : ' stars') + '</strong></p>' +
                 (gain > 0 ? '' : '<p class="a-sub">Earn ' + fmt(Math.pow(G.stars + 1, 3) * 1e15) + ' lifetime coins to earn your next star.</p>') +
                 '<button class="btn btn-primary" id="donate"' + (gain > 0 ? '' : ' disabled') + '>Donate and start over</button></div>';
             const d = document.getElementById('donate');
             if (d) d.addEventListener('click', () => {
-                if (!confirm('Donate your zoo? You keep your stars and lifetime total, and everything else resets.')) return;
-                G = { v: 1, coins: 0, lifetime: G.lifetime, levels: Array(ANIMALS.length).fill(0), habs: [true].concat(Array(HABITATS.length - 1).fill(false)), upg: {}, stars: total, last: Date.now(), boostUntil: 0, taps: G.taps };
+                if (!confirm('Donate your zoo? You keep your stars, rare animals, cards and achievements. Everything else resets.')) return;
+                const keep = {};
+                ['lifetime', 'names', 'rares', 'cardsEver', 'ach', 'login', 'candy', 'bat', 'babies', 'reqDone', 'renamed', 'taps'].forEach(k => keep[k] = G[k]);
+                keep.stars = total;
+                G = freshRun(keep);
                 save();
                 K.toast('Thank you! You now have ' + total + ' Conservation Stars.', 2500);
                 buildAll();
-                updateBand();
             });
         }
 
-        function buildAll() { buildZoo(); buildUpg(); buildFund(); updateTop(); }
+        // ---------- Boo at the Zoo ----------
+        const BOO_SHOP = [
+            { k: 'bat', e: '🦇', n: 'Adopt Vlad the Vampire Bat', d: 'Limited-time animal. Permanent +15% earnings and a spooky new part in the symphony.', c: 80 },
+            { k: 'parade', e: '🧛', n: 'Costume Parade', d: '3x earnings for 2 minutes', c: 25 },
+            { k: 'hayride', e: '🚜', n: 'Haunted Hayride', d: 'Instantly earn 30 minutes of income', c: 40 },
+        ];
+        function buildBoo() {
+            const v = document.getElementById('view-boo');
+            v.innerHTML = '<div class="panel-card"><h2>🎃 Boo at the Zoo</h2><p>The animals are in costume and the zoo stays spooky until October 31. Collect 🍬 candy from tours, pumpkins and visitor requests, then spend it here.</p>' +
+                '<p style="font-size:1.2rem"><strong>🍬 ' + G.candy + ' candy</strong></p></div>' +
+                BOO_SHOP.map(s => {
+                    const owned = s.k === 'bat' && G.bat;
+                    return '<div class="upg' + (owned ? ' done' : '') + '"><div class="emo">' + s.e + '</div><div><div class="a-name">' + s.n + '</div><div class="a-sub">' + s.d + '</div></div>' +
+                        (owned ? '<span class="a-sub">Adopted ✓</span>' : '<button class="buy" data-boo="' + s.k + '"><span>Trade</span><small>🍬 ' + s.c + '</small></button>') + '</div>';
+                }).join('');
+            v.querySelectorAll('button[data-boo]').forEach(b => b.addEventListener('click', () => booBuy(b.dataset.boo)));
+            updateBoo();
+        }
+        function updateBoo() {
+            document.querySelectorAll('#view-boo button[data-boo]').forEach(b => { const s = BOO_SHOP.find(x => x.k === b.dataset.boo); setProp(b, 'disabled', G.candy < s.c); });
+        }
+        function booBuy(k) {
+            const s = BOO_SHOP.find(x => x.k === k);
+            if (G.candy < s.c) return;
+            G.candy -= s.c;
+            if (k === 'bat') { G.bat = true; K.toast('🦇 Vlad the vampire bat moved in! +15% earnings', 2500); ZooSymphony.join(BAT.voice); }
+            if (k === 'parade') { G.boostUntil = Math.max(G.boostUntil, Date.now()) + 120000; K.toast('🧛 Costume parade! 3x earnings for 2 minutes', 2200); }
+            if (k === 'hayride') { const amt = income(1800, 500); earn(amt); K.toast('🚜 The haunted hayride sold out! +' + fmt(amt) + ' coins', 2200); }
+            buildBoo(); updateBand(); save();
+        }
+        function addCandy(n, why) {
+            if (!booActive() || n <= 0) return;
+            G.candy += n;
+            if (why) K.toast('🍬 +' + n + ' candy' + why, 1800);
+            if (tab === 'boo') buildBoo();
+        }
+
+        // ---------- map ----------
+        const ZONES = [[0, 0], [1, 0], [2, 0], [0, 1], [2, 1], [0, 2], [1, 2], [2, 2]]; // center tile is the rare sanctuary
+        let mapEls = [];
+        function zoneRect(col, row, portrait) {
+            const cols = portrait ? 2 : 3, rows = portrait ? 5 : 3;
+            const gx = 3, gy = portrait ? 2.5 : 4;
+            const w = (100 - gx * (cols + 1)) / cols, h = (100 - gy * (rows + 1)) / rows;
+            return { l: gx + col * (w + gx), t: gy + row * (h + gy), w, h };
+        }
+        function buildMap() {
+            const v = document.getElementById('view-map');
+            const portrait = window.innerWidth < 640;
+            const ph = phase();
+            let html = '<div class="map" id="map">';
+            const placements = portrait
+                ? [[0, 0], [1, 0], [0, 1], [1, 1], [0, 3], [1, 3], [0, 4], [1, 4]]
+                : ZONES;
+            HABITATS.forEach((h, hi) => {
+                const [c, r] = placements[hi];
+                const z = zoneRect(c, r, portrait);
+                const style = 'left:' + z.l + '%;top:' + z.t + '%;width:' + z.w + '%;height:' + z.h + '%;background:' + h.col;
+                if (!G.habs[hi]) html += '<div class="zone locked" style="' + style + '" title="' + h.n + ' (locked)">🔒<span class="lbl">' + h.n + '</span></div>';
+                else html += '<div class="zone" data-z="' + hi + '" style="' + style + '"><span class="lbl">' + h.n + (G.keepers[hi] ? ' 🧑‍🌾' : '') + '</span></div>';
+            });
+            // rare sanctuary
+            const sz = portrait ? zoneRect(0, 2, true) : zoneRect(1, 1, false);
+            if (portrait) sz.w = 100 - 6;
+            html += '<div class="zone" data-z="rare" style="left:' + sz.l + '%;top:' + sz.t + '%;width:' + sz.w + '%;height:' + sz.h + '%;background:#d9e8c4"><span class="lbl">✨ Rare Sanctuary</span></div>';
+            html += '<div class="sky ' + ph + '"></div>';
+            if (ph === 'night') html += '<div class="moon">🌙</div>';
+            if (booActive()) {
+                for (let k = 0; k < 6; k++) html += '<span class="deco" style="left:' + (5 + Math.random() * 88) + '%;top:' + (5 + Math.random() * 88) + '%">' + pick(['🎃', '🕸️', '🍬', '👻']) + '</span>';
+                html += '<span class="flybat">🦇</span><span class="flybat" style="animation-delay:-4s;animation-duration:12s">🦇</span>';
+            }
+            html += '</div><p class="map-note">' + (ph === 'night' ? '🌙 Nighttime at the zoo. The animals are settling in.' : ph === 'dusk' ? '🌅 The sun is low and the zoo is glowing.' : '☀️ A sunny day at the zoo.') + ' Hover or tap an animal to see its name.</p>';
+            v.innerHTML = html;
+            const map = document.getElementById('map');
+            mapEls = [];
+            // animals
+            let budget = 70;
+            HABITATS.forEach((h, hi) => {
+                if (!G.habs[hi]) return;
+                const zone = map.querySelector('[data-z="' + hi + '"]');
+                ANIMALS.filter(a => a.h === hi && G.levels[a.i] > 0).forEach(a => {
+                    const count = Math.min(5, Math.ceil(Math.log2(G.levels[a.i] + 1)));
+                    for (let k = 0; k < count && budget > 0; k++, budget--) {
+                        const s = document.createElement('div');
+                        s.className = 'sprite';
+                        const asleep = ph === 'night' && Math.random() < 0.6;
+                        s.innerHTML = '<span>' + a.e + '</span>' + (asleep ? '<span class="costume zz">💤</span>' : k === 0 ? costume(a.i) : '');
+                        if (asleep) s.dataset.sleep = '1';
+                        s.title = k === 0 ? petName(a) + ' the ' + singular(a.n) : a.n;
+                        zone.appendChild(s);
+                        mapEls.push(s);
+                    }
+                });
+            });
+            const rz = map.querySelector('[data-z="rare"]');
+            const rares = RARES.filter(r => G.rares[r.k]).map(r => [r.k === 'snowleopard' ? '🐆' : rareIcon(r.k, '1em'), r.name + ' the ' + r.n.toLowerCase(), r.k === 'snowleopard'])
+                .concat(G.bat ? [['🦇', 'Vlad the vampire bat', false]] : []);
+            if (!rares.length) rz.insertAdjacentHTML('beforeend', '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#55704a;text-align:center;padding:1.5rem 0.5rem 0">Rare animals you adopt live here</span>');
+            rares.forEach(([icon, title, sl]) => {
+                const s = document.createElement('div');
+                s.className = 'sprite' + (sl ? ' sl' : '');
+                s.innerHTML = '<span>' + icon + '</span>';
+                s.title = title;
+                rz.appendChild(s);
+                mapEls.push(s);
+            });
+            // visitors on the paths
+            const people = ['🧍', '🚶', '🧒', '👩‍🦽', '🧑‍🦯', '👨‍👧'];
+            const nPeople = Math.min(10, 1 + Math.floor(Math.log10(totalRate() + 1) * 1.5));
+            for (let k = 0; k < (ph === 'night' ? 0 : nPeople); k++) {
+                const p = document.createElement('div');
+                p.className = 'person';
+                p.textContent = pick(people);
+                p.dataset.walk = '1';
+                map.appendChild(p);
+                mapEls.push(p);
+            }
+            mapEls.forEach(el => wander(el, true));
+        }
+        function wander(el, first) {
+            if (el.dataset.walk) {
+                // walk along the paths between the zones
+                const lanes = window.innerWidth < 640 ? [1.5, 50, 98.5] : [1.5, 34.5, 66, 98.5];
+                const horiz = Math.random() < 0.5;
+                const lane = pick(lanes) - 1;
+                const along = 2 + Math.random() * 92;
+                el.style.left = (horiz ? along : lane) + '%';
+                el.style.top = (horiz ? lane : along) + '%';
+                return;
+            }
+            const x = 6 + Math.random() * 78, y = 22 + Math.random() * 62;
+            const prevX = parseFloat(el.style.left) || x;
+            el.classList.toggle('flip', x > prevX);
+            if (first) el.style.transition = 'none';
+            el.style.left = x + '%';
+            el.style.top = y + '%';
+            if (first) { void el.offsetWidth; el.style.transition = ''; }
+        }
+        setInterval(() => {
+            if (tab !== 'map' || document.hidden) return;
+            mapEls.forEach(el => { if (!el.dataset.sleep && Math.random() < (phase() === 'night' && !el.dataset.walk ? 0.2 : 0.45)) wander(el); });
+        }, 2000);
+
+        // ---------- naming ----------
+        function rename(a) {
+            const cur = petName(a);
+            const n = prompt('Rename ' + cur + ' the ' + singular(a.n) + ':', cur);
+            if (n === null) return;
+            const clean = n.trim().slice(0, 20);
+            if (!clean) return;
+            G.names[a.i] = clean;
+            G.renamed = true;
+            K.toast(a.e + ' Say hi to ' + clean + '!');
+            updateZoo(); save();
+        }
 
         // ---------- actions ----------
+        function afterAdopt(a, before, quiet) {
+            G.cardsEver[a.i] = true;
+            const crossed = MILESTONES.find(t => before < t && G.levels[a.i] >= t);
+            if (!before) {
+                if (!G.names[a.i]) G.names[a.i] = a.info[3][0];
+                K.toast(a.e + ' Meet ' + petName(a) + ' the ' + singular(a.n) + '! New fact card unlocked.', 2400);
+                ZooSymphony.join(a.i);
+                updateBand();
+                if (tab === 'cards') buildCards();
+                if (tab === 'map') buildMap();
+            } else if (crossed) {
+                K.toast(a.e + ' ' + crossed + ' ' + a.n.toLowerCase() + '! They now earn double.', 2000);
+                ZooSymphony.fanfare();
+            } else if (!quiet) ZooSymphony.blip(a.i);
+            checkRequest();
+        }
         function buyAnimal(a) {
             const n = buyCount(a);
             const c = costFor(a, n);
@@ -346,11 +802,7 @@
             const before = G.levels[a.i];
             G.coins -= c;
             G.levels[a.i] += n;
-            const crossed = MILESTONES.find(t => before < t && G.levels[a.i] >= t);
-            if (crossed) { K.toast(a.e + ' ' + crossed + ' ' + a.n.toLowerCase() + '! They now earn double.', 2000); ZooSymphony.fanfare(); }
-            else if (!before) { K.toast(a.e + ' Welcome, ' + a.n.toLowerCase() + '! They joined the symphony.', 2000); ZooSymphony.join(a.i); }
-            else ZooSymphony.blip(a.i);
-            updateBand();
+            afterAdopt(a, before, false);
             updateZoo(); updateTop();
         }
         function buildHab(hi) {
@@ -377,14 +829,15 @@
             earn(v);
             G.taps++;
             ZooSymphony.coin();
+            if (booActive() && Math.random() < 0.08) addCandy(1, ' from a trick-or-treater');
             const f = document.createElement('div');
             f.className = 'floater';
             f.textContent = '+' + fmt(v);
-            const x = e.clientX || (e.target.getBoundingClientRect().left + 50);
-            const y = e.clientY || (e.target.getBoundingClientRect().top + 30);
+            const r = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX || (r.left + 50);
+            const y = e.clientY || (r.top + 30);
             f.style.left = (x - 15 + window.scrollX) + 'px';
             f.style.top = (y - 20 + window.scrollY) + 'px';
-            f.style.position = 'absolute';
             document.body.appendChild(f);
             setTimeout(() => f.remove(), 900);
             updateTop();
@@ -395,31 +848,30 @@
             buyN = b.dataset.n;
             updateZoo();
         }));
-        document.querySelectorAll('#tabs2 button').forEach(b => b.addEventListener('click', () => {
-            document.querySelectorAll('#tabs2 button').forEach(x => x.classList.toggle('on', x === b));
-            tab = b.dataset.t;
-            document.getElementById('zooView').style.display = tab === 'zoo' ? '' : 'none';
-            document.getElementById('upgView').style.display = tab === 'upg' ? '' : 'none';
-            document.getElementById('fundView').style.display = tab === 'fund' ? '' : 'none';
-            if (tab === 'upg') buildUpg();
-            if (tab === 'fund') buildFund();
-        }));
 
-        function singular(n) {
-            n = n.toLowerCase();
-            if (n === 'sheep') return n;
-            if (n.endsWith('uses')) return n.slice(0, -2);
-            return n.endsWith('s') ? n.slice(0, -1) : n;
+        const BUILDERS = { zoo: buildZoo, map: buildMap, upg: buildUpg, keep: buildKeep, cards: buildCards, ach: buildAch, fund: buildFund, boo: buildBoo };
+        function showTab(t) {
+            tab = t;
+            document.querySelectorAll('#tabs2 button').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+            Object.keys(BUILDERS).forEach(k => document.getElementById('view-' + k).style.display = k === t ? '' : 'none');
+            BUILDERS[t]();
+        }
+        function wireTabs() {
+            const bar = document.getElementById('tabs2');
+            if (booActive() && !bar.querySelector('[data-t="boo"]')) bar.insertAdjacentHTML('afterbegin', '<button data-t="boo" class="boo">🎃 Boo at the Zoo</button>');
+            if (!booActive()) { const b = bar.querySelector('[data-t="boo"]'); if (b) b.remove(); if (tab === 'boo') showTab('zoo'); }
+            bar.querySelectorAll('button').forEach(b => { if (!b.dataset.wired) { b.dataset.wired = 1; b.addEventListener('click', () => showTab(b.dataset.t)); } });
         }
 
-        // ---------- baby boom ----------
+        // ---------- babies and pumpkins ----------
         function scheduleBaby() {
             setTimeout(() => {
                 if (document.hidden || totalRate() <= 0) return scheduleBaby();
+                const pumpkin = booActive() && Math.random() < 0.5;
                 const b = document.createElement('button');
                 b.className = 'baby';
-                b.textContent = '🍼';
-                b.setAttribute('aria-label', 'A baby animal was born. Tap for a bonus');
+                b.textContent = pumpkin ? '🎃' : '🍼';
+                b.setAttribute('aria-label', pumpkin ? 'A pumpkin full of candy. Tap it' : 'A baby animal was born. Tap for a bonus');
                 b.style.left = (10 + Math.random() * (window.innerWidth - 90)) + 'px';
                 b.style.top = (140 + Math.random() * (window.innerHeight - 240)) + 'px';
                 document.body.appendChild(b);
@@ -427,66 +879,251 @@
                 b.addEventListener('click', () => {
                     clearTimeout(gone);
                     b.remove();
-                    const a = ANIMALS.filter(x => G.levels[x.i] > 0);
-                    const pickA = a[Math.floor(Math.random() * a.length)];
-                    if (Math.random() < 0.5) {
-                        G.boostUntil = Date.now() + 30000;
-                        K.toast(pickA.e + ' A baby ' + singular(pickA.n) + ' was born! 3x earnings for 30 seconds.', 2500);
-                    } else {
-                        const bonus = Math.max(50, totalRate() * 90);
-                        earn(bonus);
-                        K.toast(pickA.e + ' Baby announcement went viral! +' + fmt(bonus) + ' coins', 2500);
+                    if (pumpkin) {
+                        const c = 8 + Math.floor(Math.random() * 5);
+                        const amt = income(60);
+                        earn(amt);
+                        addCandy(c, '');
+                        K.toast('🎃 The pumpkin was full of treats! +' + c + ' candy and ' + fmt(amt) + ' coins', 2500);
+                        ZooSymphony.fanfare();
+                        return scheduleBaby();
                     }
+                    G.babies++;
+                    const owned = ANIMALS.filter(x => G.levels[x.i] > 0);
+                    const a = pick(owned);
+                    if (Math.random() < 0.5) {
+                        G.boostUntil = Math.max(G.boostUntil, Date.now()) + 30000;
+                        K.toast(a.e + ' ' + petName(a) + ' the ' + singular(a.n) + ' had a baby! 3x earnings for 30 seconds.', 2600);
+                    } else {
+                        const bonus = income(90);
+                        earn(bonus);
+                        K.toast(a.e + ' ' + petName(a) + '’s baby announcement went viral! +' + fmt(bonus) + ' coins', 2600);
+                    }
+                    ZooSymphony.fanfare();
                     scheduleBaby();
                 });
             }, 45000 + Math.random() * 75000);
         }
 
-        // ---------- loop ----------
+        // ---------- visitor requests ----------
+        const GROUPS = ['A school group', 'A family reunion', 'A wildlife photographer', 'A birthday party', 'A scout troop', 'A group of grandparents', 'A honeymoon couple', 'A local news crew'];
+        function newRequest() {
+            const open = ANIMALS.filter(a => G.habs[a.h]);
+            const unowned = open.filter(a => G.levels[a.i] === 0);
+            const owned = open.filter(a => G.levels[a.i] > 0);
+            let req = null;
+            const budget = Math.max(G.coins, income(300));
+            if (unowned.length && Math.random() < 0.4 && costFor(unowned[0], 1) <= budget * 2) {
+                const a = unowned[0];
+                req = { i: a.i, need: 1, text: pick(GROUPS) + ' wants to see ' + a.n.toLowerCase() + '.' };
+            } else if (owned.length) {
+                const a = pick(owned);
+                let k = 3;
+                const goal = income(240, 60);
+                while (k < 40 && costFor(a, k + 1) < goal) k++;
+                req = { i: a.i, need: G.levels[a.i] + k, text: pick(GROUPS) + ' wants to see ' + (G.levels[a.i] + k) + ' ' + a.n.toLowerCase() + '.' };
+            }
+            if (req) {
+                req.until = Date.now() + 10 * 60000;
+                req.reward = income(240, 100);
+                G.req = req;
+                ZooSymphony.blip(req.i);
+            }
+            G.nextReqAt = Date.now() + (3 + Math.random() * 3) * 60000;
+            renderNotices();
+        }
+        function checkRequest() {
+            const r = G.req;
+            if (!r) return;
+            if (G.levels[r.i] >= r.need) {
+                earn(r.reward);
+                G.reqDone++;
+                G.req = null;
+                K.toast('🎉 Request complete! +' + fmt(r.reward) + ' coins', 2400);
+                addCandy(10, '');
+                ZooSymphony.fanfare();
+                renderNotices();
+            }
+        }
+
+        // ---------- rare animals ----------
+        function newRare() {
+            const left = RARES.filter(r => !G.rares[r.k]);
+            G.nextRareAt = Date.now() + (10 + Math.random() * 10) * 60000;
+            if (!left.length || totalRate() <= 0) return;
+            const r = pick(left);
+            G.rare = { k: r.k, until: Date.now() + 5 * 60000, cost: income(400, 400) };
+            K.toast('✨ A rare ' + r.n.toLowerCase() + ' needs a home! You have 5 minutes.', 3000);
+            renderNotices();
+        }
+        function adoptRare() {
+            const o = G.rare;
+            if (!o || G.coins < o.cost) return;
+            const r = RARES.find(x => x.k === o.k);
+            G.coins -= o.cost;
+            G.rares[r.k] = true;
+            G.rare = null;
+            K.toast('✨ ' + r.name + ' the ' + r.n.toLowerCase() + ' moved into the Rare Sanctuary! +15% earnings', 2800);
+            ZooSymphony.join(r.voice);
+            updateBand(); renderNotices(); save();
+            if (tab === 'map') buildMap();
+        }
+
+        // ---------- notices (requests, rare offers, event) ----------
+        function renderNotices() {
+            const box = document.getElementById('notices');
+            let html = '';
+            if (booActive()) {
+                html += '<div class="notice event"><div class="emo">🎃</div><div><b>Boo at the Zoo is on!</b><small>The animals are in costume until October 31. Collect 🍬 candy and trade it for a limited-time vampire bat.</small></div>' +
+                    '<div class="mini"><button id="booGo">🍬 ' + G.candy + ' · Open</button></div></div>';
+            }
+            if (G.rare) {
+                const r = RARES.find(x => x.k === G.rare.k);
+                html += '<div class="notice rare"><div class="emo">' + rareIcon(r.k, '1.9rem') + '</div><div><b>A rare ' + r.n.toLowerCase() + ' needs a home!</b><small>Adopt for a permanent +15% boost. Leaves in <span class="timer" id="rareT"></span></small></div>' +
+                    '<div class="mini"><button id="rareGo">Adopt · ' + fmt(G.rare.cost) + '</button></div></div>';
+            }
+            if (G.req) {
+                const a = ANIMALS[G.req.i];
+                html += '<div class="notice"><div class="emo">' + a.e + '</div><div><b>' + G.req.text + '</b><small><span id="reqP"></span> · Reward ' + fmt(G.req.reward) + ' coins' + (booActive() ? ' + 10 🍬' : '') + ' · <span class="timer" id="reqT"></span> left</small></div>' +
+                    '<div class="mini"><button class="ghost" id="reqGo">Go to exhibit</button><button class="ghost" id="reqX" aria-label="Turn down this request">✕</button></div></div>';
+            }
+            box.innerHTML = html;
+            const bg = document.getElementById('booGo'); if (bg) bg.addEventListener('click', () => showTab('boo'));
+            const rg = document.getElementById('rareGo'); if (rg) rg.addEventListener('click', adoptRare);
+            const qg = document.getElementById('reqGo'); if (qg) qg.addEventListener('click', () => { showTab('zoo'); const el = document.getElementById('emo' + G.req.i); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+            const qx = document.getElementById('reqX'); if (qx) qx.addEventListener('click', () => { G.req = null; renderNotices(); });
+            updateNotices();
+        }
+        function updateNotices() {
+            const now = Date.now();
+            if (G.req && now > G.req.until) { K.toast('The visitors went home. Maybe next time!'); G.req = null; renderNotices(); return; }
+            if (G.rare && now > G.rare.until) { const r = RARES.find(x => x.k === G.rare.k); K.toast('The ' + r.n.toLowerCase() + ' found another home.'); G.rare = null; renderNotices(); return; }
+            if (G.req) {
+                setText(document.getElementById('reqT'), mmss(G.req.until - now));
+                setText(document.getElementById('reqP'), 'You have ' + Math.min(G.levels[G.req.i], G.req.need) + ' of ' + G.req.need);
+            }
+            if (G.rare) {
+                setText(document.getElementById('rareT'), mmss(G.rare.until - now));
+                setProp(document.getElementById('rareGo'), 'disabled', G.coins < G.rare.cost);
+            }
+            const bg = document.getElementById('booGo');
+            if (bg) setText(bg, '🍬 ' + G.candy + ' · Open');
+        }
+
+        // ---------- daily gift ----------
+        function checkDaily() {
+            const today = K.dayNumber();
+            if (G.login.day === today) return;
+            const streak = G.login.day === today - 1 ? G.login.streak + 1 : 1;
+            G.login = { day: today, streak };
+            const mult = Math.min(streak, 7);
+            const amt = income(600 * mult, 200 * mult);
+            const candy = booActive() ? 5 * mult : 0;
+            earn(amt);
+            if (candy) G.candy += candy;
+            const boxes = Array.from({ length: 7 }, (_, k) => '<span class="' + (k < Math.min(streak, 7) ? 'got' : '') + '">' + (k + 1) + '</span>').join('');
+            showModal('<h2>🎁 Daily gift</h2><p>' + (streak > 1 ? 'Day ' + streak + ' in a row!' : 'Welcome to the zoo today!') + ' Here’s <strong>' + fmt(amt) + ' coins</strong>' + (candy ? ' and <strong>' + candy + ' 🍬</strong>' : '') + '.</p>' +
+                '<div class="streak">' + boxes + '</div><p class="a-sub">Come back tomorrow for a bigger gift. It grows for 7 days in a row.</p><button class="btn btn-primary" id="okBtn">Collect</button>');
+            save();
+        }
+
+        // ---------- modal queue ----------
+        const modalQueue = [];
+        function showModal(html) {
+            modalQueue.push(html);
+            if (modalQueue.length === 1) openModal();
+        }
+        function openModal() {
+            document.getElementById('modal').innerHTML = modalQueue[0];
+            document.getElementById('overlay').classList.add('show');
+            document.getElementById('okBtn').addEventListener('click', () => {
+                modalQueue.shift();
+                document.getElementById('overlay').classList.remove('show');
+                if (modalQueue.length) setTimeout(openModal, 150);
+            });
+        }
+
+        // ---------- top bar, clock, music mood ----------
+        let lastPhase = null;
         function updateTop() {
             setText(document.getElementById('coins'), fmt(G.coins));
             const r = totalRate();
             setText(document.getElementById('rate'), fmt(r));
             setText(document.getElementById('visitors'), fmt(Math.floor(r * 4 + G.levels.reduce((s, l) => s + l, 0) * 3)));
             const left = G.boostUntil - Date.now();
-            setText(document.getElementById('boostTag'), left > 0 ? '🍼 Baby boom! 3x for ' + Math.ceil(left / 1000) + 's' : (G.stars ? '⭐ ' + G.stars + ' stars (+' + G.stars * 10 + '%)' : ''));
+            const bits = [];
+            if (left > 0) bits.push('🍼 3x for ' + Math.ceil(left / 1000) + 's');
+            if (G.stars) bits.push('⭐ ' + G.stars);
+            if (rareCount()) bits.push('✨ ' + rareCount() + ' rare');
+            if (achCount()) bits.push('🏅 +' + achCount() * 2 + '%');
+            setText(document.getElementById('boostTag'), bits.join(' · '));
+            const ph = phase();
+            if (ph !== lastPhase) {
+                lastPhase = ph;
+                const clock = document.getElementById('clock');
+                clock.textContent = ph === 'night' ? '🌙' : ph === 'dusk' ? '🌅' : '☀️';
+                clock.title = ph === 'night' ? 'Night at the zoo' : ph === 'dusk' ? 'Dusk at the zoo' : 'Daytime at the zoo';
+                if (tab === 'map') buildMap();
+            }
+            ZooSymphony.setMood(booActive() ? 'spooky' : ph === 'day' ? 'day' : 'night');
+        }
+        function updateBand() {
+            const n = totalSpecies() + rareCount();
+            const tot = ANIMALS.length + RARES.length + (booActive() || G.bat ? 1 : 0);
+            setText(document.getElementById('band'), n ? '🎵 ' + n + ' of ' + tot + ' animals in your symphony' : 'Adopt an animal to start the music');
         }
 
-        let lastTick = Date.now();
+        function buildAll() { wireTabs(); showTab(tab); renderNotices(); updateTop(); updateBand(); }
+
+        // ---------- main loop ----------
+        let lastTick = Date.now(), ticks = 0;
         setInterval(() => {
             const now = Date.now();
             const dt = Math.min(5, (now - lastTick) / 1000);
             lastTick = now;
             earn(totalRate() * dt);
             G.last = now;
+            ticks++;
             updateTop();
+            updateNotices();
             if (tab === 'zoo') updateZoo();
             else if (tab === 'upg') updateUpg();
+            else if (tab === 'keep') updateKeep();
+            else if (tab === 'boo') updateBoo();
+            if (ticks % 10 === 0) { keeperWork(); checkAch(); checkRequest(); }
+            if (ticks % 25 === 0) {
+                if (!G.req && now > G.nextReqAt && totalSpecies() > 0) newRequest();
+                if (!G.rare && now > G.nextRareAt) newRare();
+                checkDaily();
+                wireTabs();
+            }
         }, 200);
 
         function save() { G.last = Date.now(); K.save(SAVE, G); }
         setInterval(save, 5000);
-        document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else { lastTick = Date.now(); } });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else lastTick = Date.now(); });
         window.addEventListener('pagehide', save);
 
-        // offline earnings
+        // ---------- offline earnings ----------
         const away = Math.min(8 * 3600, (Date.now() - (G.last || Date.now())) / 1000);
         if (away > 60) {
-            const saved = G.boostUntil; G.boostUntil = 0;
-            const amt = totalRate() * away * 0.5;
-            G.boostUntil = saved;
+            const gm = globalMult(true);
+            let amt = 0;
+            HABITATS.forEach((h, hi) => { amt += habRate(hi) * gm * away * (G.keepers[hi] ? 1 : 0.5); });
             if (amt > 0) {
                 earn(amt);
                 const h = Math.floor(away / 3600), m = Math.floor(away % 3600 / 60);
-                document.getElementById('modal').innerHTML = '<h2>Welcome back!</h2><p>While you were away for ' + (h ? h + 'h ' : '') + m + 'm, your zoo earned <strong>' + fmt(amt) + ' coins</strong>.</p><button class="btn btn-primary" id="okBtn">Collect</button>';
-                document.getElementById('overlay').classList.add('show');
-                document.getElementById('okBtn').addEventListener('click', () => document.getElementById('overlay').classList.remove('show'));
+                const kc = Object.keys(G.keepers).length;
+                showModal('<h2>Welcome back!</h2><p>While you were away for ' + (h ? h + 'h ' : '') + m + 'm, your zoo earned <strong>' + fmt(amt) + ' coins</strong>.' +
+                    (kc ? ' Your ' + (kc === 1 ? 'keeper kept their habitat' : kc + ' keepers kept their habitats') + ' running at full speed.' : '') + '</p><button class="btn btn-primary" id="okBtn">Collect</button>');
             }
         }
         G.last = Date.now();
+        if (G.req && Date.now() > G.req.until) G.req = null;
+        if (G.rare && Date.now() > G.rare.until) G.rare = null;
 
         // ---------- sound ----------
-        ZooSymphony.setLevels(() => G.levels);
+        ZooSymphony.setLevels(() => G.levels.concat(RARES.map(r => G.rares[r.k] ? 1 : 0), [G.bat ? 1 : 0]));
         const soundBtn = document.getElementById('soundBtn');
         const volEl = document.getElementById('vol');
         const pref = K.load('wild_acres_sound', { on: false, vol: 60 });
@@ -498,22 +1135,20 @@
             soundBtn.setAttribute('aria-pressed', on);
             soundBtn.textContent = on ? '🔊 Sound on' : '🔇 Sound off';
             K.save('wild_acres_sound', { on, vol: +volEl.value });
-            updateBand();
         }
         soundBtn.addEventListener('click', () => setSound(!ZooSymphony.isOn()));
         volEl.addEventListener('input', () => { ZooSymphony.setVolume(volEl.value / 100); K.save('wild_acres_sound', { on: ZooSymphony.isOn(), vol: +volEl.value }); });
-        // browsers only allow sound after a tap, so a saved "on" setting waits for the first one
         if (pref.on) document.addEventListener('pointerdown', function first(e) {
             document.removeEventListener('pointerdown', first);
             if (e.target !== soundBtn && !ZooSymphony.isOn()) setSound(true);
         });
-        function updateBand() {
-            const n = G.levels.filter(l => l > 0).length;
-            document.getElementById('band').textContent = n ? '🎵 ' + n + ' of ' + ANIMALS.length + ' animals in your symphony' : 'Adopt an animal to start the music';
-        }
-        updateBand();
+
+        let resizeT;
+        window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (tab === 'map') buildMap(); }, 300); });
 
         buildAll();
+        checkDaily();
+        checkAch();
         scheduleBaby();
     })();
     </script>

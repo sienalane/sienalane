@@ -1,11 +1,19 @@
 // Zoo Symphony: every animal you adopt adds its own voice to a looping song.
 // All sounds are synthesized with the Web Audio API. No audio files needed.
 (function () {
-    const BPM = 92;
-    const STEP = 60 / BPM / 4; // 16th note
+    const MOODS = {
+        // bright C major: C, Am, F, G
+        day: { bpm: 92, chords: [[0, 4, 7], [-3, 0, 4], [-7, -3, 0], [-5, -1, 2]], lp: 12000 },
+        // slower and softer: Am, F, C, G
+        night: { bpm: 76, chords: [[-3, 0, 4], [-7, -3, 0], [0, 4, 7], [-5, -1, 2]], lp: 2200 },
+        // spooky minor: Am, F, Dm, E
+        spooky: { bpm: 84, chords: [[-3, 0, 4], [-7, -3, 0], [-10, -7, -3], [-8, -4, -1]], lp: 4000 }
+    };
+    let mood = 'day';
+    let STEP = 60 / MOODS.day.bpm / 4; // 16th note
     const STEPS = 16;
-    // Chord progression in C major, one chord per bar: C, Am, F, G
-    const CHORDS = [[0, 4, 7], [-3, 0, 4], [-7, -3, 0], [-5, -1, 2]];
+    let CHORDS = MOODS.day.chords;
+    let tone_lp = null;
     const BASE = 261.63; // middle C
 
     let ctx = null, master = null, comp = null, verb = null, noiseBuf = null;
@@ -30,13 +38,16 @@
         comp.threshold.value = -18; comp.ratio.value = 6;
         master = ctx.createGain();
         master.gain.value = volume;
+        tone_lp = ctx.createBiquadFilter();
+        tone_lp.type = 'lowpass';
+        tone_lp.frequency.value = MOODS[mood].lp;
         // simple echo for a little space
         verb = ctx.createDelay(1);
         verb.delayTime.value = STEP * 3;
         const fb = ctx.createGain(); fb.gain.value = 0.25;
         const wet = ctx.createGain(); wet.gain.value = 0.18;
         verb.connect(fb); fb.connect(verb); verb.connect(wet); wet.connect(comp);
-        master.connect(comp); master.connect(verb);
+        master.connect(tone_lp); tone_lp.connect(comp); tone_lp.connect(verb);
         comp.connect(ctx.destination);
         noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
         const d = noiseBuf.getChannelData(0);
@@ -112,6 +123,11 @@
         { n: 'Sea Turtles', p: [0], play: (t, v) => { if (bar % 2 === 1) { osc(t, tone(2, 0), 2.2, { type: 'sine', gain: 0.07 * v }); osc(t, tone(2, 0) * 3, 1.2, { type: 'sine', gain: 0.015 * v }); } } },
         { n: 'Octopuses', p: [0, 3, 6, 9, 12], play: (t, v, s) => osc(t, tone([3, 2, 4, 1, 3][s / 3], 1), 0.14, { type: 'sine', slide: 0.6, slideTime: 0.1, gain: 0.07 * v }) },
         { n: 'Sharks', p: [0, 2, 4, 6, 8, 10, 12, 14], play: (t, v) => osc(t, tone(0, -2), STEP * 0.9, { type: 'square', lp: 300, gain: 0.07 * v }) },
+        // rare animals and the Boo at the Zoo bat
+        { n: 'Red Panda', p: [0, 4, 8, 12], play: (t, v, s) => osc(t, tone([4, 3, 5, 2][s / 4], 1), 0.5, { type: 'sine', gain: 0.06 * v }) },
+        { n: 'Snow Leopard', p: [0], play: (t, v) => { if (bar % 2 === 0) osc(t, tone(4, 1), STEP * 14, { type: 'sine', attack: 0.6, vib: 4, vibDepth: 0.008, gain: 0.05 * v }); } },
+        { n: 'Okapi', p: [6, 14], play: (t, v) => osc(t, tone(1, -1), 0.3, { type: 'triangle', lp: 900, gain: 0.14 * v }) },
+        { n: 'Vampire Bat', p: [0, 8], play: (t, v, s) => osc(t, tone(s ? 1 : 2, 1), STEP * 7, { type: 'sine', vib: 6, vibDepth: 0.03, slide: s ? 0.94 : 1.06, slideTime: STEP * 6, attack: 0.15, gain: 0.07 * v }) },
     ];
 
     // more of an animal = a slightly louder voice
@@ -154,6 +170,15 @@
                 if (ctx) ctx.suspend();
             }
         },
+        setMood(m) {
+            if (!MOODS[m] || m === mood) return;
+            mood = m;
+            STEP = 60 / MOODS[m].bpm / 4;
+            CHORDS = MOODS[m].chords;
+            if (tone_lp) tone_lp.frequency.setTargetAtTime(MOODS[m].lp, ctx.currentTime, 0.5);
+            if (verb) verb.delayTime.setTargetAtTime(STEP * 3, ctx.currentTime, 0.1);
+        },
+        mood() { return mood; },
         setVolume(v) {
             volume = v;
             if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05);
