@@ -480,6 +480,23 @@
                 }
                 v.appendChild(sec);
             });
+            // Rare Sanctuary: rare animals and the Boo at the Zoo bat
+            const special = RARES.map(r => ({ icon: rareIcon(r.k, '2.1rem'), n: r.n, owned: !!G.rares[r.k], name: r.name,
+                    hint: 'Rare. Watch for it to show up at the top of the page, then adopt it within 5 minutes.' }))
+                .concat([{ icon: '🦇', n: BAT.n, owned: G.bat, name: BAT.name, bat: true,
+                    hint: booActive() ? 'Limited time. Trade 80 🍬 candy for Vlad in the Boo at the Zoo tab before October 31.' : 'Only available during Boo at the Zoo in October.' }]);
+            if (special.some(x => x.owned) || booActive() || totalSpecies() >= 3) {
+                const sec = document.createElement('div');
+                sec.className = 'habitat';
+                sec.innerHTML = '<div class="hab-head" style="background:#d9e8c4"><h2>✨ Rare Sanctuary</h2><small>+15% to all earnings each</small></div><div class="hab-body">' +
+                    special.map(x => '<div class="animal"><div class="emo ' + (x.owned ? 'live' : 'off') + '">' + x.icon + '</div>' +
+                        '<div><div class="a-name">' + x.n + (x.owned ? '<em>× 1</em>' : '') + '</div>' +
+                        '<div class="a-sub">' + (x.owned ? 'Meet ' + x.name + '! Boosting every exhibit by 15% and playing in your symphony.' : x.hint) + '</div></div>' +
+                        (x.owned ? '<span class="a-sub">Adopted ✓</span>' : x.bat && booActive() ? '<button class="buy" data-gobat="1"><span>Get Vlad</span><small>🍬 ' + G.candy + ' / 80</small></button>' : '<span class="a-sub">Not yet</span>') + '</div>').join('') + '</div>';
+                v.insertBefore(sec, v.firstChild);
+                const gb = sec.querySelector('[data-gobat]');
+                if (gb) gb.addEventListener('click', () => showTab('boo'));
+            }
             v.querySelectorAll('button[data-a]').forEach(b => b.addEventListener('click', () => buyAnimal(ANIMALS[+b.dataset.a])));
             v.querySelectorAll('button[data-hab]').forEach(b => b.addEventListener('click', () => buildHab(+b.dataset.hab)));
             v.querySelectorAll('button[data-rename]').forEach(b => b.addEventListener('click', () => rename(ANIMALS[+b.dataset.rename])));
@@ -986,6 +1003,7 @@
             K.toast('✨ ' + r.name + ' the ' + r.n.toLowerCase() + ' moved into the Rare Sanctuary! +15% earnings', 2800);
             ZooSymphony.join(r.voice);
             updateBand(); renderNotices(); save();
+            if (tab === 'zoo') buildZoo();
             if (tab === 'map') buildMap();
         }
 
