@@ -266,7 +266,7 @@
             height: 25%;
             flex-shrink: 0;
             position: relative;
-            transition: background 0.2s ease;
+            transition: height 0.25s linear;
         }
 
         .layer::before {
@@ -278,6 +278,24 @@
 
         .flask.selected {
             transform: translateY(-18px);
+        }
+
+        .flask.pouring {
+            z-index: 10;
+            transform-origin: 50% 0;
+            transition: transform 0.35s ease-in-out;
+            cursor: default;
+        }
+
+        .stream {
+            position: fixed;
+            width: 6px;
+            height: 0;
+            border-radius: 3px;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0.95;
+            transition: height 0.15s linear, top 0.15s linear;
         }
 
         .flask.selected .flask-body,
@@ -358,6 +376,15 @@
         }
 
         .win-banner p {
+            margin: 0;
+        }
+
+        .win-banner .win-level {
+            font-weight: 600;
+            color: var(--sage-dark);
+        }
+
+        .win-banner .win-moves {
             margin-bottom: 0.75rem;
         }
 
@@ -449,7 +476,8 @@
         <div class="game-card">
             <div class="win-banner" id="win-banner">
                 <h2>Potions brewed!</h2>
-                <p id="win-text"></p>
+                <p class="win-level" id="win-level"></p>
+                <p class="win-moves" id="win-moves"></p>
                 <button class="btn btn-primary" onclick="nextLevel()">Next Level</button>
             </div>
 
@@ -507,6 +535,9 @@
         let selected = null;
         let extraUsed = false;
         let won = false;
+        let animating = false;
+        let best = { normal: null, extra: null };
+        let solverId = 0;
 
         function loadLevel() {
             try {
@@ -617,6 +648,79 @@
             return state;
         }
 
+        // Finds the fewest moves needed (A* search). A move can merge at most one
+        // pair of color bands, so "bands minus colors" never overestimates.
+        function minMoves(start) {
+            const colors = new Set(start.flat()).size;
+            const bands = st => {
+                let n = 0;
+                for (const f of st) for (let i = 0; i < f.length; i++) if (i === 0 || f[i] !== f[i - 1]) n++;
+                return n;
+            };
+            const key = st => st.map(f => f.join('.')).sort().join('|');
+            const buckets = [];
+            const cost = new Map();
+            const push = (st, g) => {
+                const f = g + bands(st) - colors;
+                (buckets[f] || (buckets[f] = [])).push([st, g]);
+            };
+            cost.set(key(start), 0);
+            push(start, 0);
+            let expanded = 0;
+            for (let f = 0; f < buckets.length; f++) {
+                const bucket = buckets[f];
+                if (!bucket) continue;
+                while (bucket.length) {
+                    const [st, g] = bucket.pop();
+                    if (cost.get(key(st)) < g) continue;
+                    if (isSolved(st)) return g;
+                    if (++expanded > 400000) return null;
+                    for (let i = 0; i < st.length; i++) {
+                        for (let j = 0; j < st.length; j++) {
+                            if (!canPour(st, i, j)) continue;
+                            const a = st[i];
+                            if (st[j].length === 0 && a.every(c => c === a[0])) continue;
+                            const next = st.map(x => x.slice());
+                            pour(next, i, j);
+                            const k = key(next);
+                            if (!cost.has(k) || cost.get(k) > g + 1) {
+                                cost.set(k, g + 1);
+                                push(next, g + 1);
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Run the solver in the background so the game never freezes
+        let solverWorker = null;
+        try {
+            const code = `const CAPACITY = ${CAPACITY};
+                ${canPour.toString()}
+                ${pour.toString()}
+                ${isSolved.toString()}
+                ${minMoves.toString()}
+                onmessage = e => postMessage({ id: e.data.id, kind: e.data.kind, moves: minMoves(e.data.state) });`;
+            solverWorker = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
+            solverWorker.onmessage = e => {
+                if (e.data.id !== solverId) return;
+                best[e.data.kind] = e.data.moves;
+                if (won) showWinText();
+            };
+        } catch (e) {
+            solverWorker = null;
+        }
+
+        function requestBest(kind, state) {
+            if (solverWorker) {
+                solverWorker.postMessage({ id: solverId, kind, state });
+            } else {
+                best[kind] = minMoves(state);
+            }
+        }
+
         function startLevel() {
             startFlasks = generateLevel(level);
             flasks = startFlasks.map(f => f.slice());
@@ -625,8 +729,12 @@
             selected = null;
             extraUsed = false;
             won = false;
+            animating = false;
+            solverId++;
+            best = { normal: null, extra: null };
             document.getElementById('win-banner').classList.remove('show');
             render();
+            requestBest('normal', startFlasks);
         }
 
         function render() {
@@ -669,8 +777,102 @@
             ).join('');
         }
 
+        const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Tilts the source flask over the target and pours a stream of potion into it
+        async function animatePour(from, to, done) {
+            const reduceMotion = window.matchMedia &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) {
+                done();
+                return;
+            }
+
+            animating = true;
+            const els = document.querySelectorAll('.flask');
+            const src = els[from];
+            const dst = els[to];
+
+            // How much will move, and what color
+            const preview = flasks.map(f => f.slice());
+            const count = pour(preview, from, to);
+            const color = POTIONS[flasks[from][flasks[from].length - 1]].color;
+
+            // Measure the source flask in its resting position
+            src.style.transition = 'none';
+            src.classList.remove('selected');
+            const srcRect = src.getBoundingClientRect();
+            const dstRect = dst.getBoundingClientRect();
+            const dstBody = dst.querySelector('.flask-body').getBoundingClientRect();
+            void src.offsetWidth;
+            src.style.transition = '';
+
+            const dir = (srcRect.left + srcRect.width / 2) < (dstRect.left + dstRect.width / 2) ? 1 : -1;
+            const dstX = dstRect.left + dstRect.width / 2;
+            const mouthX = dstX - dir * 12;
+            const mouthY = dstRect.top - 26;
+            const dx = mouthX - (srcRect.left + srcRect.width / 2);
+            const dy = mouthY - srcRect.top;
+            const angle = dir * 112;
+
+            src.classList.add('pouring');
+            src.style.transform = `translate(${dx}px, ${dy}px) rotate(${angle}deg)`;
+            await wait(370);
+
+            // Stream from the mouth down to the potion surface in the target
+            const innerHeight = dstBody.height - 6;
+            const surfaceY = dstBody.bottom - 3 - flasks[to].length * (innerHeight / CAPACITY);
+            const stream = document.createElement('div');
+            stream.className = 'stream';
+            stream.style.background = color;
+            stream.style.left = `${mouthX + dir * 4 - 3}px`;
+            stream.style.top = `${mouthY}px`;
+            document.body.appendChild(stream);
+            void stream.offsetWidth;
+            stream.style.height = `${Math.max(0, surfaceY - mouthY)}px`;
+            await wait(150);
+
+            // Drain the source and fill the target at the same rate
+            const duration = 260 * count;
+            const srcLayers = src.querySelectorAll('.layer');
+            const draining = Array.from(srcLayers).slice(srcLayers.length - count);
+            draining.forEach(layer => {
+                layer.style.transition = `height ${duration}ms linear`;
+                layer.style.height = '0';
+            });
+            const dstBodyEl = dst.querySelector('.flask-body');
+            const filling = [];
+            for (let k = 0; k < count; k++) {
+                const layer = document.createElement('div');
+                layer.className = 'layer';
+                layer.style.background = color;
+                layer.style.height = '0';
+                layer.style.transition = `height ${duration}ms linear`;
+                dstBodyEl.appendChild(layer);
+                filling.push(layer);
+            }
+            void dstBodyEl.offsetWidth;
+            filling.forEach(layer => { layer.style.height = `${100 / CAPACITY}%`; });
+            const finalSurface = dstBody.bottom - 3 - (flasks[to].length + count) * (innerHeight / CAPACITY);
+            stream.style.transition = `height ${duration}ms linear`;
+            stream.style.height = `${Math.max(0, finalSurface - mouthY)}px`;
+            await wait(duration);
+
+            // Last drops fall, then the flask goes back to the shelf
+            stream.style.transition = 'height 0.15s linear, top 0.15s linear';
+            stream.style.top = `${finalSurface}px`;
+            stream.style.height = '0';
+            await wait(150);
+            stream.remove();
+            src.style.transform = '';
+            await wait(360);
+
+            animating = false;
+            done();
+        }
+
         function handleFlask(index, el) {
-            if (won) return;
+            if (won || animating) return;
             if (selected === null) {
                 if (flasks[index].length === 0) return;
                 selected = index;
@@ -683,12 +885,15 @@
                 return;
             }
             if (canPour(flasks, selected, index)) {
-                history.push(flasks.map(f => f.slice()));
-                pour(flasks, selected, index);
-                moves++;
+                const from = selected;
                 selected = null;
-                render();
-                checkWin();
+                animatePour(from, index, () => {
+                    history.push(flasks.map(f => f.slice()));
+                    pour(flasks, from, index);
+                    moves++;
+                    render();
+                    checkWin();
+                });
             } else {
                 // Not a valid pour: switch selection if possible, otherwise shake
                 if (flasks[index].length > 0) {
@@ -704,14 +909,28 @@
         function checkWin() {
             if (!isSolved(flasks)) return;
             won = true;
-            document.getElementById('win-text').textContent =
-                `Level ${level} solved in ${moves} move${moves === 1 ? '' : 's'}.`;
+            showWinText();
             document.getElementById('win-banner').classList.add('show');
             render();
         }
 
+        function showWinText() {
+            const fewest = extraUsed ? best.extra : best.normal;
+            const plural = n => `${n} move${n === 1 ? '' : 's'}`;
+            let text = `Solved in ${plural(moves)}`;
+            if (fewest === null) {
+                text += ' (working out the fewest possible...)';
+            } else if (moves <= fewest) {
+                text += ` (fewest possible: ${fewest}). Perfect!`;
+            } else {
+                text += ` (fewest possible: ${fewest})`;
+            }
+            document.getElementById('win-level').textContent = `Level ${level}`;
+            document.getElementById('win-moves').textContent = text;
+        }
+
         function undo() {
-            if (!history.length || won) return;
+            if (!history.length || won || animating) return;
             flasks = history.pop();
             moves = Math.max(0, moves - 1);
             selected = null;
@@ -719,6 +938,7 @@
         }
 
         function restartLevel() {
+            if (animating) return;
             flasks = startFlasks.map(f => f.slice());
             history = [];
             moves = 0;
@@ -730,10 +950,11 @@
         }
 
         function addFlask() {
-            if (extraUsed || won) return;
+            if (extraUsed || won || animating) return;
             flasks.push([]);
             extraUsed = true;
             render();
+            if (best.extra === null) requestBest('extra', startFlasks.concat([[]]));
         }
 
         function nextLevel() {
