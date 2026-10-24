@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter Loop - Siena Lane</title>
+    <meta name="description" content="Connect letters around the square to use all twelve.">
+    <link rel="stylesheet" href="game-common.css">
+    <style>
+        .loop-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: center; }
+        .word-line { text-align: center; font-size: 1.7rem; font-weight: 700; letter-spacing: 1px; min-height: 2.6rem; text-transform: uppercase; }
+        .word-line .cursor { display: inline-block; width: 2px; height: 1.5rem; background: var(--accent-gold); vertical-align: middle; animation: blink 1s steps(1) infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .chain { text-align: center; color: var(--muted); min-height: 1.6rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .goal { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        svg.box { width: 100%; max-width: 340px; display: block; margin: 0 auto; touch-action: manipulation; }
+        svg.box .sq { fill: var(--tile-bg); stroke: var(--text-primary); stroke-width: 3; }
+        svg.box .ltr { font-size: 26px; font-weight: 700; fill: var(--text-primary); text-anchor: middle; dominant-baseline: central; text-transform: uppercase; pointer-events: none; }
+        svg.box .dot { fill: var(--tile-bg); stroke: var(--text-primary); stroke-width: 2.5; cursor: pointer; }
+        svg.box .dot.used { fill: var(--sage-light); }
+        svg.box .dot.cur { fill: var(--accent-gold); stroke: var(--accent-gold); }
+        svg.box .ltr.used { fill: var(--sage-dark); }
+        svg.box .hit { fill: transparent; cursor: pointer; }
+        svg.box line { stroke: var(--sage-dark); stroke-width: 3; stroke-linecap: round; }
+        svg.box line.live { stroke: var(--accent-gold); stroke-dasharray: 6 5; }
+        @media (max-width: 720px) { .loop-wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="quizzes.html" class="nav-link">Quizzes</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <a href="games.html" class="back-link">&larr; All games</a>
+            <h1>Letter Loop</h1>
+            <p>Use all twelve letters by chaining words around the square.</p>
+        </div>
+
+        <div class="game-card">
+            <div class="mode-bar">
+                <div class="mode-tabs" id="tabs">
+                    <button data-mode="daily" class="on">Daily</button>
+                    <button data-mode="free">Unlimited</button>
+                </div>
+                <span class="mode-label" id="modeLabel"></span>
+            </div>
+
+            <div class="loop-wrap">
+                <div>
+                    <div class="goal" id="goal">Try to solve it in 3 words or fewer.</div>
+                    <div class="word-line" id="word"></div>
+                    <div class="chain" id="chain"></div>
+                    <div class="btn-row" style="margin-top:1rem">
+                        <button class="btn btn-secondary" id="delBtn">Delete</button>
+                        <button class="btn btn-secondary" id="restartBtn">Restart</button>
+                        <button class="btn btn-primary" id="enterBtn">Enter</button>
+                    </div>
+                    <div class="btn-row" style="margin-top:0.6rem">
+                        <button class="btn btn-secondary" id="revealBtn" style="padding:0.35rem 0.9rem;font-size:0.85rem">Show a solution</button>
+                    </div>
+                </div>
+                <svg class="box" id="box" viewBox="0 0 340 340" aria-label="Letter square"></svg>
+            </div>
+
+            <div class="result-box" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="shareBtn">Share</button>
+                    <button class="btn btn-secondary" id="nextBtn">New puzzle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <h2>How to play</h2>
+            <ul>
+                <li>Tap letters (or type them) to spell a word of 3 or more letters.</li>
+                <li>Letters next to each other in a word can't come from the same side of the square.</li>
+                <li>Each new word starts with the last letter of the word before it.</li>
+                <li>Letters can be reused. Finish when every letter has been used at least once.</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script src="game-common.js"></script>
+    <script src="word-dict.js"></script>
+    <script src="letter-loop-data.js"></script>
+    <script>
+    (function () {
+        const K = GameKit;
+        const PAR = 3;
+        let mode = 'daily', pIndex, sides, solution, words, cur, done, sideOf, posOf;
+
+        function start(m, idx) {
+            mode = m;
+            const day = K.dayNumber();
+            if (mode === 'daily') {
+                pIndex = ((day % LOOP.length) + LOOP.length) % LOOP.length;
+                document.getElementById('modeLabel').textContent = 'Puzzle #' + (day + 1) + ' · ' + K.dateLabel();
+            } else {
+                pIndex = idx !== undefined && idx !== null ? idx : Math.floor(Math.random() * LOOP.length);
+                document.getElementById('modeLabel').textContent = 'Unlimited';
+            }
+            const [s, sol] = LOOP[pIndex].split(':');
+            sides = s.split(' ');
+            solution = sol.split(' ');
+            sideOf = {};
+            sides.forEach((str, i) => str.split('').forEach(c => sideOf[c] = i));
+            const saved = K.load('loop_' + mode, null);
+            words = []; cur = ''; done = false;
+            if (saved && saved.p === pIndex && (mode === 'free' || saved.day === day)) { words = saved.words; done = saved.done; }
+            if (words.length && !done) cur = words[words.length - 1].slice(-1);
+            document.getElementById('result').classList.remove('show');
+            layout();
+            render();
+            if (done) showResult(false);
+        }
+
+        function persist() { K.save('loop_' + mode, { p: pIndex, day: K.dayNumber(), words, done }); }
+
+        function layout() {
+            posOf = {};
+            const lo = 70, hi = 270, mids = [120, 170, 220];
+            sides.forEach((str, s) => {
+                str.split('').forEach((c, i) => {
+                    let x, y, lx, ly;
+                    if (s === 0) { x = mids[i]; y = lo; lx = x; ly = lo - 32; }
+                    if (s === 1) { x = hi; y = mids[i]; lx = hi + 32; ly = y; }
+                    if (s === 2) { x = mids[2 - i]; y = hi; lx = x; ly = hi + 32; }
+                    if (s === 3) { x = lo; y = mids[2 - i]; lx = lo - 32; ly = y; }
+                    posOf[c] = { x, y, lx, ly };
+                });
+            });
+        }
+
+        function usedLetters() {
+            const u = new Set();
+            words.concat([cur]).forEach(w => w.split('').forEach(c => u.add(c)));
+            return u;
+        }
+
+        function render() {
+            const svg = document.getElementById('box');
+            const used = usedLetters();
+            let html = '<rect class="sq" x="70" y="70" width="200" height="200" rx="4"/>';
+            words.forEach(w => { for (let i = 1; i < w.length; i++) html += line(w[i - 1], w[i], ''); });
+            for (let i = 1; i < cur.length; i++) html += line(cur[i - 1], cur[i], 'live');
+            Object.keys(posOf).forEach(c => {
+                const p = posOf[c];
+                const isCur = cur && cur[cur.length - 1] === c;
+                html += '<circle class="dot' + (used.has(c) ? ' used' : '') + (isCur ? ' cur' : '') + '" cx="' + p.x + '" cy="' + p.y + '" r="9"/>';
+                html += '<text class="ltr' + (used.has(c) ? ' used' : '') + '" x="' + p.lx + '" y="' + p.ly + '">' + c.toUpperCase() + '</text>';
+                html += '<circle class="hit" data-c="' + c + '" cx="' + ((p.x + p.lx) / 2) + '" cy="' + ((p.y + p.ly) / 2) + '" r="26"/>';
+            });
+            svg.innerHTML = html;
+            document.getElementById('word').innerHTML = cur.toUpperCase() + '<span class="cursor"></span>';
+            document.getElementById('chain').textContent = words.length ? words.join(' – ') : '';
+            const left = 12 - Array.from(usedLetters()).length;
+            document.getElementById('goal').textContent = done ? 'Solved!' : 'Try to solve it in ' + PAR + ' words or fewer. ' + (words.length ? left + ' letters left.' : '');
+        }
+
+        function line(a, b, cls) {
+            const p = posOf[a], q = posOf[b];
+            return '<line class="' + cls + '" x1="' + p.x + '" y1="' + p.y + '" x2="' + q.x + '" y2="' + q.y + '"/>';
+        }
+
+        function tap(c) {
+            if (done || !(c in sideOf)) return;
+            const last = cur[cur.length - 1];
+            if (last && sideOf[last] === sideOf[c]) {
+                if (last === c && cur.length === 1 && words.length) return; // first letter is locked
+                return K.toast('Pick a letter from a different side');
+            }
+            cur += c;
+            render();
+        }
+
+        function del() {
+            if (done) return;
+            if (cur.length > 1) cur = cur.slice(0, -1);
+            else if (cur.length === 1 && words.length) {
+                // step back into the previous word
+                cur = words.pop();
+            } else cur = '';
+            render();
+            persist();
+        }
+
+        function enter() {
+            if (done) return;
+            if (cur.length < 3) { K.shake(document.getElementById('word')); return K.toast('Too short'); }
+            if (!WORD_DICT.has(cur)) { K.shake(document.getElementById('word')); return K.toast('Not in word list'); }
+            words.push(cur);
+            cur = cur[cur.length - 1];
+            if (usedLetters().size === 12) {
+                done = true;
+                cur = '';
+                const st = K.load('loop_stats_' + mode, { played: 0, wins: 0 });
+                st.played++; st.wins++;
+                K.save('loop_stats_' + mode, st);
+                showResult(true);
+            }
+            persist();
+            render();
+        }
+
+        function showResult() {
+            const n = words.length;
+            document.getElementById('resultTitle').textContent = n <= 2 ? 'Perfect loop!' : n <= PAR ? 'Nicely done!' : 'Solved!';
+            document.getElementById('resultText').textContent = 'You used all twelve letters in ' + n + (n === 1 ? ' word' : ' words') +
+                '. One possible answer: ' + solution.join(' – ').toUpperCase() + '.';
+            document.getElementById('nextBtn').textContent = mode === 'daily' ? 'Play unlimited' : 'New puzzle';
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('box').addEventListener('click', e => {
+            const c = e.target.getAttribute && e.target.getAttribute('data-c');
+            if (c) tap(c);
+        });
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            if (/^[a-zA-Z]$/.test(e.key)) { tap(e.key.toLowerCase()); e.preventDefault(); }
+            else if (e.key === 'Backspace') { del(); e.preventDefault(); }
+            else if (e.key === 'Enter') { enter(); e.preventDefault(); }
+        });
+        document.getElementById('enterBtn').addEventListener('click', enter);
+        document.getElementById('delBtn').addEventListener('click', del);
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            if (done) return;
+            words = []; cur = ''; persist(); render();
+        });
+        document.getElementById('revealBtn').addEventListener('click', () => {
+            K.toast('One answer: ' + solution.join(' – ').toUpperCase(), 4000);
+        });
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            K.share('Letter Loop ' + (mode === 'daily' ? '#' + (K.dayNumber() + 1) + ' ' : '') + 'solved in ' + words.length + ' words 🔁\n' + location.href.split('?')[0]);
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'free'));
+            K.save('loop_free', null);
+            start('free');
+        });
+        K.modeTabs(document.getElementById('tabs'), m => start(m, m === 'free' ? (K.load('loop_free', null) || {}).p : undefined));
+        start('daily');
+    })();
+    </script>
+</body>
+</html>

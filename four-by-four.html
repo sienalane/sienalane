@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Four by Four - Siena Lane</title>
+    <meta name="description" content="Sort sixteen words into four hidden groups.">
+    <link rel="stylesheet" href="game-common.css">
+    <style>
+        .solved { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+        .group {
+            border-radius: 10px; padding: 0.7rem; text-align: center; color: #2b2b2b;
+            animation: pop 0.35s ease;
+        }
+        .group strong { display: block; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.95rem; }
+        .group span { font-size: 0.9rem; text-transform: uppercase; }
+        .lv1 { background: var(--g1); } .lv2 { background: var(--g2); } .lv3 { background: var(--g3); } .lv4 { background: var(--g4); }
+        @media (prefers-color-scheme: dark) { .group { color: #f2f2f2; } }
+        @keyframes pop { 0% { transform: scale(0.95); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
+
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .card {
+            aspect-ratio: 1.6; border: none; border-radius: 10px; background: var(--sage-very-light);
+            color: var(--text-primary); font: inherit; font-weight: 700; text-transform: uppercase;
+            font-size: clamp(0.62rem, 2.6vw, 0.95rem); cursor: pointer; padding: 0.25rem; word-break: break-word;
+            transition: transform 0.1s ease, background 0.15s ease;
+        }
+        .card:active { transform: scale(0.96); }
+        .card.sel { background: var(--sage-dark); color: var(--cream); }
+        .card.bump { animation: bump 0.4s ease; }
+        @keyframes bump { 50% { transform: translateY(-6px); } }
+
+        .mistakes { text-align: center; margin: 1rem 0; color: var(--muted); font-size: 0.95rem; }
+        .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--sage-dark); margin: 0 3px; vertical-align: middle; }
+        .dot.used { background: var(--tile-border); }
+</style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="quizzes.html" class="nav-link">Quizzes</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <a href="games.html" class="back-link">&larr; All games</a>
+            <h1>Four by Four</h1>
+            <p>Find four groups of four words that belong together.</p>
+        </div>
+
+        <div class="game-card">
+            <div class="mode-bar">
+                <div class="mode-tabs" id="tabs">
+                    <button data-mode="daily" class="on">Daily</button>
+                    <button data-mode="free">Unlimited</button>
+                </div>
+                <span class="mode-label" id="modeLabel"></span>
+            </div>
+
+            <div class="solved" id="solved"></div>
+            <div class="grid" id="grid"></div>
+            <div class="mistakes" id="mistakes"></div>
+            <div class="btn-row" id="controls">
+                <button class="btn btn-secondary" id="shuffleBtn">Shuffle</button>
+                <button class="btn btn-secondary" id="clearBtn">Deselect all</button>
+                <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+            </div>
+
+            <div class="result-box" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="shareBtn">Share</button>
+                    <button class="btn btn-secondary" id="nextBtn">Next puzzle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <h2>How to play</h2>
+            <ul>
+                <li>Pick four words that share something in common, then press Submit.</li>
+                <li>Groups go from <strong>yellow</strong> (most straightforward) to <strong>purple</strong> (trickiest).</li>
+                <li>Watch out for words that seem to fit more than one group.</li>
+                <li>You can make four mistakes before the game ends.</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script src="game-common.js"></script>
+    <script>
+    (function () {
+        const K = GameKit;
+        // Each puzzle: 4 groups, easiest to hardest: [category, word, word, word, word]
+        const PUZZLES = [
+            [['Fruits', 'MANGO', 'PEACH', 'GRAPE', 'LEMON'], ['Things with keys', 'PIANO', 'KEYBOARD', 'MAP', 'JANITOR'], ['___cake', 'CUP', 'PAN', 'CHEESE', 'CARROT'], ['Palindromes', 'KAYAK', 'LEVEL', 'RADAR', 'CIVIC']],
+            [['Colors', 'TEAL', 'MAROON', 'IVORY', 'OLIVE'], ['Pasta shapes', 'PENNE', 'ORZO', 'ZITI', 'FUSILLI'], ['Wild cats', 'OCELOT', 'SERVAL', 'LYNX', 'CHEETAH'], ['Cars named after animals', 'MUSTANG', 'BEETLE', 'IMPALA', 'JAGUAR']],
+            [['Breakfast foods', 'WAFFLE', 'BAGEL', 'OMELET', 'PANCAKE'], ['Card games', 'POKER', 'BRIDGE', 'RUMMY', 'HEARTS'], ['___ball', 'BASKET', 'FOOT', 'MEAT', 'SNOW'], ['Hidden body parts', 'CHINA', 'SHINE', 'EARTH', 'LEGEND']],
+            [['Weather', 'SLEET', 'HAIL', 'FOG', 'DRIZZLE'], ['Instruments', 'CELLO', 'TUBA', 'OBOE', 'HARP'], ['Shades of blue', 'NAVY', 'COBALT', 'AZURE', 'SAPPHIRE'], ['___storm', 'BRAIN', 'FIRE', 'SAND', 'BARN']],
+            [['Birds', 'ROBIN', 'FINCH', 'HERON', 'EAGLE'], ['Animal group names', 'PRIDE', 'PARLIAMENT', 'MURDER', 'GAGGLE'], ['Verbs that mean pester', 'BADGER', 'HOUND', 'BUG', 'FERRET'], ['___fish', 'CAT', 'DOG', 'LION', 'STAR']],
+            [['Kitchen tools', 'WHISK', 'LADLE', 'SPATULA', 'GRATER'], ['Chess pieces', 'KNIGHT', 'BISHOP', 'ROOK', 'PAWN'], ['Poker terms', 'FLUSH', 'BLUFF', 'RIVER', 'FOLD'], ['___board', 'CARD', 'SKATE', 'CLIP', 'DASH']],
+            [['Planets', 'MARS', 'VENUS', 'SATURN', 'MERCURY'], ['Greek letters', 'ALPHA', 'DELTA', 'SIGMA', 'OMEGA'], ['Elements', 'NEON', 'IRON', 'ZINC', 'COPPER'], ['___ code', 'MORSE', 'ZIP', 'AREA', 'DRESS']],
+            [['Dog breeds', 'BEAGLE', 'POODLE', 'BOXER', 'CORGI'], ['Punches', 'JAB', 'HOOK', 'CROSS', 'UPPERCUT'], ['Pirate gear', 'PLANK', 'PARROT', 'CUTLASS', 'DOUBLOON'], ['Anagrams of STEAL', 'LEAST', 'SLATE', 'TALES', 'STALE']],
+            [['Vegetables', 'CARROT', 'CELERY', 'RADISH', 'TURNIP'], ['Dances', 'SALSA', 'TANGO', 'WALTZ', 'SAMBA'], ['Dips and spreads', 'GUACAMOLE', 'HUMMUS', 'PESTO', 'AIOLI'], ['Silent first letter', 'KNEE', 'WRIST', 'GNOME', 'PSALM']],
+            [['Shapes', 'CIRCLE', 'SQUARE', 'OVAL', 'TRIANGLE'], ['In a wallet', 'CASH', 'RECEIPT', 'LICENSE', 'COUPON'], ['Music genres', 'JAZZ', 'BLUES', 'FUNK', 'SOUL'], ['___box', 'JUKE', 'LUNCH', 'SOAP', 'TOOL']],
+            [['Ice cream flavors', 'VANILLA', 'MINT', 'PISTACHIO', 'STRAWBERRY'], ['Gemstones', 'EMERALD', 'TOPAZ', 'OPAL', 'GARNET'], ['Programming languages', 'JAVA', 'PYTHON', 'SWIFT', 'RUST'], ['Things you crack', 'KNUCKLE', 'CODE', 'SAFE', 'SMILE']],
+            [['Sports', 'TENNIS', 'GOLF', 'RUGBY', 'CRICKET'], ['Insects', 'BEETLE', 'MOTH', 'WASP', 'FLEA'], ['Golf scores', 'EAGLE', 'BIRDIE', 'BOGEY', 'PAR'], ['___room', 'MUSH', 'BALL', 'BATH', 'CLASS']],
+            [['Furniture', 'SOFA', 'DRESSER', 'BENCH', 'STOOL'], ['In a courtroom', 'JUDGE', 'JURY', 'VERDICT', 'GAVEL'], ['Baking staples', 'FLOUR', 'YEAST', 'SUGAR', 'EGGS'], ['___fly', 'BUTTER', 'DRAGON', 'FIRE', 'HOUSE']],
+            [['Sea creatures', 'SQUID', 'OCTOPUS', 'DOLPHIN', 'URCHIN'], ['Things you inflate', 'BALLOON', 'TIRE', 'RAFT', 'EGO'], ['___shot', 'MUG', 'SNAP', 'BIG', 'MOON'], ['Things with scales', 'FISH', 'PIANO', 'MAP', 'DRAGON']],
+            [['Summer things', 'SUNSCREEN', 'POPSICLE', 'HAMMOCK', 'SPRINKLER'], ['Slang for money', 'DOUGH', 'BREAD', 'BUCKS', 'CHEDDAR'], ['Cheeses', 'BRIE', 'GOUDA', 'FETA', 'SWISS'], ['___wood', 'HOLLY', 'DRIFT', 'SANDAL', 'FIRE']],
+            [['Farm animals', 'COW', 'GOAT', 'HORSE', 'SHEEP'], ['Constellations', 'ORION', 'DRACO', 'LYRA', 'PEGASUS'], ['Mythical creatures', 'UNICORN', 'PHOENIX', 'GRIFFIN', 'KRAKEN'], ['___pen', 'PIG', 'PLAY', 'BALL', 'FOUNTAIN']],
+            [['Trees', 'OAK', 'MAPLE', 'BIRCH', 'CEDAR'], ['On a desk', 'STAPLER', 'PENCIL', 'ERASER', 'RULER'], ['Words for leader', 'CHIEF', 'CAPTAIN', 'BOSS', 'HEAD'], ['Things with rings', 'SATURN', 'BELL', 'CIRCUS', 'ONION']],
+            [['Coffee drinks', 'LATTE', 'MOCHA', 'ESPRESSO', 'CORTADO'], ['Sewing kit', 'NEEDLE', 'THREAD', 'THIMBLE', 'BOBBIN'], ['Social media actions', 'POST', 'LIKE', 'SHARE', 'FOLLOW'], ['___line', 'HEAD', 'DEAD', 'PUNCH', 'FINISH']],
+            [['Bodies of water', 'LAKE', 'POND', 'BAY', 'LAGOON'], ['On a farm', 'BARN', 'SILO', 'TRACTOR', 'FENCE'], ['Horses', 'MARE', 'FOAL', 'COLT', 'STALLION'], ['Things that run', 'NOSE', 'ENGINE', 'CANDIDATE', 'FAUCET']],
+            [['Hats', 'BERET', 'FEDORA', 'BEANIE', 'SOMBRERO'], ['Units', 'INCH', 'OUNCE', 'GALLON', 'MILE'], ['A tiny amount', 'PINCH', 'DASH', 'SPLASH', 'SMIDGEN'], ['___bowl', 'SUPER', 'DUST', 'FISH', 'SALAD']],
+            [['Desserts', 'CUPCAKE', 'PUDDING', 'SUNDAE', 'COBBLER'], ['Things with wings', 'AIRPLANE', 'ANGEL', 'BAT', 'HOSPITAL'], ['Baseball words', 'PITCH', 'BASE', 'MITT', 'INNING'], ['___point', 'BROWNIE', 'BALL', 'BREAKING', 'MATCH']],
+            [['Camping gear', 'TENT', 'LANTERN', 'CANTEEN', 'HATCHET'], ['Math results', 'SUM', 'PRODUCT', 'QUOTIENT', 'DIFFERENCE'], ['Starts with a body part', 'FOOTNOTE', 'HANDBAG', 'EARRING', 'ARMCHAIR'], ['Things with needles', 'PINE', 'COMPASS', 'CACTUS', 'SYRINGE']],
+            [['Rodents', 'HAMSTER', 'BEAVER', 'SQUIRREL', 'GERBIL'], ['Shades of red', 'CRIMSON', 'SCARLET', 'RUBY', 'CHERRY'], ['Cocktails', 'MOJITO', 'MARTINI', 'DAIQUIRI', 'MARGARITA'], ['U.S. presidents', 'BUSH', 'GRANT', 'FORD', 'PIERCE']],
+            [['Winter wear', 'SCARF', 'GLOVE', 'SWEATER', 'MITTEN'], ['Phone parts', 'CAMERA', 'SCREEN', 'CHARGER', 'CASE'], ['Things you dial', 'NUMBER', 'SAFE', 'THERMOSTAT', 'RADIO'], ['___ship', 'FRIEND', 'HARD', 'WAR', 'SCHOLAR']],
+            [['Pizza toppings', 'PEPPERONI', 'OLIVE', 'ONION', 'MUSHROOM'], ['Royalty', 'QUEEN', 'PRINCE', 'DUKE', 'BARON'], ['Hot peppers', 'JALAPENO', 'CAYENNE', 'HABANERO', 'SERRANO'], ['Hidden numbers', 'OFTEN', 'STONE', 'WEIGHT', 'CANINE']],
+            [['Australian animals', 'KANGAROO', 'KOALA', 'WOMBAT', 'PLATYPUS'], ['Movie genres', 'HORROR', 'COMEDY', 'WESTERN', 'THRILLER'], ['Hot ___', 'DOG', 'SAUCE', 'TUB', 'SPRING'], ['Sound like letters', 'BEE', 'SEA', 'TEA', 'EYE']],
+            [['In the sky', 'CLOUD', 'KITE', 'RAINBOW', 'COMET'], ['Halloween', 'PUMPKIN', 'COSTUME', 'CANDY', 'GHOST'], ['Terms of endearment', 'HONEY', 'SUGAR', 'DARLING', 'SWEETIE'], ['___light', 'MOON', 'STAR', 'FLASH', 'SPOT']],
+            [['Breads', 'BAGUETTE', 'BRIOCHE', 'FOCACCIA', 'CIABATTA'], ['Office supplies', 'STAPLE', 'BINDER', 'FOLDER', 'MARKER'], ['Rivers', 'NILE', 'AMAZON', 'DANUBE', 'THAMES'], ['Add S to the front', 'HOVEL', 'NOW', 'LICE', 'PILL']],
+            [['Music terms', 'TEMPO', 'CHORD', 'MELODY', 'RHYTHM'], ['Spices', 'CUMIN', 'NUTMEG', 'PAPRIKA', 'TURMERIC'], ['Butterfly life cycle', 'CATERPILLAR', 'CHRYSALIS', 'COCOON', 'BUTTERFLY'], ['Anagrams of LISTEN', 'SILENT', 'ENLIST', 'TINSEL', 'INLETS']],
+            [['Zoo jobs', 'KEEPER', 'VET', 'DOCENT', 'CURATOR'], ['Soccer positions', 'STRIKER', 'GOALIE', 'DEFENDER', 'MIDFIELDER'], ['Parts of the eye', 'IRIS', 'PUPIL', 'LENS', 'RETINA'], ['___work', 'HOME', 'FRAME', 'TEAM', 'CLOCK']]
+        ];
+        const MAX_MISTAKES = 4;
+        const gridEl = document.getElementById('grid');
+        const solvedEl = document.getElementById('solved');
+        let mode = 'daily', pIndex, puzzle, order, selected, solved, mistakes, history, done;
+
+        function start(m, idx) {
+            mode = m;
+            const day = K.dayNumber();
+            const label = document.getElementById('modeLabel');
+            if (mode === 'daily') {
+                pIndex = ((day % PUZZLES.length) + PUZZLES.length) % PUZZLES.length;
+                label.textContent = 'Puzzle #' + (day + 1) + ' · ' + K.dateLabel();
+            } else {
+                pIndex = idx !== undefined ? idx : Math.floor(Math.random() * PUZZLES.length);
+                label.textContent = 'Unlimited · Puzzle ' + (pIndex + 1) + ' of ' + PUZZLES.length;
+            }
+            puzzle = PUZZLES[pIndex];
+            selected = []; solved = []; mistakes = 0; history = []; done = false;
+            const saved = K.load('fxf_' + mode, null);
+            if (saved && saved.p === pIndex && (mode === 'free' || saved.day === day)) {
+                solved = saved.solved; mistakes = saved.mistakes; history = saved.history; order = saved.order;
+            } else {
+                order = K.shuffle(puzzle.flatMap(g => g.slice(1)));
+            }
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('controls').style.display = '';
+            render();
+            if (solved.length === 4 || mistakes >= MAX_MISTAKES) finish(false);
+        }
+
+        function persist() {
+            K.save('fxf_' + mode, { p: pIndex, day: K.dayNumber(), solved, mistakes, history, order });
+        }
+
+        function groupOf(word) { return puzzle.findIndex(g => g.slice(1).includes(word)); }
+
+        function render() {
+            solvedEl.innerHTML = '';
+            solved.forEach(gi => {
+                const g = puzzle[gi];
+                const div = document.createElement('div');
+                div.className = 'group lv' + (gi + 1);
+                div.innerHTML = '<strong></strong><span></span>';
+                div.querySelector('strong').textContent = g[0];
+                div.querySelector('span').textContent = g.slice(1).join(', ');
+                solvedEl.appendChild(div);
+            });
+            gridEl.innerHTML = '';
+            order.filter(w => !solved.includes(groupOf(w))).forEach(w => {
+                const b = document.createElement('button');
+                b.className = 'card' + (selected.includes(w) ? ' sel' : '');
+                b.textContent = w;
+                b.addEventListener('click', () => toggle(w));
+                gridEl.appendChild(b);
+            });
+            const left = MAX_MISTAKES - mistakes;
+            document.getElementById('mistakes').innerHTML = 'Mistakes remaining: ' +
+                Array.from({ length: MAX_MISTAKES }, (_, i) => '<span class="dot' + (i >= left ? ' used' : '') + '"></span>').join('');
+            document.getElementById('submitBtn').disabled = selected.length !== 4 || done;
+            document.getElementById('clearBtn').disabled = !selected.length;
+        }
+
+        function toggle(w) {
+            if (done) return;
+            if (selected.includes(w)) selected = selected.filter(x => x !== w);
+            else if (selected.length < 4) selected.push(w);
+            render();
+        }
+
+        function submit() {
+            if (selected.length !== 4 || done) return;
+            const key = selected.slice().sort().join('|');
+            if (history.some(h => h.key === key)) return K.toast('Already guessed');
+            const groups = selected.map(groupOf);
+            history.push({ key, groups });
+            const counts = {};
+            groups.forEach(g => counts[g] = (counts[g] || 0) + 1);
+            const best = Math.max(...Object.values(counts));
+            if (best === 4) {
+                solved.push(groups[0]);
+                selected = [];
+                render();
+                if (solved.length === 4) setTimeout(() => finish(true), 400);
+            } else {
+                mistakes++;
+                gridEl.querySelectorAll('.card.sel').forEach(c => K.shake(c));
+                K.toast(best === 3 ? 'One away...' : 'Not quite');
+                if (mistakes >= MAX_MISTAKES) {
+                    selected = [];
+                    // reveal remaining groups in order
+                    for (let i = 0; i < 4; i++) if (!solved.includes(i)) solved.push(i);
+                    setTimeout(() => { render(); finish(true); }, 600);
+                } else render();
+            }
+            persist();
+        }
+
+        function finish(record) {
+            done = true;
+            const won = mistakes < MAX_MISTAKES;
+            if (record) {
+                const st = K.load('fxf_stats_' + mode, { played: 0, wins: 0, perfect: 0 });
+                st.played++; if (won) st.wins++; if (won && mistakes === 0) st.perfect++;
+                K.save('fxf_stats_' + mode, st);
+            }
+            persist();
+            render();
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('resultTitle').textContent = won ? (mistakes === 0 ? 'Perfect!' : 'Solved!') : 'Next time';
+            const st = K.load('fxf_stats_' + mode, { played: 0, wins: 0, perfect: 0 });
+            document.getElementById('resultText').textContent = (won ? 'You found all four groups with ' + mistakes + (mistakes === 1 ? ' mistake. ' : ' mistakes. ') : 'Here are the answers. ') +
+                'Solved ' + st.wins + ' of ' + st.played + ' played.';
+            document.getElementById('nextBtn').textContent = mode === 'daily' ? 'Play unlimited' : 'Next puzzle';
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', submit);
+        document.getElementById('clearBtn').addEventListener('click', () => { selected = []; render(); });
+        document.getElementById('shuffleBtn').addEventListener('click', () => {
+            order = K.shuffle(order);
+            render();
+            gridEl.querySelectorAll('.card').forEach(c => c.classList.add('bump'));
+            persist();
+        });
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const em = ['🟨', '🟩', '🟦', '🟪'];
+            const lines = history.map(h => h.groups.map(g => em[g]).join(''));
+            K.share('Four by Four ' + (mode === 'daily' ? '#' + (K.dayNumber() + 1) : '') + '\n' + lines.join('\n') + '\n' + location.href.split('?')[0]);
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'free'));
+            const next = mode === 'free' ? (pIndex + 1) % PUZZLES.length : undefined;
+            K.save('fxf_free', null);
+            start('free', next);
+        });
+        K.modeTabs(document.getElementById('tabs'), m => start(m, m === 'free' ? (K.load('fxf_free', null) || {}).p : undefined));
+        start('daily');
+    })();
+    </script>
+</body>
+</html>

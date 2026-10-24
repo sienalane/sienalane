@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Close Call - Siena Lane</title>
+    <meta name="description" content="Guess the secret word. Every guess is ranked by how close it is in meaning.">
+    <link rel="stylesheet" href="game-common.css">
+    <style>
+        .guess-form { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .guess-form input {
+            flex: 1; min-width: 0; padding: 0.7rem 1rem; font: inherit; font-size: 1.05rem;
+            border: 2px solid var(--tile-border); border-radius: 25px; background: var(--tile-bg); color: var(--text-primary);
+        }
+        .guess-form input:focus { outline: none; border-color: var(--sage-dark); }
+        .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.9rem; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+        .last { margin-bottom: 0.75rem; }
+        .last .gl { outline: 2px solid var(--text-primary); }
+        .list { display: flex; flex-direction: column; gap: 5px; }
+        .gl {
+            position: relative; display: flex; justify-content: space-between; align-items: center;
+            padding: 0.45rem 0.9rem; border-radius: 8px; background: var(--sage-very-light); overflow: hidden; font-weight: 600;
+        }
+        .gl .bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; opacity: 0.85; }
+        .gl span { position: relative; }
+        .gl.hot .bar { background: var(--good); }
+        .gl.warm .bar { background: var(--close); }
+        .gl.cold .bar { background: #c98a7d; }
+        .gl.win { background: var(--good); color: #fff; }
+        .legend { display: flex; gap: 1rem; font-size: 0.85rem; color: var(--muted); justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
+        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+        .loading { text-align: center; color: var(--muted); padding: 2rem; }
+</style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="quizzes.html" class="nav-link">Quizzes</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <a href="games.html" class="back-link">&larr; All games</a>
+            <h1>Close Call</h1>
+            <p>Find the secret word. Each guess shows how close it is in meaning.</p>
+        </div>
+
+        <div class="game-card">
+            <div class="mode-bar">
+                <div class="mode-tabs" id="tabs">
+                    <button data-mode="daily" class="on">Daily</button>
+                    <button data-mode="free">Unlimited</button>
+                </div>
+                <span class="mode-label" id="modeLabel"></span>
+            </div>
+
+            <form class="guess-form" id="form" autocomplete="off">
+                <input id="input" type="text" placeholder="Type a word" aria-label="Your guess" autocapitalize="none" spellcheck="false">
+                <button class="btn btn-primary" type="submit">Guess</button>
+            </form>
+            <div class="meta">
+                <span id="count">Guesses: 0</span>
+                <span>
+                    <button class="btn btn-secondary" id="hintBtn" type="button" style="padding:0.3rem 0.9rem">Hint</button>
+                    <button class="btn btn-secondary" id="giveBtn" type="button" style="padding:0.3rem 0.9rem">Give up</button>
+                </span>
+            </div>
+
+            <div class="result-box" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="shareBtn">Share</button>
+                    <button class="btn btn-secondary" id="nextBtn">New word</button>
+                </div>
+            </div>
+
+            <div class="last" id="last"></div>
+            <div class="list" id="list"><div class="loading">Loading words...</div></div>
+            <div class="legend">
+                <span><i style="background:var(--good)"></i>Top 300</span>
+                <span><i style="background:var(--close)"></i>301 to 1,000</span>
+                <span><i style="background:#c98a7d"></i>Farther away</span>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <h2>How to play</h2>
+            <ul>
+                <li>Guess any word. It gets a number showing how close it is to the secret word.</li>
+                <li>The secret word is #1. Lower numbers mean you're getting warmer.</li>
+                <li>Closeness is about meaning and how words are used together, not spelling.</li>
+                <li>The secret word is always a common noun. Stuck? Use a hint to reveal a closer word.</li>
+                <li>You get unlimited guesses.</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script src="game-common.js"></script>
+    <script src="close-call-data.js"></script>
+    <script>
+    (function () {
+        const K = GameKit;
+        const D = window.CLOSE_DATA;
+        const VOCAB = D.vocab.split(' ');
+        const VIDX = new Map(VOCAB.map((w, i) => [w, i]));
+        const N_RANKED = 2000;
+        let mode = 'daily', tIndex, target, rankOf, wordAt, guesses, hints, done, lastWord;
+
+        function decode(b64) {
+            const bin = atob(b64);
+            const arr = new Uint16Array(bin.length / 2);
+            for (let i = 0; i < arr.length; i++) arr[i] = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+            return arr;
+        }
+
+        function start(m, idx) {
+            mode = m;
+            const day = K.dayNumber();
+            if (mode === 'daily') {
+                tIndex = ((day % D.targets.length) + D.targets.length) % D.targets.length;
+                document.getElementById('modeLabel').textContent = 'Puzzle #' + (day + 1) + ' · ' + K.dateLabel();
+            } else {
+                tIndex = idx !== undefined && idx !== null ? idx : Math.floor(Math.random() * D.targets.length);
+                document.getElementById('modeLabel').textContent = 'Unlimited';
+            }
+            target = D.targets[tIndex];
+            const order = decode(D.ranks[tIndex]);
+            rankOf = new Map();
+            wordAt = [];
+            order.forEach((vi, r) => { rankOf.set(VOCAB[vi], r + 1); wordAt.push(VOCAB[vi]); });
+            const saved = K.load('close_' + mode, null);
+            guesses = []; hints = 0; done = false; lastWord = null;
+            if (saved && saved.t === tIndex && (mode === 'free' || saved.day === day)) {
+                guesses = saved.guesses; hints = saved.hints; done = saved.done;
+            }
+            document.getElementById('result').classList.remove('show');
+            render();
+            if (done) showResult(guesses.some(g => g.r === 1) && !guesses.find(g => g.r === 1).gaveUp);
+        }
+
+        function persist() { K.save('close_' + mode, { t: tIndex, day: K.dayNumber(), guesses, hints, done }); }
+
+        function normalize(w) {
+            w = w.trim().toLowerCase().replace(/[^a-z]/g, '');
+            if (VIDX.has(w)) return w;
+            const tries = [];
+            if (w.endsWith('ies')) tries.push(w.slice(0, -3) + 'y');
+            if (w.endsWith('es')) tries.push(w.slice(0, -2));
+            if (w.endsWith('s')) tries.push(w.slice(0, -1));
+            for (const t of tries) if (VIDX.has(t)) return t;
+            return null;
+        }
+
+        function rankFor(w) { return rankOf.get(w) || null; }
+
+        function rowHTML(g) {
+            const r = g.r;
+            const cls = r === 1 ? 'win' : r && r <= 300 ? 'hot' : r && r <= 1000 ? 'warm' : 'cold';
+            let pct;
+            if (!r) pct = 4;
+            else pct = Math.max(4, 100 - Math.log(r) / Math.log(N_RANKED) * 96);
+            return '<div class="gl ' + cls + '">' + (r === 1 ? '' : '<div class="bar" style="width:' + pct + '%"></div>') +
+                '<span>' + g.w + (g.hint ? ' 💡' : '') + '</span><span>' + (r ? r.toLocaleString() : (N_RANKED.toLocaleString() + '+')) + '</span></div>';
+        }
+
+        function render() {
+            document.getElementById('count').textContent = 'Guesses: ' + guesses.filter(g => !g.hint).length + (hints ? ' · Hints: ' + hints : '');
+            const last = guesses.find(g => g.w === lastWord);
+            document.getElementById('last').innerHTML = last ? rowHTML(last) : '';
+            const sorted = guesses.slice().sort((a, b) => (a.r || 1e9) - (b.r || 1e9));
+            document.getElementById('list').innerHTML = sorted.map(rowHTML).join('');
+            document.getElementById('input').disabled = done;
+            document.getElementById('hintBtn').disabled = done;
+            document.getElementById('giveBtn').disabled = done;
+        }
+
+        function addGuess(raw, isHint) {
+            if (done) return;
+            const cleaned = raw.trim().toLowerCase();
+            if (!cleaned) return;
+            const w = normalize(cleaned);
+            if (!w) { K.shake(document.getElementById('input')); return K.toast("Sorry, I don't know that word"); }
+            if (guesses.some(g => g.w === w)) {
+                lastWord = w; render();
+                return K.toast(w === cleaned ? 'Already guessed' : 'Already guessed as "' + w + '"');
+            }
+            const r = rankFor(w);
+            guesses.push({ w, r, hint: !!isHint });
+            lastWord = w;
+            if (r === 1) {
+                done = true;
+                const st = K.load('close_stats_' + mode, { played: 0, wins: 0 });
+                st.played++; st.wins++;
+                K.save('close_stats_' + mode, st);
+                showResult(true);
+            }
+            persist();
+            render();
+        }
+
+        function showResult(won) {
+            const real = guesses.filter(g => !g.hint).length;
+            document.getElementById('resultTitle').textContent = won ? 'You got it!' : 'The word was "' + target + '"';
+            document.getElementById('resultText').textContent = won
+                ? 'The secret word was "' + target + '". You found it in ' + real + (real === 1 ? ' guess' : ' guesses') + (hints ? ' and ' + hints + (hints === 1 ? ' hint.' : ' hints.') : '.')
+                : 'Better luck on the next one.';
+            document.getElementById('nextBtn').textContent = mode === 'daily' ? 'Play unlimited' : 'New word';
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('form').addEventListener('submit', e => {
+            e.preventDefault();
+            const inp = document.getElementById('input');
+            addGuess(inp.value, false);
+            inp.value = '';
+            inp.focus();
+        });
+        document.getElementById('hintBtn').addEventListener('click', () => {
+            const ranks = guesses.map(g => g.r).filter(Boolean);
+            const best = ranks.length ? Math.min(...ranks) : 600;
+            let r = best <= 2 ? 2 : Math.max(2, Math.floor(best / 2));
+            while (r > 1 && guesses.some(g => g.w === wordAt[r - 1])) r--;
+            if (r <= 1) return K.toast('No more hints. You are right next to it!');
+            hints++;
+            addGuess(wordAt[r - 1], true);
+        });
+        document.getElementById('giveBtn').addEventListener('click', () => {
+            if (!confirm('Give up and reveal the word?')) return;
+            done = true;
+            guesses.push({ w: target, r: 1, hint: true, gaveUp: true });
+            lastWord = target;
+            const st = K.load('close_stats_' + mode, { played: 0, wins: 0 });
+            st.played++;
+            K.save('close_stats_' + mode, st);
+            persist();
+            render();
+            showResult(false);
+        });
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const real = guesses.filter(g => !g.hint).length;
+            const hot = guesses.filter(g => g.r && g.r <= 300 && !g.hint).length;
+            const warm = guesses.filter(g => g.r && g.r > 300 && g.r <= 1000 && !g.hint).length;
+            const cold = real - hot - warm;
+            const won = !guesses.some(g => g.gaveUp);
+            K.share('Close Call ' + (mode === 'daily' ? '#' + (K.dayNumber() + 1) + ' ' : '') + (won ? 'solved in ' + real + ' guesses' : 'gave up after ' + real + ' guesses') +
+                (hints ? ' (' + hints + ' hints)' : '') + '\n🟩 ' + hot + '  🟨 ' + warm + '  🟥 ' + cold + '\n' + location.href.split('?')[0]);
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'free'));
+            K.save('close_free', null);
+            start('free');
+        });
+        K.modeTabs(document.getElementById('tabs'), m => start(m, m === 'free' ? (K.load('close_free', null) || {}).t : undefined));
+        start('daily');
+    })();
+    </script>
+</body>
+</html>

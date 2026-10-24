@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess Five - Siena Lane</title>
+    <meta name="description" content="Guess the five-letter word in six tries.">
+    <link rel="stylesheet" href="game-common.css">
+    <style>
+        .board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px; width: min(330px, 100%); margin: 0 auto 1.25rem; }
+        .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .tile {
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            font-size: clamp(1.4rem, 7vw, 2rem); font-weight: 700; text-transform: uppercase;
+            border: 2px solid var(--tile-border); background: var(--tile-bg); border-radius: 6px;
+            transition: transform 0.15s ease;
+        }
+        .tile.filled { border-color: var(--muted); transform: scale(1.04); }
+        .tile.good, .tile.close, .tile.miss { color: #fff; border-color: transparent; }
+        .tile.good { background: var(--good); }
+        .tile.close { background: var(--close); }
+        .tile.miss { background: var(--miss); }
+        .tile.flip { animation: flip 0.45s ease both; }
+        @keyframes flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+
+        .keyboard { display: flex; flex-direction: column; gap: 6px; max-width: 500px; margin: 0 auto; user-select: none; }
+        .krow { display: flex; gap: 5px; justify-content: center; }
+        .key {
+            flex: 1; max-width: 44px; height: 54px; border: none; border-radius: 6px;
+            background: var(--sage-very-light); color: var(--text-primary);
+            font: inherit; font-weight: 700; font-size: 0.95rem; text-transform: uppercase; cursor: pointer;
+        }
+        .key.wide { max-width: 68px; flex: 1.5; font-size: 0.75rem; }
+        .key.good { background: var(--good); color: #fff; }
+        .key.close { background: var(--close); color: #fff; }
+        .key.miss { background: var(--miss); color: #fff; }
+
+        .stats-line { display: flex; justify-content: center; gap: 1.5rem; margin: 0.5rem 0 0.75rem; flex-wrap: wrap; }
+        .stats-line div { text-align: center; }
+        .stats-line strong { display: block; font-size: 1.4rem; color: var(--sage-dark); }
+        .stats-line span { font-size: 0.8rem; color: var(--muted); }
+        @media (max-width: 400px) { .key { height: 48px; font-size: 0.85rem; } .krow { gap: 4px; } }
+</style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="quizzes.html" class="nav-link">Quizzes</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <a href="games.html" class="back-link">&larr; All games</a>
+            <h1>Guess Five</h1>
+            <p>Find the hidden five-letter word in six tries.</p>
+        </div>
+
+        <div class="game-card">
+            <div class="mode-bar">
+                <div class="mode-tabs" id="tabs">
+                    <button data-mode="daily" class="on">Daily</button>
+                    <button data-mode="free">Unlimited</button>
+                </div>
+                <span class="mode-label" id="modeLabel"></span>
+            </div>
+
+            <div class="board" id="board"></div>
+            <div class="keyboard" id="keyboard"></div>
+
+            <div class="result-box" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+                <div class="stats-line" id="statsLine"></div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="shareBtn">Share</button>
+                    <button class="btn btn-secondary" id="nextBtn">Play unlimited</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <h2>How to play</h2>
+            <ul>
+                <li>Type any five-letter word and press Enter.</li>
+                <li><strong style="color:var(--good)">Green</strong> means the letter is in the right spot.</li>
+                <li><strong style="color:var(--close)">Gold</strong> means the letter is in the word but in a different spot.</li>
+                <li><strong style="color:var(--miss)">Gray</strong> means the letter isn't in the word.</li>
+                <li>Daily is the same word for everyone each day. Unlimited gives you a fresh word whenever you want.</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script src="game-common.js"></script>
+    <script src="guess-five-data.js"></script>
+    <script>
+    (function () {
+        const K = GameKit;
+        const ANS = G5.answers;
+        const VALID = new Set(G5.valid);
+        const ROWS = 6, LEN = 5;
+        const boardEl = document.getElementById('board');
+        const kbEl = document.getElementById('keyboard');
+        let mode = 'daily', answer, guesses, current, done;
+
+        // Board
+        for (let r = 0; r < ROWS; r++) {
+            const row = document.createElement('div');
+            row.className = 'row';
+            for (let c = 0; c < LEN; c++) {
+                const t = document.createElement('div');
+                t.className = 'tile';
+                row.appendChild(t);
+            }
+            boardEl.appendChild(row);
+        }
+        // Keyboard
+        ['qwertyuiop', 'asdfghjkl', '>zxcvbnm<'].forEach(line => {
+            const row = document.createElement('div');
+            row.className = 'krow';
+            for (const ch of line) {
+                const b = document.createElement('button');
+                b.className = 'key';
+                if (ch === '>') { b.textContent = 'Enter'; b.classList.add('wide'); b.dataset.k = 'Enter'; }
+                else if (ch === '<') { b.textContent = '⌫'; b.classList.add('wide'); b.dataset.k = 'Backspace'; b.setAttribute('aria-label', 'Delete'); }
+                else { b.textContent = ch; b.dataset.k = ch; }
+                row.appendChild(b);
+            }
+            kbEl.appendChild(row);
+        });
+        kbEl.addEventListener('click', e => {
+            const b = e.target.closest('.key');
+            if (b) { press(b.dataset.k); b.blur(); }
+        });
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)) {
+                e.preventDefault();
+                press(e.key.length === 1 ? e.key.toLowerCase() : e.key);
+            }
+        });
+
+        function score(guess, ans) {
+            const res = Array(LEN).fill('miss');
+            const left = {};
+            for (let i = 0; i < LEN; i++) {
+                if (guess[i] === ans[i]) res[i] = 'good';
+                else left[ans[i]] = (left[ans[i]] || 0) + 1;
+            }
+            for (let i = 0; i < LEN; i++) {
+                if (res[i] !== 'good' && left[guess[i]]) { res[i] = 'close'; left[guess[i]]--; }
+            }
+            return res;
+        }
+
+        function start(m, keepState) {
+            mode = m;
+            const label = document.getElementById('modeLabel');
+            if (mode === 'daily') {
+                const day = K.dayNumber();
+                answer = ANS[((day % ANS.length) + ANS.length) % ANS.length];
+                label.textContent = 'Puzzle #' + (day + 1) + ' · ' + K.dateLabel();
+                const saved = K.load('g5_daily', null);
+                guesses = (saved && saved.day === day) ? saved.guesses : [];
+            } else {
+                const saved = keepState ? K.load('g5_free', null) : null;
+                if (saved && saved.answer && !saved.done) { answer = saved.answer; guesses = saved.guesses; }
+                else { answer = ANS[Math.floor(Math.random() * ANS.length)]; guesses = []; }
+                label.textContent = 'Unlimited';
+            }
+            current = '';
+            done = false;
+            document.getElementById('result').classList.remove('show');
+            render(false);
+            if (guesses.length && (guesses[guesses.length - 1] === answer || guesses.length === ROWS)) finish(false);
+            persist();
+        }
+
+        function persist() {
+            if (mode === 'daily') K.save('g5_daily', { day: K.dayNumber(), guesses });
+            else K.save('g5_free', { answer, guesses, done });
+        }
+
+        function render(animateLast) {
+            const rows = boardEl.children;
+            const keyState = {};
+            for (let r = 0; r < ROWS; r++) {
+                const tiles = rows[r].children;
+                const g = guesses[r];
+                const res = g ? score(g, answer) : null;
+                for (let c = 0; c < LEN; c++) {
+                    const t = tiles[c];
+                    t.className = 'tile';
+                    t.style.animationDelay = '';
+                    if (g) {
+                        t.textContent = g[c];
+                        t.classList.add(res[c]);
+                        if (animateLast && r === guesses.length - 1) { t.classList.add('flip'); t.style.animationDelay = (c * 0.12) + 's'; }
+                        const prev = keyState[g[c]];
+                        const rank = { miss: 1, close: 2, good: 3 };
+                        if (!prev || rank[res[c]] > rank[prev]) keyState[g[c]] = res[c];
+                    } else if (r === guesses.length) {
+                        t.textContent = current[c] || '';
+                        if (current[c]) t.classList.add('filled');
+                    } else {
+                        t.textContent = '';
+                    }
+                }
+            }
+            kbEl.querySelectorAll('.key').forEach(k => {
+                k.classList.remove('good', 'close', 'miss');
+                if (keyState[k.dataset.k]) k.classList.add(keyState[k.dataset.k]);
+            });
+        }
+
+        function press(k) {
+            if (done) return;
+            if (k === 'Enter') return submit();
+            if (k === 'Backspace') { current = current.slice(0, -1); return render(false); }
+            if (/^[a-z]$/.test(k) && current.length < LEN) { current += k; render(false); }
+        }
+
+        function submit() {
+            const row = boardEl.children[guesses.length];
+            if (current.length < LEN) { K.shake(row); return K.toast('Not enough letters'); }
+            if (!VALID.has(current)) { K.shake(row); return K.toast('Not in word list'); }
+            guesses.push(current);
+            current = '';
+            render(true);
+            persist();
+            if (guesses[guesses.length - 1] === answer || guesses.length === ROWS) {
+                setTimeout(() => finish(true), 800);
+            }
+        }
+
+        function finish(record) {
+            done = true;
+            const won = guesses[guesses.length - 1] === answer;
+            if (record) {
+                const key = 'g5_stats_' + mode;
+                const st = K.load(key, { played: 0, wins: 0, streak: 0, best: 0, dist: [0, 0, 0, 0, 0, 0] });
+                st.played++;
+                if (won) { st.wins++; st.streak++; st.best = Math.max(st.best, st.streak); st.dist[guesses.length - 1]++; }
+                else st.streak = 0;
+                K.save(key, st);
+                persist();
+            }
+            const st = K.load('g5_stats_' + mode, { played: 0, wins: 0, streak: 0, best: 0 });
+            const msgs = ['Genius!', 'Brilliant!', 'Great job!', 'Nice!', 'Solid!', 'Phew!'];
+            document.getElementById('resultTitle').textContent = won ? msgs[guesses.length - 1] : 'So close';
+            document.getElementById('resultText').innerHTML = won
+                ? 'You found <strong>' + answer.toUpperCase() + '</strong> in ' + guesses.length + (guesses.length === 1 ? ' try.' : ' tries.')
+                : 'The word was <strong>' + answer.toUpperCase() + '</strong>.';
+            document.getElementById('statsLine').innerHTML =
+                '<div><strong>' + st.played + '</strong><span>Played</span></div>' +
+                '<div><strong>' + (st.played ? Math.round(100 * st.wins / st.played) : 0) + '%</strong><span>Win rate</span></div>' +
+                '<div><strong>' + st.streak + '</strong><span>Streak</span></div>' +
+                '<div><strong>' + st.best + '</strong><span>Best streak</span></div>';
+            document.getElementById('nextBtn').textContent = mode === 'daily' ? 'Play unlimited' : 'New word';
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const em = { good: '🟩', close: '🟨', miss: '⬜' };
+            const won = guesses[guesses.length - 1] === answer;
+            const head = 'Guess Five ' + (mode === 'daily' ? '#' + (K.dayNumber() + 1) + ' ' : '') + (won ? guesses.length : 'X') + '/6';
+            const grid = guesses.map(g => score(g, answer).map(s => em[s]).join('')).join('\n');
+            K.share(head + '\n' + grid + '\n' + location.href.split('?')[0]);
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'free'));
+            start('free', false);
+        });
+        K.modeTabs(document.getElementById('tabs'), m => start(m, true));
+        start('daily', true);
+    })();
+    </script>
+</body>
+</html>
