@@ -1,0 +1,22 @@
+{
+  "name": "SienaLane Games",
+  "short_name": "SL Games",
+  "description": "Word games, puzzles, a zoo idle game, wine tasting and a world strategy game.",
+  "start_url": "games.html?app=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F5F1E8",
+  "theme_color": "#6B8E7F",
+  "categories": ["games", "entertainment", "education"],
+  "icons": [
+    { "src": "app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Wild Acres", "url": "wild-acres.html", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Guess Five", "url": "guess-five.html", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Blind Tasting", "url": "blind-tasting.html", "icons": [{ "src": "app-icon-192.png", "sizes": "192x192" }] }
+  ]
+}

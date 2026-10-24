@@ -230,7 +230,22 @@
                 grid-template-columns: 1fr;
             }
         }
+        .install-box { display: none; justify-content: space-between; align-items: center; gap: 1rem; background: var(--card-bg); border-radius: 12px; box-shadow: 0 5px 20px var(--shadow-color); padding: 1rem 1.2rem; margin-bottom: 2rem; border-left: 5px solid var(--accent-gold); }
+        .install-box strong { display: block; color: var(--sage-dark); }
+        .install-box span { font-size: 0.92rem; color: var(--text-secondary); }
+        .install-box .ib { display: flex; gap: 0.5rem; flex: none; }
+        .install-box button { border: none; border-radius: 25px; padding: 0.55rem 1.2rem; font: inherit; font-weight: 700; cursor: pointer; background: var(--sage-dark); color: var(--cream); }
+        .install-box button.x { background: var(--sage-very-light); color: var(--sage-dark); padding: 0.55rem 0.8rem; }
     </style>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#6B8E7F">
+    <link rel="icon" href="favicon-32.png" type="image/png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SL Games">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <script src="pwa.js" defer></script>
 </head>
 <body>
     <header class="navbar">
@@ -252,6 +267,8 @@
             <h1>Games</h1>
             <p>Take a quick break and play something.</p>
         </div>
+
+        <div class="install-box" id="installBox"></div>
 
         <div class="quiz-grid">
             <a href="potion-sort.html" class="quiz-card">
