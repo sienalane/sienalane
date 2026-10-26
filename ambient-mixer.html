@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ambient Mixer - Siena Lane</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1e2a33;
+      color: #eef2f4;
+      text-align: center;
+      padding: 40px 16px;
+      margin: 0;
+    }
+    a { color: #8fd3c7; }
+    .mixer {
+      max-width: 420px;
+      margin: 24px auto;
+      display: grid;
+      gap: 14px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #2a3a45;
+      padding: 14px 16px;
+      border-radius: 10px;
+    }
+    .row span { font-size: 28px; }
+    .row label { width: 60px; text-align: left; }
+    input[type=range] { flex: 1; accent-color: #8fd3c7; }
+    button {
+      font-size: 18px;
+      padding: 12px 32px;
+      border: none;
+      border-radius: 999px;
+      background: #8fd3c7;
+      color: #1e2a33;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <a href="games.html">← All games</a>
+  <h1>Ambient Mixer</h1>
+  <p>Press play, then slide to blend your own background sound.</p>
+
+  <button id="play">▶ Play</button>
+
+  <div class="mixer">
+    <div class="row"><span>🌧️</span><label>Rain</label>
+      <input type="range" id="rain" min="0" max="1" step="0.01" value="0.4"></div>
+    <div class="row"><span>🌊</span><label>Ocean</label>
+      <input type="range" id="ocean" min="0" max="1" step="0.01" value="0"></div>
+    <div class="row"><span>🍃</span><label>Wind</label>
+      <input type="range" id="wind" min="0" max="1" step="0.01" value="0"></div>
+    <div class="row"><span>🔥</span><label>Fire</label>
+      <input type="range" id="fire" min="0" max="1" step="0.01" value="0"></div>
+  </div>
+
+  <script>
+    let ctx = null;
+    const volumes = {};
+
+    // Makes a loop of static. "brown" is deeper and softer than "white".
+    function makeNoise(type, seconds) {
+      const length = ctx.sampleRate * seconds;
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < length; i++) {
+        const white = Math.random() * 2 - 1;
+        if (type === "brown") {
+          last = (last + 0.02 * white) / 1.02;
+          data[i] = last * 3.5;
+        } else {
+          data[i] = white;
+        }
+      }
+      return buffer;
+    }
+
+    // Builds one sound: static -> filter -> shape -> volume slider -> speakers
+    function addSound(name, noiseType, filterType, freq) {
+      const src = ctx.createBufferSource();
+      src.buffer = makeNoise(noiseType, 2);
+      src.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = filterType;
+      filter.frequency.value = freq;
+
+      const shape = ctx.createGain();
+      const vol = ctx.createGain();
+      vol.gain.value = document.getElementById(name).value;
+
+      src.connect(filter).connect(shape).connect(vol).connect(ctx.destination);
+      src.start();
+      volumes[name] = vol;
+      return { filter, shape };
+    }
+
+    // Slowly moves a setting up and down, like waves or gusts
+    function wobble(setting, speed, amount) {
+      const lfo = ctx.createOscillator();
+      const depth = ctx.createGain();
+      lfo.frequency.value = speed;
+      depth.gain.value = amount;
+      lfo.connect(depth).connect(setting);
+      lfo.start();
+    }
+
+    function startSounds() {
+      ctx = new AudioContext();
+
+      addSound("rain", "white", "highpass", 900);
+
+      const ocean = addSound("ocean", "brown", "lowpass", 500);
+      ocean.shape.gain.value = 0.5;
+      wobble(ocean.shape.gain, 0.1, 0.5);
+
+      const wind = addSound("wind", "white", "bandpass", 400);
+      wobble(wind.filter.frequency, 0.15, 250);
+
+      addSound("fire", "brown", "lowpass", 300);
+      const pop = makeNoise("white", 0.01);
+      function crackle() {
+        const p = ctx.createBufferSource();
+        p.buffer = pop;
+        const g = ctx.createGain();
+        g.gain.value = Math.random() * 0.8;
+        p.connect(g).connect(volumes.fire);
+        p.start();
+        setTimeout(crackle, 50 + Math.random() * 300);
+      }
+      crackle();
+    }
+
+    const playBtn = document.getElementById("play");
+    playBtn.addEventListener("click", function () {
+      if (!ctx) {
+        startSounds();
+        playBtn.textContent = "❚❚ Pause";
+      } else if (ctx.state === "running") {
+        ctx.suspend();
+        playBtn.textContent = "▶ Play";
+      }
