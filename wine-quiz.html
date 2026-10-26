@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Which Wine Are You? - Siena Lane</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cream: #F5F1E8;
+            --sage-dark: #6B8E7F;
+            --sage-light: #A8C5B3;
+            --sage-very-light: #D4E5DC;
+            --accent-gold: #C9A961;
+            --wine: #7B2D3B;
+            --bg-primary: #F5F1E8;
+            --text-primary: #3D3D3D;
+            --text-secondary: #6B8E7F;
+            --card-bg: #FFFFFF;
+            --border: #E5E2DA;
+            --shadow-color: rgba(107, 142, 127, 0.12);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --cream: #1a1a1a;
+                --sage-dark: #8BA89C;
+                --sage-light: #6B8E7F;
+                --sage-very-light: #2a3a35;
+                --accent-gold: #D4AF6A;
+                --wine: #D98A97;
+                --bg-primary: #1a1a1a;
+                --text-primary: #e0e0e0;
+                --text-secondary: #a8c5b3;
+                --card-bg: #2a2a2a;
+                --border: #3a3a3a;
+                --shadow-color: rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        html { background: var(--bg-primary); }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage-light) 100%);
+            box-shadow: 0 4px 15px rgba(107, 142, 127, 0.1);
+            z-index: 1000;
+            padding: 1.2rem 0;
+        }
+
+        .navbar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--cream);
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+
+        .nav-menu { display: flex; gap: 2.5rem; align-items: center; }
+
+        .nav-link {
+            color: var(--cream);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-gold);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 2.5rem 1.25rem 3rem;
+        }
+
+        .back {
+            display: inline-block;
+            color: var(--sage-dark);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .back:hover { text-decoration: underline; }
+
+        .header { text-align: center; margin-bottom: 2rem; }
+
+        .header h1 {
+            font-size: 2.3rem;
+            color: var(--sage-dark);
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p { color: var(--text-secondary); font-size: 1.05rem; }
+
+        .progress {
+            height: 8px;
+            background: var(--sage-very-light);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--sage-dark);
+            border-radius: 999px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-label {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0.5rem 0 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 5px 20px var(--shadow-color);
+            padding: 2rem;
+        }
+
+        .question {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .options { display: grid; gap: 0.75rem; }
+
+        .option {
+            width: 100%;
+            text-align: left;
+            padding: 1rem 1.1rem;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.1s;
+        }
+
+        .option:hover {
+            border-color: var(--sage-light);
+            background: var(--sage-very-light);
+        }
+
+        .option:active { transform: scale(0.98); }
+
+        .back-q {
+            margin-top: 1.25rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .back-q:hover { text-decoration: underline; }
+
+        .result { text-align: center; }
+
+        .result-emoji { font-size: 4rem; line-height: 1; margin-bottom: 0.75rem; }
+
+        .result-kicker {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .result h2 {
+            font-size: 2.2rem;
+            color: var(--wine);
+            line-height: 1.2;
+            margin: 0.25rem 0 1rem;
+        }
+
+        .result-blurb {
+            font-size: 1.05rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .facts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            text-align: left;
+            margin-bottom: 1.75rem;
+        }
+
+        .fact {
+            background: var(--sage-very-light);
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+        }
+
+        .fact-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--sage-dark);
+            margin-bottom: 0.2rem;
+        }
+
+        .fact p { font-size: 0.95rem; }
+
+        .runner-up {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 999px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            background: var(--sage-dark);
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .footer {
+            background: var(--sage-dark);
+            color: var(--cream);
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.95rem;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-container { padding: 0 1rem; flex-direction: column; gap: 1rem; }
+            .logo { font-size: 1.5rem; }
+            .nav-menu { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+            .nav-link { font-size: 0.85rem; }
+            .header h1 { font-size: 1.9rem; }
+            .card { padding: 1.5rem 1.25rem; }
+            .facts { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="logo">SienaLane</a>
+            <nav class="nav-menu">
+                <a href="index.html#about" class="nav-link">About</a>
+                <a href="index.html#portfolio" class="nav-link">Portfolio</a>
+                <a href="games.html" class="nav-link active">Games</a>
+                <a href="colors.html" class="nav-link">Color Generator</a>
+                <a href="index.html#contact" class="nav-link">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="games.html#quizzes" class="back">← Back to Games</a>
+
+        <div class="header">
+            <h1>Which Wine Are You?</h1>
+            <p>Seven quick questions. One grape that matches your personality.</p>
+        </div>
+
+        <div id="quiz"></div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
+    </footer>
+
+    <script>
+        // ---------- The ten grapes ----------
+        const WINES = {
+            sauv: {
+                name: 'Sauvignon Blanc', emoji: '🍋',
+                blurb: 'You are bright, quick and refreshingly direct. People come to you for an honest answer and a good laugh, and you never overthink the plan.',
+                tastes: 'Lime, grapefruit, passion fruit, fresh-cut grass. High acidity, light body.',
+                grows: 'Loire Valley (Sancerre), Marlborough in New Zealand, Bordeaux, California.',
+                pair: 'Goat cheese, green salads, ceviche, anything with fresh herbs.',
+                try: 'Albariño or Grüner Veltliner.'
+            },
+            ries: {
+                name: 'Riesling', emoji: '🌼',
+                blurb: 'You are more complex than people expect. Sweet or sharp depending on the day, you keep friends guessing and still manage to get along with everyone.',
+                tastes: 'Lime, green apple, apricot, white flowers. Ranges from bone dry to sweet, always high acidity.',
+                grows: 'Mosel in Germany, Alsace in France, Clare Valley in Australia, the Finger Lakes in New York.',
+                pair: 'Spicy Thai or Indian food, pork, sushi.',
+                try: 'Chenin Blanc or Gewürztraminer.'
+            },
+            chard: {
+                name: 'Chardonnay', emoji: '✨',
+                blurb: 'You are polished and adaptable. You can go crisp and minimal or rich and indulgent, and you look good doing either. People trust your taste.',
+                tastes: 'Unoaked: green apple, lemon, wet stone. Oaked: butter, vanilla, toast, baked apple.',
+                grows: 'Burgundy (including Chablis), California, Sta. Rita Hills, Australia.',
+                pair: 'Roast chicken, lobster, creamy pasta, popcorn.',
+                try: 'Viognier or white Rioja.'
+            },
+            alba: {
+                name: 'Albariño', emoji: '🌊',
+                blurb: 'You are easygoing, sunny and happiest near the water. You turn a regular afternoon into a mini vacation and bring everyone along with you.',
+                tastes: 'Peach, lemon zest, nectarine, a salty sea-breeze finish. Light body, high acidity.',
+                grows: 'Rías Baixas in Spain and Vinho Verde in Portugal (where it is called Alvarinho).',
+                pair: 'Oysters, grilled fish, ceviche, fish tacos.',
+                try: 'Vermentino or Sauvignon Blanc.'
+            },
+            gren: {
+                name: 'Grenache', emoji: '🍓',
+                blurb: 'You are warm, generous and the first to say yes to a plan. You are fun without trying too hard, and your friends always leave your house full and happy.',
+                tastes: 'Strawberry, raspberry, white pepper, dried herbs. Medium body, soft tannins.',
+                grows: 'Southern Rhône, Spain (as Garnacha), Sardinia, Santa Barbara County. It is also the base of most Provence rosé.',
+                pair: 'Paella, grilled sausages, roasted vegetables, barbecue.',
+                try: 'A GSM blend (Grenache, Syrah, Mourvèdre) or a dry rosé.'
+            },
+            pinot: {
+                name: 'Pinot Noir', emoji: '🍂',
+                blurb: 'You are thoughtful, a little sensitive and full of layers. You notice details other people miss and you prefer one deep conversation to ten small ones.',
+                tastes: 'Cherry, raspberry, mushroom, forest floor. Light body, high acidity, low tannin.',
+                grows: 'Burgundy, Willamette Valley in Oregon, Sta. Rita Hills, Central Otago in New Zealand.',
+                pair: 'Salmon, duck, mushroom risotto, Thanksgiving dinner.',
+                try: 'Gamay (Beaujolais) or Nebbiolo.'
+            },
+            sangio: {
+                name: 'Sangiovese', emoji: '🍅',
+                blurb: 'You are lively, social and best around a crowded dinner table. You believe every problem can be solved with a good meal and the right people.',
+                tastes: 'Sour cherry, tomato leaf, dried oregano, a little earthiness. High acidity, medium tannins.',
+                grows: 'Tuscany, where it makes Chianti and Brunello di Montalcino.',
+                pair: 'Margherita pizza, pasta with red sauce, lasagna.',
+                try: 'Barbera or Tempranillo.'
+            },
+            temp: {
+                name: 'Tempranillo', emoji: '💃',
+                blurb: 'You are classic with a bit of an edge. You love old traditions, long dinners that start late and stories that get better every time you tell them.',
+                tastes: 'Cherry, dried fig, leather, tobacco, and vanilla or dill from oak aging. Medium to full body.',
+                grows: 'Rioja and Ribera del Duero in Spain, and the Douro in Portugal (as Tinta Roriz).',
+                pair: 'Jamón, Manchego, roast lamb, tapas.',
+                try: 'Sangiovese or Malbec.'
+            },
+            syrah: {
+                name: 'Syrah', emoji: '🌶️',
+                blurb: 'You are bold, a little mysterious and you love some spice. You speak up, take risks and make every night a bit more interesting.',
+                tastes: 'Blackberry, black pepper, smoked meat, violets. Called Shiraz in Australia, where it tastes riper and jammier.',
+                grows: 'Northern Rhône (Hermitage, Côte-Rôtie), Barossa Valley in Australia, Washington State, Santa Barbara County.',
+                pair: 'Barbecue, lamb, spicy sausage, burgers.',
+                try: 'Petite Sirah or a GSM blend.'
+            },
+            cab: {
+                name: 'Cabernet Sauvignon', emoji: '👑',
+                blurb: 'You are confident, structured and built to last. You are the one with the plan, and people know they can count on you when it matters.',
+                tastes: 'Blackcurrant, black cherry, cedar, mint. Full body, high tannin.',
+                grows: 'Bordeaux (Left Bank), Napa Valley, Coonawarra in Australia, Chile.',
+                pair: 'Steak, aged cheddar, mushroom burgers.',
+                try: 'Cabernet Franc or Malbec.'
+            }
+        };
+
+        // ---------- The questions ----------
+        const QUESTIONS = [
+            {
+                q: 'Pick your ideal Saturday.',
+                options: [
+                    { text: 'Farmers market, then a long hike', pts: { sauv: 3, pinot: 1 } },
+                    { text: 'Beach day with a cooler and a playlist', pts: { alba: 3, gren: 2 } },
+                    { text: 'Museum, bookstore and a quiet lunch', pts: { pinot: 3, ries: 1 } },
+                    { text: 'Hosting a big dinner for friends', pts: { sangio: 3, gren: 2 } },
+                    { text: 'A road trip somewhere new', pts: { syrah: 3, temp: 1 } },
+                    { text: 'Brunch reservation, then shopping', pts: { chard: 3, cab: 1 } }
+                ]
+            },
+            {
+                q: 'Which snack are you reaching for?',
+                options: [
+                    { text: 'Salty chips and guacamole', pts: { sauv: 3, alba: 1 } },
+                    { text: 'Spicy pad thai leftovers', pts: { ries: 3, syrah: 1 } },
+                    { text: 'Warm brie and crackers', pts: { chard: 3, pinot: 1 } },
+                    { text: 'A slice of pizza', pts: { sangio: 3, gren: 1 } },
+                    { text: 'Jamón and Manchego', pts: { temp: 3, gren: 1 } },
+                    { text: 'A burger, medium rare', pts: { cab: 3, syrah: 2 } }
+                ]
+            },
+            {
+                q: 'How would your friends describe your style?',
+                options: [
+                    { text: 'Clean, simple, effortless', pts: { sauv: 3, alba: 1 } },
+                    { text: 'Classic and polished', pts: { chard: 3, cab: 2 } },
+                    { text: 'Bright, colorful, playful', pts: { gren: 3, ries: 1 } },
+                    { text: 'Vintage and one of a kind', pts: { temp: 3, pinot: 2 } },
+                    { text: 'Dark and a little dramatic', pts: { syrah: 3, cab: 1 } }
+                ]
+            },
+            {
+                q: 'Where are you booking your next trip?',
+                options: [
+                    { text: 'The coast of northern Spain', pts: { alba: 3, temp: 2 } },
+                    { text: 'A villa in Tuscany', pts: { sangio: 3, chard: 1 } },
+                    { text: 'A cabin in Oregon', pts: { pinot: 3, sauv: 1 } },
+                    { text: 'A river cruise through Germany', pts: { ries: 3, pinot: 1 } },
+                    { text: 'The Australian outback', pts: { syrah: 3, cab: 1 } },
+                    { text: 'A luxury hotel in Napa', pts: { cab: 3, chard: 2 } }
+                ]
+            },
+            {
+                q: 'At a party, where do people find you?',
+                options: [
+                    { text: 'On the dance floor', pts: { gren: 3, alba: 2 } },
+                    { text: 'In the kitchen, helping with the food', pts: { sangio: 3, temp: 1 } },
+                    { text: 'In a corner, deep in conversation', pts: { pinot: 3, ries: 1 } },
+                    { text: 'In the middle of the room, telling a story', pts: { temp: 3, syrah: 2 } },
+                    { text: 'Making the rounds and meeting everyone', pts: { chard: 3, sauv: 1 } },
+                    { text: 'Running the whole thing', pts: { cab: 3, sangio: 1 } }
+                ]
+            },
+            {
+                q: 'Which season feels most like you?',
+                options: [
+                    { text: 'Spring', pts: { sauv: 2, ries: 2, alba: 1 } },
+                    { text: 'Summer', pts: { alba: 2, gren: 2, chard: 1 } },
+                    { text: 'Fall', pts: { pinot: 2, sangio: 2, temp: 1 } },
+                    { text: 'Winter', pts: { cab: 2, syrah: 2, temp: 1 } }
+                ]
+            },
+            {
+                q: 'How spicy do you like your food?',
+                options: [
+                    { text: 'Bring on the heat', pts: { syrah: 2, ries: 2 } },
+                    { text: 'A little kick is nice', pts: { gren: 2, temp: 2 } },
+                    { text: 'Mild, please', pts: { chard: 2, pinot: 2 } },
+                    { text: 'Fresh and zesty over spicy', pts: { sauv: 2, alba: 2 } },
+                    { text: 'Save the spice, give me salt and fat', pts: { cab: 2, sangio: 2 } }
+                ]
+            }
+        ];
+
+        // ---------- Quiz logic ----------
+        const quiz = document.getElementById('quiz');
+        let step = 0;
+        let history = [];
+
+        function scores() {
+            const totals = {};
+            Object.keys(WINES).forEach(k => totals[k] = 0);
+            history.forEach(pts => {
+                Object.entries(pts).forEach(([k, v]) => totals[k] += v);
+            });
+            return Object.entries(totals).sort((a, b) => b[1] - a[1]);
+        }
+
+        function showQuestion() {
+            const item = QUESTIONS[step];
+            const pct = (step / QUESTIONS.length) * 100;
+            quiz.innerHTML =
+                '<div class="progress"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
+                '<p class="progress-label">Question ' + (step + 1) + ' of ' + QUESTIONS.length + '</p>' +
+                '<div class="card">' +
+                    '<p class="question">' + item.q + '</p>' +
+                    '<div class="options"></div>' +
+                    (step > 0 ? '<button class="back-q">← Previous question</button>' : '') +
+                '</div>';
+
+            const box = quiz.querySelector('.options');
+            item.options.forEach(opt => {
+                const b = document.createElement('button');
+                b.className = 'option';
+                b.textContent = opt.text;
+                b.onclick = () => choose(opt.pts);
+                box.appendChild(b);
+            });
+
+            const back = quiz.querySelector('.back-q');
+            if (back) back.onclick = () => { history.pop(); step--; showQuestion(); };
+        }
+
+        function choose(pts) {
+            history.push(pts);
+            step++;
+            if (step < QUESTIONS.length) showQuestion();
+            else showResult();
+        }
+
+        function showResult() {
+            const ranked = scores();
+            const w = WINES[ranked[0][0]];
+            const second = WINES[ranked[1][0]];
+
+            quiz.innerHTML =
+                '<div class="card result">' +
+                    '<div class="result-emoji">' + w.emoji + '</div>' +
+                    '<p class="result-kicker">Your wine is</p>' +
+                    '<h2>' + w.name + '</h2>' +
+                    '<p class="result-blurb">' + w.blurb + '</p>' +
+                    '<div class="facts">' +
+                        '<div class="fact"><p class="fact-label">Tastes like</p><p>' + w.tastes + '</p></div>' +
+                        '<div class="fact"><p class="fact-label">Where it grows</p><p>' + w.grows + '</p></div>' +
+                        '<div class="fact"><p class="fact-label">Pair it with</p><p>' + w.pair + '</p></div>' +
+                        '<div class="fact"><p class="fact-label">If you like it, try</p><p>' + w.try + '</p></div>' +
+                    '</div>' +
+                    '<p class="runner-up">Runner-up: ' + second.emoji + ' ' + second.name + '</p>' +
+                    '<button class="btn" id="again">Take it again</button>' +
+                '</div>';
+
+            document.getElementById('again').onclick = () => {
+                step = 0;
+                history = [];
+                showQuestion();
+            };
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>
