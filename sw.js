@@ -1,6 +1,6 @@
 // SienaLane Games offline support.
-// Pages load from the cache right away, then quietly update in the background.
-const CACHE = 'sl-games-v2';
+// Pages load fresh when online and from the cache when offline. Bump CACHE and add new files to FILES when adding a game.
+const CACHE = 'sl-games-v3';
 const FILES = [
   'games.html', 'potion-sort.html', 'puzzles.html', 'world-order.html', 'wild-acres.html', 'blind-tasting.html',
   'guess-five.html', 'four-by-four.html', 'honeycomb.html', 'close-call.html', 'letter-loop.html', 'word-ladder.html',
@@ -10,7 +10,7 @@ const FILES = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -24,13 +24,13 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(caches.open(CACHE).then(async cache => {
     const cached = await cache.match(req, { ignoreSearch: true });
-    const fresh = fetch(req).then(res => {
+    const fresh = fetch(req.url, { cache: 'no-cache' }).then(res => {
       if (res && res.ok) cache.put(req, res.clone());
       return res;
     }).catch(() => null);
-    if (cached) { e.waitUntil(fresh); return cached; }
+    if (cached && req.mode !== 'navigate') { e.waitUntil(fresh); return cached; }
     const res = await fresh;
-    if (res) return res;
+    if (res) return res; if (cached) return cached;
     if (req.mode === 'navigate') return cache.match('games.html');
     return new Response('', { status: 504 });
   }));
