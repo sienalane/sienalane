@@ -16,12 +16,8 @@
             --sage-dark: #6B8E7F;
             --sage-light: #A8C5B3;
             --sage-very-light: #D4E5DC;
-            --blush: #E8D4D0;
-            --lavender: #D9D0E8;
-            --dark-text: #3D3D3D;
             --accent-gold: #C9A961;
             --bg-primary: #F5F1E8;
-            --bg-secondary: #FFFFFF;
             --text-primary: #3D3D3D;
             --text-secondary: #6B8E7F;
             --card-bg: #FFFFFF;
@@ -34,12 +30,8 @@
                 --sage-dark: #8BA89C;
                 --sage-light: #6B8E7F;
                 --sage-very-light: #2a3a35;
-                --blush: #3a2f2e;
-                --lavender: #332f3a;
-                --dark-text: #e0e0e0;
                 --accent-gold: #D4AF6A;
                 --bg-primary: #1a1a1a;
-                --bg-secondary: #242424;
                 --text-primary: #e0e0e0;
                 --text-secondary: #a8c5b3;
                 --card-bg: #2a2a2a;
@@ -123,7 +115,7 @@
 
         .header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .header h1 {
@@ -137,12 +129,60 @@
             color: var(--text-secondary);
         }
 
+        .option-label {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .palette-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .type-btn {
+            padding: 0.8rem;
+            background: var(--card-bg);
+            border: 2px solid var(--sage-very-light);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .type-btn:hover {
+            border-color: var(--sage-dark);
+            background: var(--sage-very-light);
+        }
+
+        .type-btn.active {
+            background: var(--sage-dark);
+            color: white;
+            border-color: var(--sage-dark);
+        }
+
         .controls {
             display: flex;
             gap: 1rem;
             justify-content: center;
-            margin-bottom: 3rem;
+            margin-bottom: 0.75rem;
             flex-wrap: wrap;
+        }
+
+        .tip {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
         }
 
         .btn {
@@ -177,8 +217,8 @@
 
         .palette-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.25rem;
             margin-bottom: 3rem;
         }
 
@@ -196,19 +236,45 @@
         }
 
         .color-display {
-            height: 200px;
+            height: 180px;
             width: 100%;
             position: relative;
-            transition: all 0.3s ease;
+            transition: background-color 0.4s ease;
+        }
+
+        .lock-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .lock-btn.locked {
+            background: #3D3D3D;
         }
 
         .color-info {
-            padding: 1.5rem;
+            padding: 1.1rem;
             text-align: center;
         }
 
+        .color-role {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
         .color-name {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
@@ -216,12 +282,64 @@
 
         .color-code {
             font-family: 'Courier New', monospace;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--text-secondary);
             background: var(--sage-very-light);
-            padding: 0.5rem;
+            padding: 0.4rem 0.6rem;
             border-radius: 6px;
             display: inline-block;
+        }
+
+        .preview-wrap h2 {
+            text-align: center;
+            color: var(--sage-dark);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .preview {
+            max-width: 640px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px var(--shadow-color);
+            transition: background-color 0.4s ease;
+        }
+
+        .preview-header {
+            padding: 1.75rem 2rem;
+            transition: background-color 0.4s ease;
+        }
+
+        .preview-header h3 {
+            font-size: 1.6rem;
+            line-height: 1.2;
+        }
+
+        .preview-body {
+            padding: 1.75rem 2rem 2rem;
+        }
+
+        .preview-tag {
+            display: inline-block;
+            padding: 0.25rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 0.9rem;
+        }
+
+        .preview-body p {
+            margin-bottom: 1.25rem;
+        }
+
+        .preview-btn {
+            border: none;
+            padding: 0.7rem 1.6rem;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: default;
         }
 
         .copy-notification {
@@ -244,36 +362,6 @@
             transform: translateY(0);
         }
 
-        .palette-types {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 3rem;
-        }
-
-        .type-btn {
-            padding: 1rem;
-            background: var(--card-bg);
-            border: 2px solid var(--sage-very-light);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .type-btn:hover {
-            border-color: var(--sage-dark);
-            background: var(--sage-very-light);
-        }
-
-        .type-btn.active {
-            background: var(--sage-dark);
-            color: white;
-            border-color: var(--sage-dark);
-        }
-
         .footer {
             background: var(--sage-dark);
             color: var(--cream);
@@ -281,6 +369,12 @@
             padding: 2rem;
             font-size: 0.95rem;
             margin-top: 3rem;
+        }
+
+        @media (max-width: 900px) {
+            .palette-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -312,10 +406,6 @@
                 font-size: 2rem;
             }
 
-            .palette-container {
-                grid-template-columns: 1fr;
-            }
-
             .palette-types {
                 grid-template-columns: 1fr 1fr;
             }
@@ -326,6 +416,10 @@
 
             .btn {
                 width: 100%;
+            }
+
+            .color-display {
+                height: 120px;
             }
         }
     </style>
@@ -348,53 +442,95 @@
     <div class="container">
         <div class="header">
             <h1>Brand Color Palette Generator</h1>
-            <p>Generate beautiful, harmonious color palettes for your brand</p>
+            <p>Build a balanced five-color palette for your brand, then see it in action.</p>
         </div>
 
-        <div class="palette-types">
-            <button class="type-btn active" onclick="setPaletteType('complementary')">Complementary</button>
-            <button class="type-btn" onclick="setPaletteType('analogous')">Analogous</button>
-            <button class="type-btn" onclick="setPaletteType('triadic')">Triadic</button>
-            <button class="type-btn" onclick="setPaletteType('monochromatic')">Monochromatic</button>
+        <div class="option-label">Mood</div>
+        <div class="palette-types" id="mood-buttons">
+            <button class="type-btn" data-mood="soft">Soft</button>
+            <button class="type-btn active" data-mood="earthy">Earthy</button>
+            <button class="type-btn" data-mood="bold">Bold</button>
+            <button class="type-btn" data-mood="moody">Moody</button>
+        </div>
+
+        <div class="option-label">Harmony</div>
+        <div class="palette-types" id="harmony-buttons">
+            <button class="type-btn active" data-harmony="complementary">Complementary</button>
+            <button class="type-btn" data-harmony="analogous">Analogous</button>
+            <button class="type-btn" data-harmony="split">Split Complementary</button>
+            <button class="type-btn" data-harmony="triadic">Triadic</button>
+            <button class="type-btn" data-harmony="monochromatic">Monochromatic</button>
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" onclick="generatePalette()">🎨 Generate New Palette</button>
-            <button class="btn btn-secondary" onclick="exportPalette()">📋 Export Colors</button>
+            <button class="btn btn-primary" id="generate-btn">🎨 Generate New Palette</button>
+            <button class="btn btn-secondary" id="export-btn">📋 Export Colors</button>
         </div>
+        <p class="tip">Press the spacebar for a new palette. Tap 🔓 to lock a color you love. Tap a color to copy it.</p>
 
-        <div class="palette-container" id="palette-container">
-            <!-- Color cards will be generated here -->
+        <div class="palette-container" id="palette-container"></div>
+
+        <div class="preview-wrap">
+            <h2>Preview</h2>
+            <div class="preview" id="preview">
+                <div class="preview-header" id="pv-header">
+                    <h3>Your brand, in color</h3>
+                </div>
+                <div class="preview-body">
+                    <span class="preview-tag" id="pv-tag">New this week</span>
+                    <p id="pv-text">See how your palette works together on a real layout before you commit to it. Background, headline, body text, tag and button all use your five colors.</p>
+                    <button class="preview-btn" id="pv-btn">Get started</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="copy-notification" id="copy-notification">
-        Color copied to clipboard!
-    </div>
+    <div class="copy-notification" id="copy-notification">Color copied to clipboard!</div>
 
     <footer class="footer">
         <p>&copy; 2026 SienaLane. All rights reserved. | Digital Marketing Specialist</p>
     </footer>
 
     <script>
-        let currentPaletteType = 'complementary';
-        let currentColors = [];
+        // The five roles every brand palette needs
+        const ROLES = ['Primary', 'Secondary', 'Accent', 'Background', 'Text'];
 
-        // Generate random color
-        function randomColor() {
-            return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-        }
+        // Each mood keeps saturation (s) and lightness (l) in a tasteful range
+        const MOODS = {
+            soft:   { s: [30, 50], l: [66, 78] },
+            earthy: { s: [22, 42], l: [38, 55] },
+            bold:   { s: [55, 72], l: [42, 55] },
+            moody:  { s: [25, 45], l: [42, 58] }
+        };
 
-        // Convert hex to HSL
+        // Earthy palettes start from terracotta, olive/sage or dusty blue
+        const EARTHY_HUES = [[15, 45], [70, 150], [190, 220]];
+
+        // How far around the color wheel the secondary and accent colors sit
+        const HARMONY = {
+            complementary: [0, 180],
+            analogous: [30, -30],
+            split: [150, 210],
+            triadic: [120, 240],
+            monochromatic: [0, 0]
+        };
+
+        let mood = 'earthy';
+        let harmony = 'complementary';
+        let colors = [];
+        let locked = [false, false, false, false, false];
+
+        function rand(min, max) { return min + Math.random() * (max - min); }
+        function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+        function wrapHue(h) { return ((h % 360) + 360) % 360; }
+
         function hexToHSL(hex) {
             let r = parseInt(hex.slice(1, 3), 16) / 255;
             let g = parseInt(hex.slice(3, 5), 16) / 255;
             let b = parseInt(hex.slice(5, 7), 16) / 255;
-
             let max = Math.max(r, g, b);
             let min = Math.min(r, g, b);
             let h, s, l = (max + min) / 2;
-
             if (max === min) {
                 h = s = 0;
             } else {
@@ -406,195 +542,214 @@
                     case b: h = ((r - g) / d + 4) / 6; break;
                 }
             }
-
             return { h: h * 360, s: s * 100, l: l * 100 };
         }
 
-        // Convert HSL to hex
         function HSLToHex(h, s, l) {
-            s /= 100;
-            l /= 100;
-
-            let c = (1 - Math.abs(2 * l - 1)) * s;
-            let x = c * (1 - Math.abs((h / 60) % 2 - 1));
-            let m = l - c/2;
+            h = wrapHue(h);
+            s = clamp(s, 0, 100) / 100;
+            l = clamp(l, 0, 100) / 100;
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = l - c / 2;
             let r = 0, g = 0, b = 0;
-
-            if (0 <= h && h < 60) {
-                r = c; g = x; b = 0;
-            } else if (60 <= h && h < 120) {
-                r = x; g = c; b = 0;
-            } else if (120 <= h && h < 180) {
-                r = 0; g = c; b = x;
-            } else if (180 <= h && h < 240) {
-                r = 0; g = x; b = c;
-            } else if (240 <= h && h < 300) {
-                r = x; g = 0; b = c;
-            } else if (300 <= h && h < 360) {
-                r = c; g = 0; b = x;
-            }
-
-            r = Math.round((r + m) * 255);
-            g = Math.round((g + m) * 255);
-            b = Math.round((b + m) * 255);
-
-            return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            if (h < 60) { r = c; g = x; }
+            else if (h < 120) { r = x; g = c; }
+            else if (h < 180) { g = c; b = x; }
+            else if (h < 240) { g = x; b = c; }
+            else if (h < 300) { r = x; b = c; }
+            else { r = c; b = x; }
+            const toHex = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+            return '#' + toHex(r) + toHex(g) + toHex(b);
         }
 
-        // Generate color name
+        // Picks dark or white text so words stay readable on any color
+        function readableOn(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance > 0.6 ? '#1f1f1f' : '#ffffff';
+        }
+
         function getColorName(hex) {
-            const hsl = hexToHSL(hex);
-            const hue = hsl.h;
-            const sat = hsl.s;
-            const light = hsl.l;
-
-            let colorName = '';
-
-            // Grayscale colors
+            const { h: hue, s: sat, l: light } = hexToHSL(hex);
+            let name = '';
             if (sat < 10) {
-                if (light > 90) colorName = 'White';
-                else if (light < 10) colorName = 'Black';
-                else if (light > 60) colorName = 'Light Gray';
-                else if (light > 40) colorName = 'Gray';
-                else colorName = 'Dark Gray';
+                if (light > 92) name = 'Off White';
+                else if (light < 12) name = 'Near Black';
+                else if (light > 60) name = 'Light Gray';
+                else if (light > 35) name = 'Gray';
+                else name = 'Charcoal';
+                return name;
             }
-            // Low saturation browns/olives/muted colors
-            else if (sat < 30) {
-                if (hue >= 40 && hue < 80) {
-                    colorName = light > 50 ? 'Beige' : 'Olive';
-                } else if (hue >= 20 && hue < 40) {
-                    colorName = light > 50 ? 'Tan' : 'Brown';
-                } else if (hue >= 0 && hue < 20 || hue >= 340) {
-                    colorName = light > 50 ? 'Pink' : 'Brown';
-                } else if (hue >= 80 && hue < 170) {
-                    colorName = light > 50 ? 'Sage' : 'Dark Olive';
-                } else if (hue >= 170 && hue < 250) {
-                    colorName = light > 50 ? 'Slate' : 'Dark Slate';
-                } else {
-                    colorName = light > 50 ? 'Lavender' : 'Dark Purple';
-                }
+            if (sat < 45) {
+                if (hue >= 15 && hue < 40) name = light > 60 ? 'Sand' : light > 35 ? 'Terracotta' : 'Brown';
+                else if (hue >= 40 && hue < 70) name = light > 60 ? 'Cream' : light > 35 ? 'Ochre' : 'Bronze';
+                else if (hue >= 70 && hue < 160) name = light > 60 ? 'Sage' : light > 35 ? 'Olive' : 'Forest';
+                else if (hue >= 160 && hue < 200) name = light > 60 ? 'Seafoam' : 'Teal';
+                else if (hue >= 200 && hue < 250) name = light > 60 ? 'Mist' : light > 35 ? 'Dusty Blue' : 'Navy';
+                else if (hue >= 250 && hue < 300) name = light > 60 ? 'Lavender' : 'Plum';
+                else name = light > 60 ? 'Blush' : light > 35 ? 'Rose' : 'Wine';
+                if (light > 92) name = 'Pale ' + name;
+                else if (light < 18) name = 'Deep ' + name;
+                return name;
             }
-            // Saturated colors
-            else {
-                if (hue >= 345 || hue < 15) colorName = 'Red';
-                else if (hue < 45) colorName = 'Orange';
-                else if (hue < 70) colorName = 'Yellow';
-                else if (hue < 100) colorName = 'Lime';
-                else if (hue < 165) colorName = 'Green';
-                else if (hue < 200) colorName = 'Cyan';
-                else if (hue < 255) colorName = 'Blue';
-                else if (hue < 285) colorName = 'Purple';
-                else if (hue < 320) colorName = 'Magenta';
-                else colorName = 'Pink';
-
-                // Add lightness modifier
-                if (light > 70) colorName = 'Light ' + colorName;
-                else if (light < 30) colorName = 'Dark ' + colorName;
-            }
-
-            return colorName;
+            if (hue >= 345 || hue < 15) name = 'Red';
+            else if (hue < 45) name = 'Orange';
+            else if (hue < 70) name = 'Gold';
+            else if (hue < 100) name = 'Lime';
+            else if (hue < 165) name = 'Green';
+            else if (hue < 200) name = 'Teal';
+            else if (hue < 255) name = 'Blue';
+            else if (hue < 285) name = 'Violet';
+            else if (hue < 320) name = 'Magenta';
+            else name = 'Pink';
+            if (light > 70) name = 'Light ' + name;
+            else if (light < 30) name = 'Dark ' + name;
+            return name;
         }
 
-        // Generate palette based on type
+        function pickBaseHue() {
+            if (mood === 'earthy') {
+                const range = EARTHY_HUES[Math.floor(Math.random() * EARTHY_HUES.length)];
+                return rand(range[0], range[1]);
+            }
+            return rand(0, 360);
+        }
+
+        function buildPalette() {
+            const m = MOODS[mood];
+            const h = pickBaseHue();
+            const s = rand(m.s[0], m.s[1]);
+            const l = rand(m.l[0], m.l[1]);
+            const [offset1, offset2] = HARMONY[harmony];
+            const dark = mood === 'moody';
+            const shift = l > 50 ? -1 : 1;
+
+            const primary = HSLToHex(h, s, l);
+            let secondary, accent;
+            if (harmony === 'monochromatic') {
+                secondary = HSLToHex(h, s * 0.6, clamp(l + 18 * shift, 15, 88));
+                accent = HSLToHex(h, s + 15, clamp(l + 30 * shift, 15, 88));
+            } else {
+                secondary = HSLToHex(h + offset1, s * 0.75, clamp(l + 10 * shift, 15, 88));
+                accent = HSLToHex(h + offset2, s + 12, clamp(l - 6 * shift, 15, 88));
+            }
+
+            // Background and text are tinted neutrals so they match the palette
+            const background = dark
+                ? HSLToHex(h, clamp(s * 0.4, 8, 20), rand(10, 14))
+                : HSLToHex(h, clamp(s * 0.4, 8, 25), rand(94, 97));
+            const text = dark
+                ? HSLToHex(h, clamp(s * 0.3, 5, 15), rand(90, 94))
+                : HSLToHex(h, clamp(s * 0.4, 10, 25), rand(14, 20));
+
+            return [primary, secondary, accent, background, text];
+        }
+
         function generatePalette() {
-            const baseColor = randomColor();
-            const hsl = hexToHSL(baseColor);
-            currentColors = [baseColor];
-
-            switch (currentPaletteType) {
-                case 'complementary':
-                    currentColors.push(HSLToHex((hsl.h + 180) % 360, hsl.s, hsl.l));
-                    currentColors.push(HSLToHex(hsl.h, hsl.s, Math.max(20, hsl.l - 20)));
-                    currentColors.push(HSLToHex((hsl.h + 180) % 360, hsl.s, Math.min(80, hsl.l + 20)));
-                    currentColors.push(HSLToHex(hsl.h, Math.max(20, hsl.s - 30), hsl.l));
-                    break;
-
-                case 'analogous':
-                    currentColors.push(HSLToHex((hsl.h + 30) % 360, hsl.s, hsl.l));
-                    currentColors.push(HSLToHex((hsl.h - 30 + 360) % 360, hsl.s, hsl.l));
-                    currentColors.push(HSLToHex((hsl.h + 60) % 360, hsl.s, Math.min(80, hsl.l + 15)));
-                    currentColors.push(HSLToHex((hsl.h - 60 + 360) % 360, hsl.s, Math.max(20, hsl.l - 15)));
-                    break;
-
-                case 'triadic':
-                    currentColors.push(HSLToHex((hsl.h + 120) % 360, hsl.s, hsl.l));
-                    currentColors.push(HSLToHex((hsl.h + 240) % 360, hsl.s, hsl.l));
-                    currentColors.push(HSLToHex(hsl.h, hsl.s, Math.min(80, hsl.l + 20)));
-                    currentColors.push(HSLToHex((hsl.h + 120) % 360, hsl.s, Math.max(20, hsl.l - 20)));
-                    break;
-
-                case 'monochromatic':
-                    currentColors.push(HSLToHex(hsl.h, hsl.s, Math.min(90, hsl.l + 30)));
-                    currentColors.push(HSLToHex(hsl.h, hsl.s, Math.min(80, hsl.l + 15)));
-                    currentColors.push(HSLToHex(hsl.h, hsl.s, Math.max(20, hsl.l - 15)));
-                    currentColors.push(HSLToHex(hsl.h, hsl.s, Math.max(10, hsl.l - 30)));
-                    break;
-            }
-
+            const fresh = buildPalette();
+            colors = fresh.map((c, i) => (locked[i] && colors[i]) ? colors[i] : c);
             displayPalette();
+            updatePreview();
         }
 
-        // Display palette
         function displayPalette() {
             const container = document.getElementById('palette-container');
             container.innerHTML = '';
 
-            currentColors.forEach(color => {
+            colors.forEach((color, i) => {
                 const card = document.createElement('div');
                 card.className = 'color-card';
                 card.onclick = () => copyColor(color);
 
-                card.innerHTML = `
-                    <div class="color-display" style="background-color: ${color}"></div>
-                    <div class="color-info">
-                        <div class="color-name">${getColorName(color)}</div>
-                        <div class="color-code">${color.toUpperCase()}</div>
-                    </div>
-                `;
+                const swatch = document.createElement('div');
+                swatch.className = 'color-display';
+                swatch.style.backgroundColor = color;
 
+                const lock = document.createElement('button');
+                lock.className = 'lock-btn' + (locked[i] ? ' locked' : '');
+                lock.textContent = locked[i] ? '🔒' : '🔓';
+                lock.title = locked[i] ? 'Unlock this color' : 'Lock this color';
+                lock.onclick = (e) => {
+                    e.stopPropagation();
+                    locked[i] = !locked[i];
+                    displayPalette();
+                };
+                swatch.appendChild(lock);
+
+                const info = document.createElement('div');
+                info.className = 'color-info';
+                info.innerHTML =
+                    '<div class="color-role">' + ROLES[i] + '</div>' +
+                    '<div class="color-name">' + getColorName(color) + '</div>' +
+                    '<div class="color-code">' + color.toUpperCase() + '</div>';
+
+                card.appendChild(swatch);
+                card.appendChild(info);
                 container.appendChild(card);
             });
         }
 
-        // Copy color to clipboard
+        function updatePreview() {
+            const [primary, secondary, accent, background, text] = colors;
+            const preview = document.getElementById('preview');
+            const header = document.getElementById('pv-header');
+            const tag = document.getElementById('pv-tag');
+            const btn = document.getElementById('pv-btn');
+
+            preview.style.backgroundColor = background;
+            preview.style.color = text;
+            header.style.backgroundColor = primary;
+            header.style.color = readableOn(primary);
+            tag.style.backgroundColor = secondary;
+            tag.style.color = readableOn(secondary);
+            btn.style.backgroundColor = accent;
+            btn.style.color = readableOn(accent);
+        }
+
+        function showNotice(message) {
+            const notification = document.getElementById('copy-notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 2000);
+        }
+
         function copyColor(color) {
-            navigator.clipboard.writeText(color).then(() => {
-                const notification = document.getElementById('copy-notification');
-                notification.classList.add('show');
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 2000);
-            });
+            navigator.clipboard.writeText(color.toUpperCase()).then(() => showNotice(color.toUpperCase() + ' copied!'));
         }
 
-        // Set palette type
-        function setPaletteType(type) {
-            currentPaletteType = type;
-            document.querySelectorAll('.type-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            generatePalette();
-        }
-
-        // Export palette
         function exportPalette() {
-            const text = currentColors.map((color, index) => {
-                return `Color ${index + 1}: ${color.toUpperCase()} - ${getColorName(color)}`;
-            }).join('\n');
+            const list = colors.map((c, i) => ROLES[i] + ': ' + c.toUpperCase() + ' (' + getColorName(c) + ')').join('\n');
+            const css = ':root {\n' + colors.map((c, i) => '  --' + ROLES[i].toLowerCase() + ': ' + c.toUpperCase() + ';').join('\n') + '\n}';
+            navigator.clipboard.writeText(list + '\n\n' + css).then(() => showNotice('Palette exported to clipboard!'));
+        }
 
-            navigator.clipboard.writeText(text).then(() => {
-                const notification = document.getElementById('copy-notification');
-                notification.textContent = 'Palette exported to clipboard!';
-                notification.classList.add('show');
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    notification.textContent = 'Color copied to clipboard!';
-                }, 2000);
+        function setupButtons(groupId, attr, onPick) {
+            const buttons = document.querySelectorAll('#' + groupId + ' .type-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    onPick(btn.dataset[attr]);
+                    generatePalette();
+                });
             });
         }
 
-        // Generate initial palette
+        setupButtons('mood-buttons', 'mood', value => { mood = value; });
+        setupButtons('harmony-buttons', 'harmony', value => { harmony = value; });
+        document.getElementById('generate-btn').addEventListener('click', generatePalette);
+        document.getElementById('export-btn').addEventListener('click', exportPalette);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                generatePalette();
+            }
+        });
+
         generatePalette();
     </script>
 </body>
