@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Another Life - Siena Lane</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6B8E7F">
+<link rel="icon" href="favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SL Games">
+<script src="pwa.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--hue:210;--bg1:hsl(var(--hue) 45% 14%);--bg2:hsl(calc(var(--hue) + 40) 50% 8%);--card:hsl(var(--hue) 30% 18% / .85);--line:hsl(var(--hue) 30% 30% / .6);--txt:#eef3fb;--mut:#9fb0c8;--acc:hsl(calc(var(--hue) + 150) 80% 60%);--good:#4ade80;--mid:#facc15;--bad:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Nunito,system-ui,sans-serif;color:var(--txt);background:radial-gradient(1200px 800px at 20% -10%,hsl(var(--hue) 60% 30% / .55),transparent 60%),radial-gradient(900px 700px at 110% 110%,hsl(calc(var(--hue) + 80) 60% 30% / .45),transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed;transition:--hue 1s;overflow:hidden}
+#app{max-width:520px;height:100%;margin:0 auto;display:flex;flex-direction:column;padding:10px 10px 0}
+header{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:10px 14px;backdrop-filter:blur(10px)}
+#avatar{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,hsl(var(--hue) 70% 55%),hsl(calc(var(--hue) + 60) 70% 50%));box-shadow:0 0 0 3px hsl(var(--hue) 60% 70% / .3),0 8px 20px #0006;flex:none;transition:transform .4s}
+#avatar.bump{transform:scale(1.15) rotate(-6deg)}
+.who{flex:1;min-width:0}
+#pname{font-family:Fredoka,sans-serif;font-weight:600;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#psub{color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.money{text-align:right}
+#pmoney{font-family:Fredoka,sans-serif;font-weight:600;font-size:18px;color:var(--good)}
+#pmoney.neg{color:var(--bad)}
+.tiny{font-size:11px;color:var(--mut)}
+#toolbar{display:flex;gap:6px;margin:8px 0;overflow-x:auto;scrollbar-width:none}
+#toolbar button{flex:none;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:6px 12px;font:600 13px Nunito;cursor:pointer}
+#btnGames{flex:none;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:6px 12px;font:600 13px Nunito;text-decoration:none}#btnGames:hover,#toolbar button:hover{border-color:var(--acc)}
+#toolbar .hidden{display:none}
+.badge{background:var(--acc);color:#111;border-radius:999px;padding:0 7px;margin-left:4px;font-weight:800}
+#log{flex:1;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px 14px;scroll-behavior:smooth;backdrop-filter:blur(10px)}
+.yr{margin-bottom:12px}
+.yr h4{font-family:Fredoka,sans-serif;font-weight:600;font-size:14px;color:var(--acc);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.yr h4::after{content:"";flex:1;height:1px;background:var(--line)}
+.ent{font-size:14.5px;line-height:1.45;padding:2px 0;animation:fadein .5s both}
+.ent.good{color:#b6f5c8}.ent.bad{color:#fdb4b4}.ent.big{font-weight:800;color:#fff3b0}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:10px 14px;margin-top:8px}
+.stat{font-size:12px;font-weight:700}
+.stat .row{display:flex;justify-content:space-between;margin-bottom:3px}
+.bar{height:8px;border-radius:99px;background:#ffffff18;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .6s,background .6s}
+nav{display:grid;grid-template-columns:repeat(5,1fr);align-items:end;gap:4px;padding:10px 0 12px}
+nav button{background:none;border:none;color:var(--txt);font-size:24px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:14px}
+nav button span{font:700 11px Nunito;color:var(--mut)}
+nav button:hover{background:#ffffff10}
+#ageBtn{width:76px;height:76px;margin:-26px auto 0;border-radius:50%;background:linear-gradient(135deg,hsl(calc(var(--hue) + 150) 85% 58%),hsl(calc(var(--hue) + 190) 85% 50%));font:700 38px Fredoka;color:#0b1220;box-shadow:0 10px 30px hsl(calc(var(--hue) + 150) 80% 50% / .5);animation:pulse 2.4s infinite;line-height:1}
+#ageBtn span{color:#0b1220;font-size:11px;margin-top:-6px}
+#ageBtn:hover{background:linear-gradient(135deg,hsl(calc(var(--hue) + 150) 90% 65%),hsl(calc(var(--hue) + 190) 90% 58%))}
+@keyframes pulse{0%,100%{box-shadow:0 10px 30px hsl(calc(var(--hue) + 150) 80% 50% / .45),0 0 0 0 hsl(calc(var(--hue) + 150) 80% 60% / .5)}50%{box-shadow:0 10px 30px hsl(calc(var(--hue) + 150) 80% 50% / .45),0 0 0 12px transparent}}
+#sheet{position:fixed;inset:0;background:#0009;display:flex;align-items:flex-end;justify-content:center;z-index:20;transition:opacity .25s}
+#sheet.hidden{opacity:0;pointer-events:none}
+.sheet-inner{width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,hsl(var(--hue) 35% 20%),hsl(var(--hue) 40% 12%));border:1px solid var(--line);border-bottom:none;border-radius:24px 24px 0 0;padding:16px;transform:translateY(0);transition:transform .3s cubic-bezier(.2,.9,.3,1.2)}
+#sheet.hidden .sheet-inner{transform:translateY(100%)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sheet-head h2{font:600 21px Fredoka}
+#sheetBack{background:#ffffff15;border:none;color:var(--txt);width:34px;height:34px;border-radius:50%;font:700 22px Fredoka;line-height:1;cursor:pointer;margin-right:10px;flex:none}#sheetBack:hover,#sheetClose:hover{background:#ffffff28}.sheet-head h2{flex:1}
+#sheetClose{background:#ffffff15;border:none;color:var(--txt);width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer}
+#sheetBody{overflow-y:auto;padding-bottom:12px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#ffffff0d;border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:11px 13px;margin-bottom:7px;cursor:pointer;font:600 15px Nunito;transition:transform .1s,border-color .2s,background .2s}
+.opt:hover{border-color:var(--acc);background:#ffffff16}
+.opt:active{transform:scale(.98)}
+.opt .ic{font-size:24px;width:30px;text-align:center;flex:none}
+.opt .tx{flex:1;min-width:0}
+.opt .sub{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-top:1px}
+.opt .rt{font-size:13px;color:var(--mut);text-align:right;flex:none}
+.opt.locked{opacity:.5}
+.opt.primary{background:linear-gradient(135deg,hsl(calc(var(--hue) + 150) 80% 55%),hsl(calc(var(--hue) + 190) 80% 48%));color:#0b1220;justify-content:center;font-weight:800;border:none}
+.opt.danger{border-color:#f8717166;color:#fecaca}
+.sec{font:600 13px Fredoka;text-transform:uppercase;letter-spacing:.08em;color:var(--acc);margin:14px 0 7px}
+.evt-icon{font-size:56px;text-align:center;margin:4px 0 8px;animation:pop .5s}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+.evt-text{font-size:16.5px;line-height:1.5;margin-bottom:14px;text-align:center}
+.info{background:#ffffff0d;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;font-size:14px;line-height:1.5}
+.info b{font-family:Fredoka;font-weight:600}
+input[type=text],input[type=number],select{width:100%;background:#ffffff12;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 12px;font:600 15px Nunito;margin-bottom:10px}
+select option{background:#1b2638}
+label.lb{font-size:12px;font-weight:800;color:var(--mut);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
+.title{font:700 40px Fredoka;text-align:center;background:linear-gradient(90deg,#fff,hsl(calc(var(--hue) + 150) 90% 70%));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{text-align:center;color:var(--mut);margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-120px);background:hsl(var(--hue) 40% 22%);border:1px solid var(--acc);padding:10px 16px;border-radius:14px;font-weight:700;z-index:40;transition:transform .35s cubic-bezier(.2,.9,.3,1.3);max-width:90vw;text-align:center;box-shadow:0 10px 30px #0008}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+.pill{display:inline-block;background:#ffffff15;border-radius:99px;padding:2px 9px;font-size:12px;margin:2px 3px 2px 0}
+.obit{font-family:Fredoka;font-size:17px;line-height:1.5;text-align:center;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div id="avatar">👶</div>
+    <div class="who"><div id="pname">Another Life</div><div id="psub"></div></div>
+    <div class="money"><div id="pmoney">$0</div><div class="tiny" id="pnet"></div></div>
+  </header>
+  <div id="toolbar">
+    <a id="btnGames" href="games.html">&larr; All games</a>
+    <button id="btnUp">⭐ Upgrades<span class="badge" id="ptsBadge">0</span></button>
+    <button id="btnRewind" class="hidden">⏪ Rewind</button>
+    <button id="btnCreator" class="hidden">🪄 Creator</button>
+    <button id="btnAch">🏆 Ribbons</button>
+    <button id="btnSound">🔊</button>
+    <button id="btnNew">↻ New life</button>
+  </div>
+  <main id="log"></main>
+  <section id="stats"></section>
+  <nav>
+    <button data-a="job">💼<span>Career</span></button>
+    <button data-a="assets">🏠<span>Assets</span></button>
+    <button id="ageBtn">+<span>AGE</span></button>
+    <button data-a="rel">❤️<span>People</span></button>
+    <button data-a="act">🎯<span>Activities</span></button>
+  </nav>
+</div>
+<div id="sheet" class="hidden"><div class="sheet-inner"><div class="sheet-head"><button id="sheetBack" title="Back">‹</button><h2 id="sheetTitle"></h2><button id="sheetClose">✕</button></div><div id="sheetBody"></div></div></div>
+<div id="toast"></div>
+<canvas id="fx"></canvas>
+
+<script>
+// ---------- utils ----------
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,Math.round(v)));
+const chance=p=>Math.random()<p;
+const uid=()=>Math.random().toString(36).slice(2,9);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function fmt(n){const s=n<0?'-':'';n=Math.abs(Math.round(n));if(n>=1e9)return s+'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return s+'$'+(n/1e6).toFixed(2)+'M';return s+'$'+n.toLocaleString()}
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+
+// ---------- data ----------
+const MALE=['Liam','Noah','Mateo','Ethan','Lucas','Diego','Oliver','Elijah','Leo','Gabriel','Owen','Julian','Kai','Marcus','Theo','Santiago','Felix','Andre','Hugo','Rafael'];
+const FEMALE=['Olivia','Emma','Sofia','Isabella','Mia','Luna','Valentina','Ava','Camila','Chloe','Zoe','Nora','Elena','Maya','Aria','Lucia','Ines','Hazel','Jade','Rosa'];
+const LAST=['Rivera','Chen','Patel','Johnson','Garcia','Nguyen','Kim','Martinez','Brooks','Okafor','Rossi','Silva','Walker','Hughes','Moreno','Bennett','Novak','Haddad','Larsen','Duarte'];
+const CITIES=['Lisbon','Austin','Toronto','Mexico City','Sydney','Seattle','Barcelona','Tokyo','Cape Town','Denver','Dublin','Buenos Aires','Vancouver','Auckland','Chicago','Valencia'];
+const MAJORS=['Business','Computer Science','Biology','Arts','Engineering','Education','Communications','Nursing','Political Science'];
+const GRAD={
+ 'Medical':{n:'Medical School',y:4,cost:240000,smarts:65,req:['Biology','Nursing'],icon:'🩺'},
+ 'Law':{n:'Law School',y:3,cost:160000,smarts:60,req:null,icon:'⚖️'},
+ 'MBA':{n:'MBA Program',y:2,cost:130000,smarts:50,req:null,icon:'📊'},
+ 'PhD':{n:'PhD Program',y:5,cost:0,smarts:70,req:null,icon:'🔬'},
+ 'Vet':{n:'Veterinary School',y:4,cost:180000,smarts:62,req:['Biology'],icon:'🐾'}
+};
+// careers: req {deg:[...]|'HS'|'UNI', smarts, looks, health, fame, up}
+const CAREER_LIST=[
+ // no degree
+ {id:'fast',n:'Fast Food',ic:'🍔',g:'Starter',req:{},lv:[['Crew Member',19000],['Shift Lead',27000],['Store Manager',48000]]},
+ {id:'barista',n:'Café',ic:'☕',g:'Starter',req:{},lv:[['Barista',22000],['Head Barista',30000],['Café Manager',46000]]},
+ {id:'retail',n:'Retail',ic:'🛍️',g:'Starter',req:{},lv:[['Sales Associate',24000],['Department Lead',34000],['Store Manager',58000],['District Manager',92000]]},
+ {id:'guard',n:'Lifeguard',ic:'🏊',g:'Starter',req:{health:55},lv:[['Lifeguard',23000],['Head Lifeguard',33000],['Aquatics Director',52000]]},
+ {id:'delivery',n:'Delivery Driver',ic:'📦',g:'Starter',req:{},lv:[['Driver',31000],['Route Lead',42000],['Logistics Supervisor',64000]]},
+ // trades (HS)
+ {id:'mech',n:'Mechanic',ic:'🔧',g:'Trades',req:{deg:'HS'},lv:[['Apprentice Mechanic',31000],['Mechanic',49000],['Master Mechanic',72000],['Shop Owner',115000]]},
+ {id:'elec',n:'Electrician',ic:'⚡',g:'Trades',req:{deg:'HS'},lv:[['Apprentice',36000],['Journeyman',63000],['Master Electrician',96000]]},
+ {id:'plumb',n:'Plumber',ic:'🚰',g:'Trades',req:{deg:'HS'},lv:[['Apprentice Plumber',34000],['Plumber',60000],['Master Plumber',92000]]},
+ {id:'chef',n:'Chef',ic:'👨‍🍳',g:'Trades',req:{deg:'HS'},lv:[['Line Cook',31000],['Sous Chef',52000],['Head Chef',82000],['Executive Chef',135000]]},
+ {id:'fire',n:'Firefighter',ic:'🚒',g:'Trades',req:{deg:'HS',health:65},lv:[['Firefighter',53000],['Lieutenant',76000],['Captain',97000],['Fire Chief',145000]]},
+ {id:'police',n:'Police',ic:'🚓',g:'Trades',req:{deg:'HS',health:55},lv:[['Officer',56000],['Detective',82000],['Sergeant',98000],['Chief of Police',155000]]},
+ {id:'somm',n:'Sommelier',ic:'🍷',g:'Trades',req:{deg:'HS',smarts:45},lv:[['Wine Steward',36000],['Sommelier',56000],['Head Sommelier',86000],['Wine Director',132000]]},
+ {id:'pilot',n:'Pilot',ic:'✈️',g:'Trades',req:{deg:'HS',smarts:60,health:60},lv:[['First Officer',92000],['Captain',185000],['Chief Pilot',265000]]},
+ // degree
+ {id:'zoo',n:'Zoo',ic:'🦒',g:'Degree',req:{deg:['Biology','Education']},lv:[['Keeper Aide',32000],['Zookeeper',46000],['Senior Keeper',61000],['Curator',88000],['Zoo Director',165000]]},
+ {id:'mkt',n:'Marketing',ic:'📣',g:'Degree',req:{deg:['Business','Communications','Arts']},lv:[['Marketing Coordinator',48000],['Marketing Specialist',63000],['Marketing Manager',92000],['Marketing Director',138000],['Chief Marketing Officer',265000]]},
+ {id:'design',n:'Graphic Design',ic:'🎨',g:'Degree',req:{deg:['Arts']},lv:[['Junior Designer',46000],['Designer',63000],['Art Director',106000],['Creative Director',172000]]},
+ {id:'journo',n:'Journalism',ic:'📰',g:'Degree',req:{deg:['Communications','Political Science','Arts']},lv:[['Reporter',43000],['Senior Reporter',61000],['Editor',87000],['Editor-in-Chief',152000]]},
+ {id:'teach',n:'Teaching',ic:'🍎',g:'Degree',req:{deg:['Education','Arts','Biology']},lv:[['Teacher',51000],['Senior Teacher',66000],['Vice Principal',91000],['Principal',123000],['Superintendent',190000]]},
+ {id:'nurse',n:'Nursing',ic:'💉',g:'Degree',req:{deg:['Nursing']},lv:[['Registered Nurse',73000],['Charge Nurse',91000],['Nurse Manager',118000],['Director of Nursing',160000]]},
+ {id:'swe',n:'Software',ic:'💻',g:'Degree',req:{deg:['Computer Science','Engineering']},lv:[['Junior Developer',86000],['Software Engineer',126000],['Senior Engineer',178000],['Staff Engineer',245000],['CTO',410000]]},
+ {id:'data',n:'Data Science',ic:'📈',g:'Degree',req:{deg:['Computer Science','Engineering','Business'],smarts:70},lv:[['Data Analyst',76000],['Data Scientist',122000],['Lead Data Scientist',172000],['Chief Data Officer',305000]]},
+ {id:'eng',n:'Engineering',ic:'⚙️',g:'Degree',req:{deg:['Engineering']},lv:[['Junior Engineer',73000],['Engineer',96000],['Senior Engineer',132000],['Principal Engineer',185000]]},
+ {id:'arch',n:'Architecture',ic:'📐',g:'Degree',req:{deg:['Engineering','Arts'],smarts:60},lv:[['Intern Architect',51000],['Architect',86000],['Senior Architect',127000],['Partner',225000]]},
+ {id:'acct',n:'Accounting',ic:'🧮',g:'Degree',req:{deg:['Business']},lv:[['Staff Accountant',59000],['Senior Accountant',79000],['Controller',122000],['CFO',285000]]},
+ {id:'bank',n:'Investment Banking',ic:'🏦',g:'Degree',req:{deg:['Business','MBA'],smarts:75},lv:[['Analyst',112000],['Associate',178000],['Vice President',285000],['Managing Director',620000]]},
+ {id:'wine',n:'Winemaking',ic:'🍇',g:'Degree',req:{deg:['Biology','Business']},lv:[['Cellar Hand',35000],['Assistant Winemaker',56000],['Winemaker',92000],['Estate Director',165000]]},
+ {id:'pol',n:'Politics',ic:'🏛️',g:'Degree',req:{deg:'UNI',smarts:55},lv:[['City Council Member',42000],['Mayor',122000],['Governor',182000],['Senator',176000],['President',400000]]},
+ // graduate
+ {id:'doc',n:'Medicine',ic:'🩺',g:'Graduate',req:{deg:['Medical']},lv:[['Resident',63000],['Physician',225000],['Attending Physician',305000],['Chief of Medicine',460000]]},
+ {id:'surg',n:'Surgery',ic:'🔪',g:'Graduate',req:{deg:['Medical'],smarts:85},lv:[['Surgical Resident',66000],['Surgeon',410000],['Chief Surgeon',660000]]},
+ {id:'vet',n:'Veterinary',ic:'🐶',g:'Graduate',req:{deg:['Vet']},lv:[['Associate Vet',102000],['Veterinarian',128000],['Clinic Owner',205000]]},
+ {id:'law',n:'Law',ic:'⚖️',g:'Graduate',req:{deg:['Law']},lv:[['Associate',122000],['Senior Associate',182000],['Partner',410000],['Supreme Court Justice',290000]]},
+ {id:'prof',n:'Academia',ic:'🎓',g:'Graduate',req:{deg:['PhD']},lv:[['Lecturer',61000],['Assistant Professor',87000],['Associate Professor',112000],['Full Professor',152000],['Dean',225000]]},
+ {id:'consult',n:'Consulting',ic:'🧠',g:'Graduate',req:{deg:['MBA']},lv:[['Consultant',140000],['Senior Consultant',195000],['Principal',290000],['Senior Partner',750000]]},
+ {id:'astro',n:'Astronaut',ic:'👩‍🚀',g:'Graduate',req:{deg:['PhD','Medical','Engineering'],smarts:85,health:80},lv:[['Astronaut Candidate',92000],['Astronaut',142000],['Mission Commander',195000]]},
+ // spotlight (upgrade)
+ {id:'actor',n:'Acting',ic:'🎬',g:'Spotlight',fame:1,req:{up:'spotlight',looks:45},lv:[['Background Extra',15000],['Supporting Actor',95000],['Lead Actor',850000],['A-List Movie Star',5200000]]},
+ {id:'music',n:'Music',ic:'🎤',g:'Spotlight',fame:1,req:{up:'spotlight'},lv:[['Street Performer',12000],['Indie Artist',52000],['Signed Artist',420000],['Global Superstar',4200000]]},
+ {id:'influ',n:'Content Creator',ic:'📱',g:'Spotlight',fame:1,req:{up:'spotlight',looks:35},lv:[['Micro Creator',20000],['Creator',125000],['Mega Influencer',1600000]]},
+ {id:'athlete',n:'Pro Athlete',ic:'🏆',g:'Spotlight',fame:1,req:{up:'spotlight',health:75},lv:[['Minor League',41000],['Pro Rookie',720000],['All-Star',8200000],['Hall of Famer',21000000]]},
+ {id:'model',n:'Modeling',ic:'📸',g:'Spotlight',fame:1,req:{up:'spotlight',looks:75},lv:[['Catalog Model',30000],['Runway Model',180000],['Supermodel',2500000]]},
+ {id:'chefTV',n:'Celebrity Chef',ic:'📺',g:'Spotlight',fame:1,req:{up:'spotlight',deg:'HS'},lv:[['Local Cooking Show',40000],['Network Chef',300000],['Food Empire',3000000]]},
+];
+const CAR={};CAREER_LIST.forEach(c=>CAR[c.id]=c);
+
+const UPGRADES=[
+ {id:'spotlight',ic:'🌟',n:'Spotlight Pack',d:'Unlocks 6 fame careers (actor, musician, creator, athlete, model, TV chef), social posting and a Fame meter.',cost:40},
+ {id:'mogul',ic:'🏢',n:'Mogul Pack',d:'Start and run businesses: food trucks, wineries, startups and hotels. Startups can IPO.',cost:50},
+ {id:'creator',ic:'🪄',n:'Creator Mode',d:'Edit your stats and money any time, and design your character before birth.',cost:80},
+ {id:'rewind',ic:'⏪',n:'Time Machine',d:'Rewind the last year, up to 3 times per life.',cost:60},
+ {id:'pets',ic:'🐾',n:'Pet Pack',d:'Adopt dogs, cats, parrots, horses and more. Pets boost happiness every year.',cost:20},
+ {id:'lucky',ic:'🍀',n:'Lucky Charm',d:'Better odds on interviews, promotions, the lottery and risky choices.',cost:30},
+ {id:'trust',ic:'💎',n:'Trust Fund',d:'Start every life with $50,000 and generous parents.',cost:40},
+ {id:'scholar',ic:'📚',n:'Gifted Mind',d:'+15 smarts at birth and half-price tuition.',cost:25},
+];
+const HOUSES=[['Studio Condo','🏢',280000],['Cozy Bungalow','🏠',650000],['Family Home','🏡',1100000],['Beach House','🏖️',3200000],['Hillside Mansion','🏰',11000000],['Private Island','🏝️',60000000]];
+const CARS=[['Used Hatchback','🚗',7000],['Reliable Sedan','🚙',28000],['Electric Car','🔋',48000],['Pickup Truck','🛻',52000],['Sports Car','🏎️',130000],['Supercar','🚀',450000],['Private Jet','🛩️',9000000]];
+const BIZ=[['Food Truck','🚚',40000],['Coffee Shop','☕',150000],['Fitness Studio','🏋️',220000],['Tech Startup','💻',300000],['Record Label','🎵',750000],['Boutique Winery','🍷',900000],['Boutique Hotel','🏨',4000000]];
+const PETS=[['Dog','🐕',300,14],['Cat','🐈',150,16],['Parrot','🦜',800,40],['Bunny','🐇',100,9],['Tortoise','🐢',200,80],['Horse','🐎',5000,28],['Hamster','🐹',30,3]];
+const PETNAMES=['Biscuit','Mochi','Pepper','Luna','Taco','Ziggy','Olive','Bean','Maple','Rocket','Pickles','Nova','Waffles','Juno'];
+const ILLS=[['the flu',3],['a nasty cold',2],['pneumonia',8],['a broken arm',4],['migraines',3],['a back injury',5],['high blood pressure',6],['a heart condition',10],['food poisoning',3]];
+const IQ=[
+ ['Why do you want this job?',['I care about the work and want to grow here.','Honestly? The paycheck.','My mom made me apply.']],
+ ['What is your biggest weakness?',['I take on too much, so I have learned to prioritize.','I do not have any.','Waking up before noon.']],
+ ['Where do you see yourself in 5 years?',['Leading projects on this team.','In your chair.','No idea, man.']],
+ ['Tell me about a time you handled conflict.',['I listened first, then found a compromise.','I usually just avoid people.','I win every argument.']],
+ ['How do you handle pressure?',['I break the problem down and focus.','I cry a bit, then I am fine.','What pressure?']],
+ ['Why should we hire you over others?',['I bring real skills and I show up.','I am cheaper.','You should not, probably.']],
+];
+
+// ---------- meta (persists across lives) ----------
+let M=store.get('al_meta')||{points:60,up:{},lives:0,ach:{},sandbox:false,sound:true,best:0};
+const has=u=>M.sandbox||!!M.up[u];
+const L=()=>has('lucky')?0.12:0;
+function saveMeta(){store.set('al_meta',M)}
+
+// ---------- state ----------
+let S=null,PREV=null,Q=[],sheetOpen=false;
+function save(){store.set('al_life',S);saveMeta()}
+
+function newLife(o={}){
+ const g=o.gender||pick(['male','female']);
+ const last=o.last||pick(LAST);
+ S={name:o.name||(pick(g==='male'?MALE:FEMALE)+' '+last),gender:g,age:0,born:o.born||2026,city:o.city||pick(CITIES),alive:true,
+  st:{health:rnd(70,100),happy:rnd(60,100),smarts:rnd(20,90),looks:rnd(20,95)},fame:0,karma:50,
+  money:0,debt:0,log:[],school:null,degrees:[],job:null,retired:null,rel:[],assets:[],biz:[],pets:[],used:{},ill:null,flags:{},
+  rewinds:3,gen:o.gen||1,achs:[],jobsHeld:[],cause:null,paid:false};
+ if(has('scholar'))S.st.smarts=clamp(S.st.smarts+15);
+ if(o.stats)Object.assign(S.st,o.stats);
+ if(has('trust'))S.money+=50000;
+ if(o.money)S.money+=o.money;
+ PREV=null;Q=[];
+ if(!o.noFamily){
+  const mom={id:uid(),name:pick(FEMALE)+' '+last,role:'Mother',gender:'female',age:rnd(20,40),rel:rnd(60,100),alive:true};
+  const dad={id:uid(),name:pick(MALE)+' '+last,role:'Father',gender:'male',age:rnd(21,45),rel:rnd(55,100),alive:true};
+  S.rel.push(mom,dad);
+  for(let i=0;i<rnd(0,2);i++){const sg=pick(['male','female']);S.rel.push({id:uid(),name:pick(sg==='male'?MALE:FEMALE)+' '+last,role:sg==='male'?'Brother':'Sister',gender:sg,age:rnd(1,9),rel:rnd(40,90),alive:true})}
+  log(`I was born a ${g==='male'?'boy':'girl'} in ${S.city}. 🎉`,'big');
+  log(`My mother is ${mom.name} (${mom.age}) and my father is ${dad.name} (${dad.age}).`);
+  const sibs=S.rel.filter(r=>r.role==='Brother'||r.role==='Sister');
+  if(sibs.length)log(`I have ${sibs.length===1?'a sibling':'siblings'}: ${sibs.map(s=>s.name.split(' ')[0]+' ('+s.age+')').join(', ')}.`);
+  if(has('trust'))log('My family is wealthy. A trust fund has been set up in my name. 💎','good');
+ }
+ save();render();
+}
+
+function log(t,cls=''){S.log.push({a:S.age,t,c:cls});if(S.log.length>600)S.log.splice(0,S.log.length-600)}
+function E(o){for(const k in o){if(k in S.st)S.st[k]+=o[k];else if(k==='money')S.money+=o[k];else S[k]+=o[k]}}
+function fix(){for(const k in S.st)S.st[k]=clamp(S.st[k]);S.karma=clamp(S.karma);S.fame=clamp(S.fame);checkAch();save();render()}
+const net=()=>S.money-S.debt+S.assets.reduce((a,b)=>a+b.val,0)+S.biz.reduce((a,b)=>a+b.val,0);
+const first=n=>n.split(' ')[0];
+const year=()=>S.born+S.age;
+const ppl=role=>S.rel.filter(r=>r.alive&&(Array.isArray(role)?role.includes(r.role):r.role===role));
+const partner=()=>S.rel.find(r=>r.alive&&['Partner','Fiancé','Fiancée','Spouse'].includes(r.role));
+const kids=()=>S.rel.filter(r=>r.role==='Son'||r.role==='Daughter');
+function once(k){if(S.used[k]){toast('You already did that this year. Age up!');return false}S.used[k]=1;return true}
+
+// ---------- audio / fx ----------
+let AC=null;
+function beep(f=660,d=.08,type='sine',v=.05){if(!M.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);const t=AC.currentTime;g.gain.exponentialRampToValueAtTime(.0001,t+d);o.start(t);o.stop(t+d)}catch(e){}}
+function chime(){beep(523,.12);setTimeout(()=>beep(659,.12),90);setTimeout(()=>beep(784,.2),180)}
+function sad(){beep(330,.25,'triangle');setTimeout(()=>beep(262,.4,'triangle'),200)}
+const fx=$('#fx'),cx=fx.getContext('2d');let parts=[];
+function resize(){fx.width=innerWidth;fx.height=innerHeight}resize();addEventListener('resize',resize);
+function confetti(n=90){for(let i=0;i<n;i++)parts.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*12,vy:Math.random()*-11-3,c:`hsl(${rnd(0,360)} 90% 60%)`,s:rnd(4,8),r:Math.random()*6,l:120});if(parts.length===n)requestAnimationFrame(tick);chime()}
+function tick(){cx.clearRect(0,0,fx.width,fx.height);parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.3;p.vx*=.99;p.r+=.2;p.l--;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);cx.restore()});parts=parts.filter(p=>p.l>0);if(parts.length)requestAnimationFrame(tick);else cx.clearRect(0,0,fx.width,fx.height)}
+let tt;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2600)}
+
+// ---------- sheets ----------
+let navStack=[],curNav=null;
+function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen)navStack=[];if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,go:()=>fn(...args),title:null};fn(...args)}}
+function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();curNav=prev;beep(420,.05);prev.go()}
+function backToMenu(){if(curNav)curNav.go();else closeSheet()}
+function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=!forced&&navStack.length?'':'none';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
+function closeSheet(){$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
+function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
+$('#sheetBack').onclick=goBack;
+$('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
+$('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&$('#sheetClose').style.display!=='none')closeSheet()});
+function opt(ic,label,sub,fn,o={}){const b=el('button','opt'+(o.cls?' '+o.cls:''));b.innerHTML=`${ic?`<span class="ic">${ic}</span>`:''}<span class="tx">${label}${sub?`<span class="sub">${sub}</span>`:''}</span>${o.rt?`<span class="rt">${o.rt}</span>`:''}`;b.onclick=()=>{beep(520,.05);fn()};return b}
+function sec(t){return el('div','sec',t)}
+function choice(title,text,chs,icon='❓'){const w=el('div');w.append(el('div','evt-icon',icon),el('p','evt-text',text));chs.forEach(([l,f])=>w.append(opt('',l,'',()=>{const r=f();fix();if(r)result(title,r,icon);else closeSheet()})));sheet(title,w,true);beep(440,.1,'triangle')}
+function result(title,r,icon){log(r,/lost|hurt|fired|caught|died|broke|failed|sad|rejected|botched|declined/i.test(r)?'bad':'');const w=el('div');w.append(el('div','evt-icon',icon||'✨'),el('p','evt-text',r));if(curNav&&curNav.title&&!curNav.forced)w.append(opt('‹',`Back to ${curNav.title}`,'',backToMenu));w.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet(title,w,true);fix()}
+function act(title,r,icon){result(title,r,icon)}
+
+// ---------- render ----------
+function stage(){const a=S.age;return a<3?0:a<13?1:a<20?2:a<60?3:4}
+function avatar(){if(!S.alive)return'🪦';const m=S.gender==='male',a=S.age;if(a<3)return'👶';if(a<13)return m?'👦':'👧';if(a<20)return m?'🧑':'👱‍♀️';if(a<60)return m?'👨':'👩';return m?'👴':'👵'}
+function mood(){const h=S.st.happy;return h>80?'😄':h>60?'🙂':h>40?'😐':h>20?'😟':'😢'}
+function render(){
+ if(!S)return;
+ document.documentElement.style.setProperty('--hue',[330,175,270,210,35][stage()]);
+ $('#avatar').textContent=avatar();
+ $('#pname').textContent=`${S.name} ${S.alive?mood():''}`;
+ const title=S.job?CAR[S.job.id].lv[S.job.lvl][0]:S.school?S.school.type:S.retired?'Retired':S.age<5?'Toddler':S.age>=18?'Unemployed':'Kid';
+ $('#psub').textContent=`Age ${S.age} · ${title} · ${S.city}`;
+ const pm=$('#pmoney');pm.textContent=fmt(S.money);pm.classList.toggle('neg',S.money<0);
+ $('#pnet').textContent='Net worth '+fmt(net());
+ $('#ptsBadge').textContent=M.sandbox?'∞':M.points;
+ $('#btnRewind').classList.toggle('hidden',!has('rewind'));
+ $('#btnRewind').textContent=`⏪ Rewind (${S.rewinds})`;
+ $('#btnCreator').classList.toggle('hidden',!has('creator'));
+ $('#btnSound').textContent=M.sound?'🔊':'🔇';
+ // log
+ const lg=$('#log');lg.innerHTML='';let cur=null,box;
+ S.log.slice(-250).forEach(e=>{if(e.a!==cur){cur=e.a;box=el('div','yr');box.append(el('h4','',`Age ${e.a} · ${S.born+e.a}`));lg.append(box)}box.append(el('div','ent '+e.c,e.t))});
+ lg.scrollTop=lg.scrollHeight;
+ // stats
+ const st=$('#stats');st.innerHTML='';
+ const list=[['❤️ Health',S.st.health],['😊 Happiness',S.st.happy],['🧠 Smarts',S.st.smarts],['✨ Looks',S.st.looks],['☯️ Karma',S.karma]];
+ if(has('spotlight')||S.fame>0)list.push(['🌟 Fame',S.fame]);
+ list.forEach(([n,v])=>{const c=v>66?'var(--good)':v>33?'var(--mid)':'var(--bad)';st.append(el('div','stat',`<div class="row"><span>${n}</span><span>${v}%</span></div><div class="bar"><i style="width:${v}%;background:${c}"></i></div>`))});
+}
+
+// ---------- aging ----------
+function ageUp(){
+ if(sheetOpen)return;
+ if(!S.alive)return showDeath();
+ PREV=JSON.stringify(S);
+ S.age++;S.used={};
+ const av=$('#avatar');av.classList.add('bump');setTimeout(()=>av.classList.remove('bump'),400);
+ beep(700,.06);setTimeout(()=>beep(900,.06),60);
+ yearly();
+ fix();
+ if(!S.alive){Q=[showDeath];nextQ();return}
+ if(S.age>=2&&chance(.6))queueEvent();
+ if(chance(.08)&&S.age>=4)queueEvent();
+ nextQ();
+}
+
+function yearly(){
+ const a=S.age;
+ // milestones
+ if(a===1)log('I took my first steps! 👣');
+ if(a===2)log(pick(['My first word was "no".','My first word was "dog".','My first word was "more".']));
+ // stats drift
+ S.st.happy+=Math.sign(55-S.st.happy)*rnd(0,3)+rnd(-3,3);
+ if(a>30)S.st.health-=rnd(0,2);
+ if(a>55)S.st.health-=rnd(0,3);
+ if(a>75)S.st.health-=rnd(1,4);
+ if(a>38&&chance(.4))S.st.looks-=1;
+ if(a<18)S.st.smarts+=rnd(0,2);
+ if(S.fame>0&&!(S.job&&CAR[S.job.id].fame))S.fame-=rnd(0,3);
+ // illness
+ if(S.ill){S.st.health-=S.ill.sev;if(chance(.15)){log(`I recovered from ${S.ill.n} on my own.`,'good');S.ill=null}else if(S.st.health<35){log(`⚠️ My ${S.ill.n} is getting worse. I really need to see a doctor!`,'bad');Q.push(()=>toast('⚠️ Your health is failing. Visit a doctor in Activities.'))}}
+ else if(chance(a>60?.12:a>40?.06:.035)){const i=pick(ILLS);S.ill={n:i[0],sev:i[1]};log(`I came down with ${i[0]}. 🤒 I should see a doctor.`,'bad');S.st.happy-=4}
+ // people
+ S.rel.forEach(r=>{if(!r.alive)return;r.age++;if(!['Son','Daughter'].includes(r.role))r.rel=clamp(r.rel-rnd(0,4));
+  const p=r.age>70?Math.pow((r.age-70)/32,2)*.7:0.002;
+  if(chance(p)){r.alive=false;log(`My ${r.role.toLowerCase()} ${r.name} died at age ${r.age}. 🕊️`,'bad');S.st.happy-=r.rel>60?18:8;sad();
+   if(['Mother','Father'].includes(r.role)&&chance(.45)){const inh=has('trust')?rnd(80000,600000):rnd(3000,90000);S.money+=inh;log(`I inherited ${fmt(inh)}.`,'good')}
+   if(r.role==='Spouse')log('I am now widowed.','bad')}
+  if((r.role==='Son'||r.role==='Daughter')&&r.age===18&&r.alive)log(`${first(r.name)} turned 18 and moved out. 🎓`);
+ });
+ // pets
+ S.pets.forEach(p=>{if(!p.alive)return;p.age++;S.st.happy+=2;if(p.age>p.life||chance(.01)){p.alive=false;log(`My ${p.type.toLowerCase()} ${p.name} passed away. 🌈`,'bad');S.st.happy-=10}});
+ // school
+ schoolYear();
+ // job
+ if(S.job){const c=CAR[S.job.id],lv=c.lv[S.job.lvl];const pay=lv[1]*(1+S.job.years*.015);S.money+=pay*.72;S.job.years++;
+  S.job.perf=clamp(S.job.perf+rnd(-10,7)+(S.st.smarts-50)/20+(S.st.happy-50)/25);
+  if(c.fame)S.fame+=rnd(1,3)+S.job.lvl*3;
+  if(S.job.perf>62&&S.job.lvl<c.lv.length-1&&chance(.3+L()+(S.job.perf-62)/120)){promote()}
+  else if(S.job.perf<15&&chance(.55)){log(`I was fired from my job as ${lv[0]}. 📦`,'bad');S.job=null;S.st.happy-=15}}
+ if(S.retired)S.money+=S.retired;
+ // expenses
+ if(a>=18){let cost=0;const home=S.assets.some(x=>x.kind==='house');
+  if(!(S.school&&S.school.type!=='High School'))cost+=home?9000:19000;
+  else cost+=6000;
+  const p=partner();if(p&&p.role==='Spouse')cost*=.7;
+  cost+=kids().filter(k=>k.alive&&k.age<18).length*9000;
+  cost+=S.pets.filter(p=>p.alive).length*600;
+  S.money-=cost;
+  if(S.debt>0){S.debt*=1.05;const pay=Math.min(S.debt,Math.max(6000,S.debt*.1));if(S.money>pay){S.money-=pay;S.debt-=pay}else S.st.happy-=3;if(S.debt<1)S.debt=0}
+  if(S.money<0){S.st.happy-=5;if(chance(.5))log('Bills are piling up. I am in the red. 😬','bad')}}
+ S.assets.forEach(x=>{if(x.kind==='house')x.val*=1+rnd(-4,8)/100;else x.val*=.88;S.st.happy+=x.kind==='house'?1:.5});
+ S.biz.forEach(b=>{const pr=b.val*(rnd(-14,24)+b.mgmt)/100;S.money+=pr;b.val*=1+rnd(-8,14)/100;b.mgmt=Math.max(0,b.mgmt-2);
+  if(b.name==='Tech Startup'&&!b.ipo&&chance(.04+L()/3)){b.ipo=1;b.val*=20;log(`🚀 My Tech Startup went public! It is now worth ${fmt(b.val)}.`,'big');Q.push(()=>{confetti();toast('IPO! 🚀')})}
+  else if(pr<-b.val*.08)log(`${b.icon} ${b.name} had a rough year (${fmt(pr)}).`,'bad')});
+ // death
+ let p=0;if(S.st.health<=0)p=1;else if(a>65)p=Math.pow((a-65)/40,2)*(1.3-S.st.health/100);if(a>=118)p=1;
+ if(chance(p))die(S.st.health<=0?(S.ill?S.ill.n:'poor health'):pick(['old age','heart failure','natural causes','a peaceful sleep']));
+}
+
+function promote(){const c=CAR[S.job.id];S.job.lvl++;S.job.perf=Math.max(35,S.job.perf-25);const t=c.lv[S.job.lvl][0];log(`I was promoted to ${t}! 🎊`,'big');S.st.happy+=8;Q.push(()=>{confetti();toast(`Promoted: ${t}`)})}
+
+function schoolYear(){
+ const a=S.age;
+ if(a===5&&!S.school){S.school={type:'Elementary School',left:6,perf:60};log('I started elementary school. 🎒')}
+ if(!S.school||a===5)return;
+ S.school.left--;S.school.perf=clamp(S.school.perf+rnd(-8,6)+(S.st.smarts-50)/12);
+ if(S.school.left>0)return;
+ const t=S.school.type;
+ if(t==='Elementary School'){S.school={type:'Middle School',left:3,perf:60};log('I started middle school.')}
+ else if(t==='Middle School'){S.school={type:'High School',left:4,perf:60};log('I started high school. 🏫')}
+ else if(t==='High School'){S.degrees.push('HS');S.school=null;log('I graduated from high school! 🎓','big');Q.push(()=>{confetti();uniOffer()})}
+ else if(t==='University'){S.degrees.push(S.school.major);log(`I graduated with a degree in ${S.school.major}! 🎓`,'big');S.school=null;Q.push(()=>{confetti();gradOffer()})}
+ else{const k=S.school.key;S.degrees.push(k);log(`I graduated from ${GRAD[k].n}! ${GRAD[k].icon}`,'big');S.school=null;Q.push(confetti)}
+}
+
+function tuition(base){let c=base;if(has('scholar'))c/=2;if(S.st.smarts>=85&&chance(.6+L())){return{c:0,msg:'I earned a full scholarship! 🏅'}}const par=ppl(['Mother','Father']);if(has('trust')&&par.length)return{c:0,msg:'My parents paid my tuition.'};if(S.money>=c)return{c,msg:`I paid ${fmt(c)} in tuition.`,cash:1};return{c,msg:`I took out ${fmt(c)} in student loans.`,loan:1}}
+function enrollUni(m){const t=tuition(100000);if(t.cash)S.money-=t.c;if(t.loan)S.debt+=t.c;S.school={type:'University',major:m,left:4,perf:60};log(`I enrolled at university to study ${m}. ${t.msg}`,'good');closeSheet()}
+function enrollGrad(k){const g=GRAD[k];if(S.st.smarts<g.smarts&&!chance(.15+L())){result(g.n,`I was rejected from ${g.n}. Maybe hit the library more.`,'📭');return}const t=tuition(g.cost);if(g.cost===0)t.msg='It is fully funded with a stipend.';if(t.cash)S.money-=t.c;if(t.loan)S.debt+=t.c;S.school={type:g.n,key:k,left:g.y,perf:60};result(g.n,`I was accepted to ${g.n}! ${t.msg}`,g.icon)}
+function uniOffer(){const w=el('div');w.append(el('p','evt-text','High school is done. What now?'));w.append(sec('Pick a university major'));MAJORS.forEach(m=>w.append(opt('🎓',m,'4 years',()=>enrollUni(m))));w.append(sec('Or'));w.append(opt('💼','Skip college and get a job','',()=>{log('I decided to skip college.');closeSheet()}));w.append(opt('🎒','Take a gap year','',()=>{S.st.happy+=8;log('I took a gap year to travel and figure things out. 🌍','good');closeSheet()}));sheet('Graduation 🎓',w,true)}
+function gradOffer(){const w=el('div');w.append(el('p','evt-text','Congrats, grad! Want to keep studying?'));Object.entries(GRAD).forEach(([k,g])=>{const ok=!g.req||g.req.some(d=>S.degrees.includes(d));w.append(opt(g.icon,g.n,`${g.y} years · ${g.cost?fmt(g.cost):'funded'} · ${ok?'needs '+g.smarts+' smarts':'needs '+g.req.join(' or ')+' degree'}`,()=>{if(!ok)return toast('You need a '+g.req.join(' or ')+' degree.');enrollGrad(k)},{cls:ok?'':'locked'}))});w.append(opt('💼','Start my career','',()=>{closeSheet()},{cls:'primary'}));sheet('Grad School?',w,!sheetOpen)}
+
+function die(cause){S.alive=false;S.cause=cause;log(`I died at age ${S.age} from ${cause}. 🕊️`,'bad')}
+
+// ---------- events ----------
+const EV=[
+ {a:[4,10],ic:'🐶',t:'A stray puppy follows you home from the park. It looks hungry.',c:[['Beg to keep it',()=>{if(chance(.5)){addPet(PETS[0]);return'My parents caved! We have a new family dog.'}S.st.happy-=4;return'My parents said no. I cried for an hour.'}],['Feed it and let it go',()=>{E({karma:3,happy:2});return'The puppy wagged its tail and trotted off. I felt good.'}]]},
+ {a:[6,17],ic:'😠',t:'A bully at school keeps shoving you in the hallway.',c:[['Fight back',()=>{if(chance(.45+S.st.health/300+L())){E({happy:8,karma:-2});return'I stood my ground and won. Nobody bothers me now.'}E({health:-10,happy:-6});return'I lost the fight and got hurt.'}],['Tell a teacher',()=>{E({karma:4,happy:2});return'The teacher handled it. The bully got detention.'}],['Ignore it',()=>{E({happy:-6});return'I ignored it, but it still made me sad.'}]]},
+ {a:[7,17],ic:'🎭',t:'The school talent show is coming up!',c:[['Sing a song',()=>{if(chance(S.st.looks/150+.25+L())){E({happy:10,fame:2});return'The crowd went wild. I got a standing ovation!'}E({happy:-5});return'My voice cracked on the high note. Everyone laughed.'}],['Do a magic trick',()=>{if(chance(S.st.smarts/130+L())){E({happy:9,smarts:1});return'I pulled it off. Kids still ask how I did it.'}E({happy:-4});return'I dropped the cards everywhere.'}],['Skip it',()=>'I watched from the audience.']]},
+ {a:[7,13],ic:'🪟',t:'Your baseball just smashed the neighbor\'s window.',c:[['Confess',()=>{E({karma:6});ppl(['Mother','Father']).forEach(p=>p.rel+=3);return'I told the truth. My parents were proud I owned up.'}],['Run and hide',()=>{if(chance(.5)){E({karma:-5});return'Nobody found out. I feel a little guilty.'}E({karma:-6,happy:-6});return'I got caught and grounded for a month.'}]]},
+ {a:[9,17],ic:'🔬',t:'Science fair! What will you build?',c:[['A baking-soda volcano',()=>{E({happy:3});return'Classic. I got an honorable mention.'}],['A tiny robot',()=>{if(chance(S.st.smarts/110+L())){E({smarts:4,happy:8});return'My robot won first place! 🥇'}E({happy:-3});return'My robot caught fire. Judges were not impressed.'}],['Skip it',()=>'I skipped the science fair.']]},
+ {a:[6,11],ic:'🍋',t:'You set up a lemonade stand. What do you charge?',c:[['$1 a cup',()=>{const m=rnd(10,40);S.money+=m;return`Steady business. I made ${fmt(m)}.`}],['$5 a cup',()=>{if(chance(.35)){S.money+=60;return'A rich neighbor bought 12 cups. I made $60!'}return'Nobody bought any. Too pricey.'}],['Free for everyone',()=>{E({karma:5,happy:5});return'The whole street loved me.'}]]},
+ {a:[4,12],ic:'🦁',t:'Your family visits the zoo for the day.',c:[['Watch the big cats',()=>{E({happy:6,smarts:1});return'A lion yawned right at me. Best day ever.'}],['Find the red pandas',()=>{E({happy:7,smarts:1});return'I fell in love with the red pandas. I want to work with animals someday.'}]]},
+ {a:[8,16],ic:'👻',t:'Your friends dare you to go into the "haunted" house on the corner.',c:[['Go in',()=>{if(chance(.6)){E({happy:6});return'It was just an old empty house. I am a legend now.'}E({happy:-5,health:-3});return'I tripped on the stairs and ran out screaming.'}],['Nope',()=>{E({happy:-1});return'My friends called me chicken.'}]]},
+ {a:[13,18],ic:'💘',t:'You have a huge crush on someone in your class.',c:[['Ask them to the dance',()=>{if(chance(S.st.looks/120+.15+L())){E({happy:12});return'They said yes! We danced all night. 💃'}E({happy:-8});return'They said no. Ouch.'}],['Stay quiet',()=>'I kept it to myself.']]},
+ {a:[15,21],ic:'🎉',t:'You are invited to a wild house party.',c:[['Go and party',()=>{if(chance(.2)){E({happy:-6,karma:-3});ppl(['Mother','Father']).forEach(p=>p.rel-=8);return'The police showed up. My parents were furious.'}E({happy:9,health:-2});return'Best night of the year!'}],['Stay home and study',()=>{E({smarts:3});if(S.school)S.school.perf+=6;return'I studied instead. My grades thank me.'}]]},
+ {a:[13,24],cond:()=>S.school,ic:'📝',t:'You could cheat on a big exam. The answers are going around.',c:[['Cheat',()=>{if(chance(.35-L())){S.school.perf-=30;E({karma:-6,happy:-8});return'I got caught cheating. Zero on the exam.'}S.school.perf+=10;E({karma:-4});return'I aced it. It feels a bit hollow.'}],['Study honestly',()=>{S.school.perf+=5;E({smarts:2,karma:2});return'I studied hard and did fine.'}]]},
+ {a:[16,16],ic:'🚗',t:'You are old enough to take your driving test.',c:[['Take the test',()=>{if(chance(.55+S.st.smarts/250+L())){S.flags.license=1;E({happy:8});return'I passed my driving test! 🪪'}E({happy:-5});return'I failed. I rolled through a stop sign.'}],['Wait a year',()=>'I decided to wait.']]},
+ {a:[15,17],ic:'🧃',t:'A local shop offers you a summer job.',c:[['Take it',()=>{const m=rnd(1500,3500);S.money+=m;E({happy:-1});return`I worked all summer and earned ${fmt(m)}.`}],['Enjoy summer instead',()=>{E({happy:6});return'I spent the summer at the beach.'}]]},
+ {a:[12,90],ic:'👛',t:'You find a wallet on the sidewalk with $300 inside.',c:[['Return it',()=>{E({karma:8});if(chance(.4)){S.money+=100;return'The owner was so grateful they gave me $100.'}return'I returned it. The owner hugged me.'}],['Keep the cash',()=>{S.money+=300;E({karma:-8});return'I pocketed $300. Karma is watching.'}]]},
+ {a:[20,80],cond:()=>S.money>2500,ic:'🤝',t:'A friend asks to borrow $2,000.',c:[['Lend it',()=>{S.money-=2000;E({karma:3});if(chance(.55)){S.money+=2000;return'They paid me back a few months later.'}return'They never paid me back. Lesson learned.'}],['Say no',()=>{E({karma:-1});return'I said no. Things are a bit awkward now.'}]]},
+ {a:[18,70],cond:()=>S.job,ic:'😤',t:'A coworker took credit for your work in a big meeting.',c:[['Confront them',()=>{if(chance(.5)){S.job.perf+=8;return'I called it out calmly. My boss noticed.'}S.job.perf-=6;return'It turned into a shouting match. Not great.'}],['Tell the boss privately',()=>{S.job.perf+=5;E({karma:1});return'My boss thanked me and gave me credit.'}],['Let it go',()=>{E({happy:-5});return'I let it slide. It still stings.'}]]},
+ {a:[24,60],cond:()=>S.job&&S.job.lvl<CAR[S.job.id].lv.length-1,ic:'📞',t:'A recruiter offers you a higher role at a rival company.',c:[['Take the offer',()=>{S.job.lvl++;S.job.perf=50;S.job.years=0;E({happy:6});return`I jumped ship and became ${CAR[S.job.id].lv[S.job.lvl][0]}! 🎉`}],['Stay loyal',()=>{S.job.perf+=8;return'I stayed. My boss appreciated the loyalty.'}]]},
+ {a:[22,75],cond:()=>S.money>5000,ic:'📈',t:'A friend swears a small stock is about to explode. Invest $5,000?',c:[['Invest $5,000',()=>{S.money-=5000;const r=Math.random()+L();if(r>.75){const g=5000*rnd(3,10);S.money+=g;return`It mooned! I cashed out ${fmt(g)}. 🚀`}if(r>.4){S.money+=rnd(3000,7000);return'It went sideways. I got roughly my money back.'}return'The stock crashed. I lost it all.'}],['Pass',()=>'I passed on the tip.']]},
+ {a:[18,90],ic:'📧',t:'An email says you won a prize. Just click the link and enter your bank info.',c:[['Click it',()=>{const l=Math.max(500,Math.round(S.money*.1));S.money-=l;E({happy:-8});return`It was a scam. I lost ${fmt(l)}.`}],['Delete it',()=>{E({smarts:1});return'Nice try, scammers.'}]]},
+ {a:[25,80],rare:.3,ic:'📜',t:'A lawyer calls: a distant relative left you something in their will.',c:[['Accept it',()=>{const m=rnd(5000,90000);S.money+=m;E({happy:8});return`I inherited ${fmt(m)} from a great-aunt I never met.`}]]},
+ {a:[15,60],ic:'📹',t:'A video of you doing something funny goes viral overnight.',c:[['Lean into it',()=>{E({fame:15,happy:6});return'I posted more. Strangers recognize me now. 🌟'}],['Ask for it to be taken down',()=>{E({happy:-2});return'It faded away after a week.'}]]},
+ {a:[20,60],ic:'🏃',t:'Your friends sign up for a marathon and want you in.',c:[['Train and run it',()=>{if(chance(S.st.health/110+L())){E({health:8,happy:8});return'I finished the marathon! 🏅'}E({health:-6});return'I hurt my knee at mile 14.'}],['Cheer from the sidelines',()=>{E({happy:2});return'I made a great sign and cheered.'}]]},
+ {a:[21,85],ic:'🍷',t:'A friend invites you to a wine tasting in the countryside.',c:[['Go',()=>{E({happy:7,smarts:2});return'I learned the difference between a Syrah and a Pinot. Fancy.'}],['Skip it',()=>'I stayed home.']]},
+ {a:[14,85],ic:'🤲',t:'A local charity needs volunteers this weekend.',c:[['Volunteer',()=>{E({karma:7,happy:4});return'I spent the weekend helping out. It felt great.'}],['I am busy',()=>{E({karma:-1});return'I passed this time.'}]]},
+ {a:[18,90],cond:()=>S.assets.some(x=>x.kind==='car'),ic:'🔧',t:'Your car broke down on the highway.',c:[['Pay $1,500 to repair',()=>{S.money-=1500;return'It is fixed and running like new.'}],['Sell it for scrap',()=>{const i=S.assets.findIndex(x=>x.kind==='car');const c=S.assets.splice(i,1)[0];S.money+=Math.round(c.val*.2);return`I scrapped my ${c.name}.`}]]},
+ {a:[21,80],ic:'⚖️',t:'You were summoned for jury duty.',c:[['Serve',()=>{E({karma:4,smarts:1});return'I served on a jury. Justice!'}],['Try to get out of it',()=>{if(chance(.5))return'I got excused.';E({karma:-2});return'The judge did not buy my excuse.'}]]},
+ {a:[50,95],ic:'🩺',t:'You have been feeling a little off lately.',c:[['Get a checkup',()=>{S.money-=500;if(S.ill){S.ill=null;return'The doctor caught it early and treated me.'}E({health:3});return'Clean bill of health. Phew.'}],['Ignore it',()=>{if(chance(.4)){E({health:-12});return'It got worse. I should have gone in.'}return'It passed on its own.'}]]},
+ {a:[55,95],cond:()=>kids().some(k=>k.alive&&k.age>=20),ic:'🍪',t:'Your grown kids bring the family over for the holidays.',c:[['Bake cookies for everyone',()=>{E({happy:10});kids().forEach(k=>k.rel+=5);return'The house smelled amazing. Everyone stayed late.'}],['Tell old stories',()=>{E({happy:8});kids().forEach(k=>k.rel+=4);return'Everyone laughed at my old stories.'}]]},
+ {a:[22,70],cond:()=>S.money>3000,ic:'✈️',t:'A last-minute flight deal pops up: a week abroad for $2,500.',c:[['Book it',()=>{S.money-=2500;E({happy:12});return pick(['I spent a week in Portugal eating pastries. 🇵🇹','I hiked in Patagonia. Unreal views. 🏔️','I explored Kyoto temples at sunrise. 🇯🇵','I island-hopped in Greece. 🇬🇷'])}],['Pass',()=>'Maybe next time.']]},
+ {a:[14,25],cond:()=>S.st.looks>72,ic:'📸',t:'A modeling scout stops you on the street.',c:[['Do the photoshoot',()=>{S.money+=rnd(1000,6000);E({fame:8,happy:6});return'I did a paid shoot. My photos are on a billboard!'}],['Not interested',()=>'I politely declined.']]},
+ {a:[30,80],ic:'🎓',t:'Your old school is having a reunion.',c:[['Go',()=>{if(net()>500000||S.fame>50){E({happy:10});return'Everyone wanted to hear about my life. I felt great.'}E({happy:rnd(-3,6)});return'It was nice to catch up with old friends.'}],['Skip it',()=>'I skipped the reunion.']]},
+ {a:[25,70],cond:()=>!partner(),ic:'💞',t:'A friend wants to set you up on a blind date.',c:[['Go on the date',()=>{if(chance(.5+L())){addPartner(meet());return`We hit it off! I am now dating ${first(partner().name)}.`}return'Zero chemistry. Oh well.'}],['No thanks',()=>'I said no thanks.']]},
+ {a:[18,70],ic:'🎰',t:'Walking past a casino, you feel lucky.',c:[['Bet $500 on red',()=>{S.money-=500;if(chance(.47+L())){S.money+=1000;return'Red! I doubled my money.'}return'Black. I lost $500.'}],['Keep walking',()=>{E({smarts:1});return'Smart move.'}]]},
+ {a:[30,85],cond:()=>S.debt>0,ic:'💳',t:'The bank offers to refinance your debt at a lower rate.',c:[['Refinance',()=>{S.debt*=.93;return'I refinanced and cut my debt a little.'}],['No thanks',()=>'I kept my current terms.']]},
+];
+function queueEvent(){const pool=EV.filter(e=>S.age>=e.a[0]&&S.age<=e.a[1]&&(!e.cond||e.cond())&&(!e.rare||chance(e.rare)));if(!pool.length)return;const e=pick(pool);Q.push(()=>choice(`Age ${S.age}`,e.t,e.c,e.ic))}
+
+// ---------- people ----------
+function meet(pref){const g=pref==='men'?'male':pref==='women'?'female':pick(['male','female']);return{id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:Math.max(16,S.age+rnd(-4,4)),looks:rnd(20,99),smarts:rnd(20,99),job:pick(['nurse','barista','engineer','artist','teacher','chef','lawyer','student','zookeeper','photographer','pilot','designer']),rel:60,alive:true}}
+function addPartner(p){p.role='Partner';delete p.looks;delete p.smarts;S.rel.push(p);S.st.happy+=8}
+function addPet(t){const p={name:pick(PETNAMES),type:t[0],ic:t[1],age:0,life:t[3]+rnd(-2,3),alive:true};S.pets.push(p);log(`I adopted a ${t[0].toLowerCase()} named ${p.name}! ${t[1]}`,'good');S.st.happy+=8}
+function stars(n){return'★'.repeat(Math.max(1,Math.round(n/20)))+'☆'.repeat(5-Math.max(1,Math.round(n/20)))}
+function findDate(){if(S.age<16)return toast('You are too young to date.');if(partner())return toast('You are already in a relationship.');const w=el('div');w.append(el('p','evt-text','Who are you looking for?'));[['men','👨 Men'],['women','👩 Women'],['any','💫 Anyone']].forEach(([k,l])=>w.append(opt('',l,'',()=>{if(!once('date'))return closeSheet();showCandidate(meet(k))})));sheet('Find a Date 💘',w)}
+function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}));w.append(opt('👋','Pass','',closeSheet));sheet('Your Date',w)}
+
+function relSheet(){const w=el('div');
+ const groups=[['Family',['Mother','Father','Brother','Sister']],['Love',['Partner','Fiancé','Fiancée','Spouse']],['Children',['Son','Daughter']],['Friends',['Friend']]];
+ groups.forEach(([g,roles])=>{const list=S.rel.filter(r=>roles.includes(r.role));if(!list.length&&g!=='Love')return;w.append(sec(g));
+  list.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';w.append(opt(r.alive?(r.gender==='male'?'🧑':'👩'):'🪦',`${r.name}`,`${r.role} · ${r.alive?'age '+r.age:'deceased'}`,()=>personSheet(r),{rt:r.alive?`<div class="bar" style="width:70px"><i style="width:${r.rel}%;background:${c}"></i></div>`:''}))});
+  if(g==='Love'&&!partner())w.append(opt('💘','Find a date','Meet someone new',findDate))});
+ if(S.pets.length){w.append(sec('Pets'));S.pets.forEach(p=>w.append(opt(p.alive?p.ic:'🌈',p.name,`${p.type} · ${p.alive?'age '+p.age:'passed away'}`,()=>{if(!p.alive)return;if(!once('pet'+p.name))return;E({happy:5});act(p.name,`I played with ${p.name}. Pure joy. ${p.ic}`,p.ic)})))}
+ w.append(sec('Social'));w.append(opt('🤝','Make a new friend','Once a year',()=>{if(S.age<5)return toast('Too young.');if(!once('friend'))return;const g=pick(['male','female']);const f={id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:Math.max(5,S.age+rnd(-3,3)),rel:rnd(45,75),role:'Friend',alive:true};S.rel.push(f);E({happy:4});act('New friend',`I made a new friend: ${f.name}. 😊`,'🤝')}));
+ sheet('People ❤️',w)}
+
+function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}</b><br>${r.role}${r.alive?' · Age '+r.age+' · Relationship '+r.rel+'%':' · Deceased'}`));
+ const k=a=>`p_${r.id}_${a}`;
+ const go=(a,fn)=>()=>{if(!once(k(a)))return;const res=fn();r.rel=clamp(r.rel);act(r.name,res,'💬')};
+ if(!r.alive){w.append(opt('🌹','Visit their grave','',go('grave',()=>{E({happy:3});return`I left flowers for ${first(r.name)}.`})));return sheet(r.role,w)}
+ w.append(opt('🫶','Spend time together','',go('time',()=>{r.rel+=rnd(4,12);E({happy:4});return`I spent quality time with ${first(r.name)}.`})));
+ w.append(opt('💬','Have a conversation','',go('talk',()=>{r.rel+=rnd(2,7);return pick([`${first(r.name)} and I talked about life.`,`We laughed about old memories.`,`${first(r.name)} gave me some good advice.`])})));
+ w.append(opt('🎁','Give a gift ($100)','',go('gift',()=>{S.money-=100;r.rel+=rnd(5,12);return`${first(r.name)} loved the gift!`})));
+ if(['Mother','Father'].includes(r.role))w.append(opt('💵','Ask for money','',go('money',()=>{if(chance(r.rel/160+L())){const m=has('trust')?rnd(1000,25000):rnd(20,1500);S.money+=m;return`${first(r.name)} gave me ${fmt(m)}.`}r.rel-=4;return`${first(r.name)} said no.`})));
+ if(['Son','Daughter'].includes(r.role)){if(r.age<11)w.append(opt('📖','Read a bedtime story','',go('story',()=>{r.rel+=8;E({happy:5});return`I read ${first(r.name)} a bedtime story. They fell asleep smiling.`})));if(r.age>=18)w.append(opt('💸','Give $10,000','',go('give',()=>{if(S.money<10000)return'I could not afford it.';S.money-=10000;r.rel+=15;return`I gave ${first(r.name)} $10,000. They were thrilled.`})))}
+ if(r.role==='Partner'){w.append(opt('🍝','Date night ($200)','',go('night',()=>{S.money-=200;r.rel+=rnd(6,14);E({happy:6});return'We had a romantic dinner.'})));
+  w.append(opt('💍','Propose ($3,000 ring)','',go('prop',()=>{S.money-=3000;if(r.rel>=60&&chance(.55+r.rel/300)){r.role=r.gender==='male'?'Fiancé':'Fiancée';E({happy:12});Q.push(confetti);return`${first(r.name)} said YES! We are engaged. 💍`}r.rel-=15;E({happy:-10});return`${first(r.name)} said they are not ready. Awkward.`})))}
+ if(r.role==='Fiancé'||r.role==='Fiancée'){w.append(sec('Plan the wedding'));[['🏛️','Courthouse wedding',500],['🍇','Vineyard wedding',25000],['🏰','Grand ballroom wedding',80000],['🏝️','Destination wedding',150000]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(S.money<c&&c>500)return toast('Not enough money.');S.money-=c;r.role='Spouse';r.rel=clamp(r.rel+15);E({happy:15+Math.round(c/20000)});log(`I married ${r.name} with a ${n.toLowerCase()}! 💒`,'big');Q.push(confetti);result('Just married! 💒',`I married ${first(r.name)}. Best day of my life.`,'💒')})))}
+ if(r.role==='Spouse'){w.append(opt('👶','Try for a baby','',go('baby',()=>{if(S.age>48||r.age>52)return'It is not happening for us at this age. Maybe adopt?';if(chance(.5)){babyBorn();return'We are having a baby! 🍼'}return'No luck this time.'})));
+  w.append(opt('🏠','Adopt a child ($20,000)','',go('adopt',()=>{if(S.money<20000)return'We cannot afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return'We adopted a child! Our family grew. 💛'})))}
+ if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role))w.append(opt('💔',r.role==='Spouse'?'Divorce':'Break up','',()=>{if(r.role==='Spouse'){const l=Math.max(0,S.money*.5);S.money-=l;log(`I divorced ${r.name}. I lost ${fmt(l)} in the settlement.`,'bad')}else log(`I broke up with ${r.name}.`,'bad');S.rel=S.rel.filter(x=>x!==r);E({happy:-10});closeSheet()},{cls:'danger'}));
+ if(r.role!=='Spouse'&&!['Son','Daughter'].includes(r.role))w.append(opt('😤','Argue','',go('argue',()=>{r.rel-=rnd(6,15);return`${first(r.name)} and I got into a heated argument.`}),{cls:'danger'}));
+ if(r.role==='Friend')w.append(opt('🚪','End friendship','',()=>{S.rel=S.rel.filter(x=>x!==r);log(`I ended my friendship with ${r.name}.`);closeSheet()},{cls:'danger'}));
+ sheet(r.role,w)}
+function babyBorn(age=0){const g=pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const c={id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+last,gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
+
+// ---------- career ----------
+function meets(c){const r=c.req,miss=[];
+ if(r.up&&!has(r.up))miss.push('🔒 Spotlight Pack');
+ if(r.deg==='HS'&&!S.degrees.includes('HS'))miss.push('High school diploma');
+ if(r.deg==='UNI'&&!S.degrees.some(d=>MAJORS.includes(d)))miss.push('Any university degree');
+ if(Array.isArray(r.deg)&&!r.deg.some(d=>S.degrees.includes(d)))miss.push(r.deg.map(d=>GRAD[d]?GRAD[d].n:d).join(' / '));
+ if(r.smarts&&S.st.smarts<r.smarts)miss.push(`${r.smarts} smarts`);
+ if(r.looks&&S.st.looks<r.looks)miss.push(`${r.looks} looks`);
+ if(r.health&&S.st.health<r.health)miss.push(`${r.health} health`);
+ return miss}
+function jobSheet(){const w=el('div');
+ if(S.job){const c=CAR[S.job.id],lv=c.lv[S.job.lvl];const cl=S.job.perf>66?'var(--good)':S.job.perf>33?'var(--mid)':'var(--bad)';
+  w.append(el('div','info',`<b>${c.ic} ${lv[0]}</b><br>Salary ${fmt(lv[1]*(1+S.job.years*.015))}/yr · ${S.job.years} yr${S.job.years===1?'':'s'} here<br>Level ${S.job.lvl+1} of ${c.lv.length}${S.job.lvl<c.lv.length-1?' · Next: '+c.lv[S.job.lvl+1][0]:' · Top of the ladder!'}<div style="margin-top:6px">Performance</div><div class="bar"><i style="width:${S.job.perf}%;background:${cl}"></i></div>`));
+  w.append(opt('💪','Work harder','+performance, -happiness',()=>{if(!once('work'))return;S.job.perf+=rnd(8,15);E({happy:-3,health:-1});act('Work','I put in long hours this year. My boss noticed.','💪')}));
+  w.append(opt('📈','Ask for a promotion','',()=>{if(!once('promo'))return;if(S.job.lvl>=c.lv.length-1)return act('Promotion','I am already at the top!','🏔️');if(chance(S.job.perf/180+L())){promote();fix();closeSheet()}else{S.job.perf-=5;act('Promotion','My boss said not yet. Keep pushing.','🙅')}}));
+  w.append(opt('🤝','Network with coworkers','',()=>{if(!once('net'))return;S.job.perf+=rnd(2,7);E({happy:2});act('Networking','I grabbed drinks with the team. Good vibes.','🍻')}));
+  if(S.age>=55)w.append(opt('🏖️','Retire','Get a pension',()=>{S.retired=Math.round(lv[1]*.4);log(`I retired from my job as ${lv[0]}. Pension: ${fmt(S.retired)}/yr. 🏖️`,'big');S.job=null;E({happy:12});closeSheet()}));
+  w.append(opt('🚪','Quit','',()=>{log(`I quit my job as ${lv[0]}.`);S.job=null;closeSheet()},{cls:'danger'}))}
+ if(S.retired)w.append(el('div','info',`<b>🏖️ Retired</b><br>Pension ${fmt(S.retired)}/yr`));
+ if(S.school){const s=S.school;w.append(el('div','info',`<b>🏫 ${s.type}${s.major?' · '+s.major:''}</b><br>${s.left} year${s.left===1?'':'s'} left · Grades ${s.perf}%`));
+  w.append(opt('📚','Study harder','',()=>{if(!once('study'))return;s.perf=clamp(s.perf+rnd(8,15));E({smarts:rnd(1,4),happy:-2});act('Study','I hit the books hard this year.','📚')}));
+  if(s.type==='High School'&&S.age>=16||!/School$/.test(s.type)||s.type.includes('Program')||s.type==='Medical School'||s.type==='Law School'||s.type==='Veterinary School')if(s.type!=='Elementary School'&&s.type!=='Middle School')w.append(opt('🚪','Drop out','',()=>{log(`I dropped out of ${s.type}.`,'bad');S.school=null;closeSheet()},{cls:'danger'}))}
+ if(S.age>=18&&!S.school&&S.degrees.includes('HS')){w.append(sec('Education'));w.append(opt('🎓','Go to university','Pick a major',uniOfferAdult));if(S.degrees.some(d=>MAJORS.includes(d)))w.append(opt('🔬','Apply to grad school','',gradOffer))}
+ if(S.age>=18&&!S.school&&!S.degrees.includes('HS'))w.append(opt('📝','Get your GED','Earn a high school diploma',()=>{if(!once('ged'))return;if(chance(.5+S.st.smarts/200)){S.degrees.push('HS');act('GED','I passed the GED! I now have a high school diploma.','🎓')}else act('GED','I failed the GED. Try again next year.','📝')}));
+ // listings
+ if(S.age<16){w.append(el('div','info','You are too young to work. Enjoy being a kid! 🧸'));return sheet('Career 💼',w)}
+ const groups=['Starter','Trades','Degree','Graduate','Spotlight'];
+ groups.forEach(g=>{if(S.age<18&&g!=='Starter')return;w.append(sec(g==='Spotlight'?'🌟 Spotlight':g==='Starter'?(S.age<18?'Part-time jobs':'No degree needed'):g));
+  CAREER_LIST.filter(c=>c.g===g).forEach(c=>{const miss=meets(c);const cur=S.job&&S.job.id===c.id;w.append(opt(c.ic,c.lv[0][0],miss.length?'Needs: '+miss.join(', '):`${c.n} · up to ${c.lv[c.lv.length-1][0]}`,()=>{if(cur)return toast('You already work here.');if(miss.length)return toast('Requirements: '+miss.join(', '));interview(c)},{cls:miss.length?'locked':'',rt:fmt(c.lv[0][1])}))})});
+ sheet('Career 💼',w)}
+function uniOfferAdult(){const w=el('div');MAJORS.forEach(m=>w.append(opt('🎓',m,S.degrees.includes(m)?'Already have this degree':'4 years',()=>{if(S.degrees.includes(m))return;if(S.job){log(`I left my job to go back to school.`);S.job=null}enrollUni(m)})));sheet('University',w)}
+function interview(c){if(!once('apply'))return;const q=pick(IQ);const answers=shuffle(q[1].map((t,i)=>({t,i})));const w=el('div');w.append(el('div','evt-icon','🧑‍💼'));w.append(el('p','evt-text',`Interview for <b>${c.lv[0][0]}</b><br><br>"${q[0]}"`));
+ answers.forEach(a=>w.append(opt('',a.t,'',()=>{let p=.45+(S.st.smarts-50)/200+(S.st.looks-50)/300+L()+[.3,.02,-.25][a.i];if(c.fame)p=.25+S.st.looks/300+S.fame/200+L()+[.2,0,-.2][a.i];if(!c.req.deg&&!c.fame)p+=.2;
+  if(chance(p)){if(S.job)log(`I left my job as ${CAR[S.job.id].lv[S.job.lvl][0]}.`);S.job={id:c.id,lvl:0,perf:55,years:0};if(!S.jobsHeld.includes(c.id))S.jobsHeld.push(c.id);if(S.retired)S.retired=null;E({happy:6});log(`I got hired as ${c.lv[0][0]}! ${c.ic}`,'good');Q.push(()=>confetti(50));result('You got the job!',`Welcome aboard. You start as ${c.lv[0][0]} making ${fmt(c.lv[0][1])} a year.`,c.ic)}
+  else{E({happy:-3});result('Application declined','They went with another candidate. Try again next year.','📭')}})));
+ sheet('Job Interview',w,true)}
+
+// ---------- assets ----------
+const price=(base,i)=>Math.round(base*(1+(((S.age*7+i*13)%30)-15)/100));
+function assetSheet(){const w=el('div');
+ w.append(el('div','info',`<b>💵 Cash</b> ${fmt(S.money)}<br><b>📉 Debt</b> ${fmt(S.debt)}<br><b>📊 Net worth</b> ${fmt(net())}`));
+ if(S.debt>0)w.append(opt('💳','Pay off debt',`Pay ${fmt(Math.min(S.debt,Math.max(0,S.money)))}`,()=>{const p=Math.min(S.debt,Math.max(0,S.money));if(p<=0)return toast('No cash to pay with.');S.money-=p;S.debt-=p;log(`I paid off ${fmt(p)} of debt.`,'good');fix();assetSheet()}));
+ if(S.assets.length){w.append(sec('My stuff'));S.assets.forEach(x=>w.append(opt(x.ic,x.name,`Worth ${fmt(x.val)} · tap to sell`,()=>{S.money+=x.val;S.assets=S.assets.filter(y=>y!==x);log(`I sold my ${x.name} for ${fmt(x.val)}.`);fix();assetSheet()})))}
+ if(has('mogul')){w.append(sec('🏢 My businesses'));S.biz.forEach(b=>{w.append(opt(b.icon,b.name,`Value ${fmt(b.val)}${b.ipo?' · Public 📈':''}`,()=>bizSheet(b)))});
+  w.append(sec('Start a business'));BIZ.forEach(([n,ic,c],i)=>w.append(opt(ic,n,'',()=>{if(S.age<18)return toast('You must be 18.');if(S.money<c)return toast('Not enough cash.');S.money-=c;S.biz.push({id:uid(),name:n,icon:ic,val:c,mgmt:5});log(`I started a ${n}! ${ic}`,'big');Q.push(confetti);fix();closeSheet()},{rt:fmt(c)})))}
+ else w.append(opt('🔒','Businesses','Unlock with the Mogul Pack in Upgrades',upgradeSheet,{cls:'locked'}));
+ w.append(sec('Real estate'));HOUSES.forEach(([n,ic,b],i)=>{const p=price(b,i);const cash=S.money>=p,mort=!cash&&S.money>=p*.2&&S.job;w.append(opt(ic,n,cash?'Buy with cash':mort?`Mortgage: ${fmt(p*.2)} down`:'Need '+fmt(p*.2)+' down + a job',()=>{if(S.age<18)return toast('You must be 18.');if(cash){S.money-=p}else if(mort){S.money-=p*.2;S.debt+=p*.8}else return toast('You cannot afford this yet.');S.assets.push({kind:'house',name:n,ic,val:p});E({happy:10});log(`I bought a ${n}! ${ic}`,'big');Q.push(confetti);fix();closeSheet()},{rt:fmt(p),cls:cash||mort?'':'locked'}))});
+ w.append(sec('Vehicles'));CARS.forEach(([n,ic,b],i)=>{const p=price(b,i+3);w.append(opt(ic,n,S.money>=p?'':'Too pricey',()=>{if(S.age<16)return toast('You must be 16.');if(S.money<p)return toast('Not enough cash.');S.money-=p;S.assets.push({kind:'car',name:n,ic,val:p});E({happy:6});log(`I bought a ${n}! ${ic}`,'good');fix();closeSheet()},{rt:fmt(p),cls:S.money>=p?'':'locked'}))});
+ sheet('Assets 🏠',w)}
+function bizSheet(b){const w=el('div');w.append(el('div','info',`<b>${b.icon} ${b.name}</b><br>Value ${fmt(b.val)}<br>Momentum ${b.mgmt}`));
+ w.append(opt('📣','Invest in marketing',fmt(b.val*.08),()=>{if(!once('mk'+b.id))return;const c=b.val*.08;if(S.money<c)return toast('Not enough cash.');S.money-=c;b.mgmt+=rnd(6,12);act(b.name,'I launched a marketing push. Customers are pouring in.','📣')}));
+ w.append(opt('🧑‍💼','Hire a great manager',fmt(60000),()=>{if(!once('mg'+b.id))return;if(S.money<60000)return toast('Not enough cash.');S.money-=60000;b.mgmt+=8;b.val*=1.04;act(b.name,'I hired a strong manager. Things run smoother.','🧑‍💼')}));
+ w.append(opt('💰','Sell the business',fmt(b.val),()=>{S.money+=b.val;S.biz=S.biz.filter(x=>x!==b);log(`I sold my ${b.name} for ${fmt(b.val)}.`,'good');fix();closeSheet()},{cls:'danger'}));
+ sheet(b.name,w)}
+
+// ---------- activities ----------
+function actSheet(){const w=el('div');const a=S.age;
+ const A=(ic,n,sub,minAge,fn,lock)=>{if(lock)return w.append(opt('🔒',n,lock,upgradeSheet,{cls:'locked'}));w.append(opt(ic,n,a<minAge?`Age ${minAge}+`:sub,()=>{if(a<minAge)return toast(`You must be ${minAge}.`);fn()},{cls:a<minAge?'locked':''}))};
+ w.append(sec('Mind & Body'));
+ A('🏋️','Go to the gym','+health',10,()=>{if(!once('gym'))return;E({health:rnd(2,7),happy:2});if(chance(.3))E({looks:1});act('Gym',pick(['Leg day. I can barely walk.','I hit a new personal record! 💪','I took a spin class. Sweaty and happy.']),'🏋️')});
+ A('🧘','Meditate','+happiness',8,()=>{if(!once('med'))return;E({happy:rnd(3,7),health:1});act('Meditate','I found some inner peace. 🌿','🧘')});
+ A('📖','Visit the library','+smarts',5,()=>{if(!once('lib'))return;E({smarts:rnd(2,5)});act('Library',pick(['I read a book about space.','I read a history of ancient Rome.','I got lost in a mystery novel.','I learned the basics of coding.']),'📖')});
+ A('🩺','See a doctor',S.age<18?'Free':'$300',0,()=>{if(!once('doc'))return;if(S.age>=18)S.money-=300;if(S.ill){if(chance(.8)){const n=S.ill.n;S.ill=null;E({health:8});act('Doctor',`The doctor treated my ${n}. I feel much better.`,'🩺')}else{E({health:-2});act('Doctor','The treatment did not work this time.','🩺')}}else{E({health:3});act('Doctor','A clean bill of health!','🩺')}});
+ A('💉','Plastic surgery','$8,000',18,()=>{if(!once('surg'))return;if(S.money<8000)return toast('Not enough cash.');S.money-=8000;if(chance(.75+L())){E({looks:rnd(5,15)});act('Surgery','The surgery went great. I look amazing. ✨','💉')}else{E({looks:-10,happy:-8});act('Surgery','The surgery was botched. I look worse.','😬')}});
+ A('🌙','Night out','$150',18,()=>{if(!once('night'))return;S.money-=150;E({happy:rnd(4,9),health:-1});if(!partner()&&chance(.35)){Q.push(()=>showCandidate(meet()));act('Night out','I danced all night... and someone caught my eye.','🪩')}else act('Night out','A great night out with friends. 🪩','🪩')});
+ A('🧳','Go on vacation','Pick a trip',18,vacSheet);
+ w.append(sec('Fortune'));
+ A('🎟️','Buy a lottery ticket','$10',18,()=>{if(!once('lotto'))return;S.money-=10;const r=Math.random();if(r<(has('lucky')?1/1500:1/4000)){const m=rnd(1,60)*1e6;S.money+=m;log(`🎰 I WON THE LOTTERY: ${fmt(m)}!`,'big');Q.push(confetti);act('JACKPOT!!!',`I won ${fmt(m)}! My life just changed forever.`,'🤑')}else if(r<.06){const m=rnd(20,500);S.money+=m;act('Lottery',`I won ${fmt(m)}. Small win!`,'🎟️')}else act('Lottery','No luck this time.','🎟️')});
+ w.append(sec('🌟 Spotlight'));
+ A('📱','Post on social media','+fame',13,()=>{if(!once('post'))return;const g=rnd(1,4)+Math.round(S.st.looks/30);if(chance(.08+L())){E({fame:15,happy:8});act('Viral!','My post blew up. Millions of views! 🔥','🔥')}else{E({fame:g,happy:2});act('Posted',`My post got some love. Fame +${g}.`,'📱')}},!has('spotlight')&&'Unlock with Spotlight Pack');
+ A('🎤','Open mic night','+fame',14,()=>{if(!once('mic'))return;if(chance(.5+S.st.looks/300+L())){E({fame:5,happy:7});act('Open mic','I killed it on stage. People were filming!','🎤')}else{E({happy:-4});act('Open mic','I forgot my lines. Tough crowd.','🎤')}},!has('spotlight')&&'Unlock with Spotlight Pack');
+ w.append(sec('🐾 Pets'));
+ if(has('pets'))PETS.forEach(p=>A(p[1],'Adopt a '+p[0].toLowerCase(),fmt(p[2]),6,()=>{if(!once('adopt'))return;if(S.money<p[2]&&S.age>=18)return toast('Not enough cash.');if(S.age>=18)S.money-=p[2];addPet(p);fix();closeSheet()}));else A('','Adopt a pet','',0,null,'Unlock with Pet Pack');
+ w.append(sec('Life'));
+ A('🏙️','Move to a new city','Fresh start',18,()=>{if(!once('move'))return;const c=pick(CITIES.filter(x=>x!==S.city));S.city=c;E({happy:5});act('Moving day',`I packed up and moved to ${c}. 🧳`,'🏙️')});
+ if(S.age>=18&&S.money>1000)A('🎗️','Donate to charity','10% of cash',18,()=>{if(!once('donate'))return;const d=Math.round(S.money*.1);S.money-=d;E({karma:10,happy:5});act('Charity',`I donated ${fmt(d)} to charity. 💛`,'🎗️')});
+ sheet('Activities 🎯',w)}
+function vacSheet(){const w=el('div');[['🚗','Road trip',800,6],['🏖️','Beach resort',3000,10],['🗼','Europe tour',7000,14],['🦓','African safari',12000,16],['🛳️','Luxury cruise',20000,18],['🚀','Space tourism',450000,30]].forEach(([ic,n,c,h])=>w.append(opt(ic,n,'',()=>{if(!once('vac'))return;if(S.money<c)return toast('Not enough cash.');S.money-=c;E({happy:h,health:2});act(n,`${pick(['What a trip!','I came back totally recharged.','Memories for a lifetime.','I did not want to come home.'])} ${ic}`,ic)},{rt:fmt(c)})));sheet('Vacation 🧳',w)}
+
+// ---------- upgrades / ribbons / creator ----------
+function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
+ UPGRADES.forEach(u=>{const own=has(u.id);w.append(opt(u.ic,u.n,u.d,()=>{if(own)return toast('Already unlocked!');if(M.points<u.cost)return toast(`You need ${u.cost} Life Points.`);M.points-=u.cost;M.up[u.id]=1;saveMeta();confetti();toast(`${u.n} unlocked!`);render();upgradeSheet()},{rt:own?'✅':`⭐ ${u.cost}`}))});
+ w.append(sec('Sandbox'));w.append(opt(M.sandbox?'🔓':'🧪',M.sandbox?'Sandbox mode is ON':'Turn on sandbox mode',M.sandbox?'Everything unlocked for free. Tap to turn off.':'Unlock every upgrade for free, just to play around.',()=>{M.sandbox=!M.sandbox;saveMeta();render();upgradeSheet()}));
+ sheet('Upgrades ⭐',w)}
+const ACH=[
+ ['grad','🎓','College Graduate','Earn a university degree',10,()=>S.degrees.some(d=>MAJORS.includes(d))],
+ ['doc','🩺','Doctor in the House','Graduate medical school',15,()=>S.degrees.includes('Medical')],
+ ['mil','💰','Millionaire','Reach $1M net worth',15,()=>net()>=1e6],
+ ['bil','🏦','Billionaire','Reach $1B net worth',40,()=>net()>=1e9],
+ ['wed','💍','Happily Married','Get married',10,()=>S.rel.some(r=>r.role==='Spouse')],
+ ['kid','🍼','Parenthood','Have a child',10,()=>kids().length>0],
+ ['home','🏡','Homeowner','Buy a house',10,()=>S.assets.some(a=>a.kind==='house')],
+ ['top','🚀','Top of the Ladder','Reach the top of any career',15,()=>S.job&&S.job.lvl===CAR[S.job.id].lv.length-1],
+ ['fame','🌟','Household Name','Reach 90 fame',20,()=>S.fame>=90],
+ ['boss','🏢','Entrepreneur','Own a business',10,()=>S.biz.length>0],
+ ['jobs','🔀','Jack of All Trades','Hold 5 different jobs in one life',10,()=>S.jobsHeld.length>=5],
+ ['saint','😇','Saint','Reach 90 karma',10,()=>S.karma>=90],
+ ['pet','🐾','Best Friend','Own a pet',5,()=>S.pets.length>0],
+ ['zoo','🦒','Zoo Director','Run a zoo',15,()=>S.job&&S.job.id==='zoo'&&S.job.lvl===4],
+ ['pres','🏛️','Commander in Chief','Become President',30,()=>S.job&&S.job.id==='pol'&&S.job.lvl===4],
+ ['space','👩‍🚀','To the Stars','Become an astronaut',20,()=>S.job&&S.job.id==='astro'&&S.job.lvl>=1],
+ ['old','🎂','Centenarian','Live to 100',25,()=>S.age>=100],
+ ['gen','🌳','Dynasty','Play a 3rd generation',20,()=>S.gen>=3],
+];
+function checkAch(){if(!S)return;ACH.forEach(([id,ic,n,d,pts,f])=>{if(S.achs.includes(id))return;let ok=false;try{ok=f()}catch(e){}if(!ok)return;S.achs.push(id);const firstTime=!M.ach[id];M.ach[id]=1;const g=firstTime?pts:3;M.points+=g;log(`🏆 Ribbon earned: ${n} (+${g} ⭐)`,'big');setTimeout(()=>toast(`🏆 ${n}  +${g} ⭐`),300)});saveMeta()}
+function achSheet(){const w=el('div');w.append(el('div','info',`Ribbons this life: <b>${S.achs.length}</b> · All-time: <b>${Object.keys(M.ach).length}/${ACH.length}</b> · Lives lived: <b>${M.lives}</b>`));ACH.forEach(([id,ic,n,d,pts])=>w.append(opt(M.ach[id]?ic:'⬜',n,d,()=>{},{rt:S.achs.includes(id)?'✅ this life':M.ach[id]?'earned':`⭐ ${pts}`,cls:M.ach[id]?'':'locked'})));sheet('Ribbons 🏆',w)}
+function creatorSheet(){const w=el('div');['health','happy','smarts','looks'].forEach(k=>{w.append(el('label','lb',`${k} <span id="cv_${k}">${S.st[k]}</span>`));const r=el('input');r.type='range';r.min=0;r.max=100;r.value=S.st[k];r.oninput=()=>{S.st[k]=+r.value;$('#cv_'+k).textContent=r.value};w.append(r)});
+ [['karma','Karma'],['fame','Fame']].forEach(([k,l])=>{w.append(el('label','lb',`${l} <span id="cv_${k}">${S[k]}</span>`));const r=el('input');r.type='range';r.min=0;r.max=100;r.value=S[k];r.oninput=()=>{S[k]=+r.value;$('#cv_'+k).textContent=r.value};w.append(r)});
+ w.append(el('label','lb','Cash'));const m=el('input');m.type='number';m.value=Math.round(S.money);w.append(m);
+ if(S.ill)w.append(opt('💊','Cure illness','',()=>{S.ill=null;toast('Cured!')}));
+ w.append(opt('','Save changes','',()=>{S.money=+m.value||0;log('🪄 Reality shifted slightly.');fix();closeSheet()},{cls:'primary'}));sheet('Creator Mode 🪄',w)}
+
+// ---------- death / start ----------
+function showDeath(){
+ if(!S.paid){S.paid=true;const nw=net();const pts=Math.floor(S.age/4)+(nw>=1e6?10:0)+(nw>=1e8?20:0)+S.achs.length*2;S.earned=pts;M.points+=pts;M.lives++;M.best=Math.max(M.best||0,S.age);saveMeta();save();sad()}
+ const w=el('div');const job=S.job?CAR[S.job.id].lv[S.job.lvl][0]:S.retired?'a retiree':S.jobsHeld.length?'between jobs':'never worked';
+ const k=kids();const p=S.rel.find(r=>r.role==='Spouse');
+ w.append(el('div','evt-icon','🪦'));
+ w.append(el('div','obit',`<b>${S.name}</b><br>${S.born} – ${year()}<br><br>Died at age ${S.age} from ${S.cause}.<br>${S.job?'Worked as '+job:'Career: '+job}. Net worth ${fmt(net())}.${p?'<br>Survived by spouse '+first(p.name)+'.':''}${k.length?`<br>Parent of ${k.length} ${k.length===1?'child':'children'}.`:''}`));
+ const ribs=S.achs.map(id=>ACH.find(a=>a[0]===id)).filter(Boolean);
+ w.append(el('div','info',`<b>Life summary</b><br>${S.degrees.filter(d=>d!=='HS').map(d=>`<span class="pill">🎓 ${GRAD[d]?GRAD[d].n:d}</span>`).join('')}${ribs.map(r=>`<span class="pill">${r[1]} ${r[2]}</span>`).join('')||'<span class="pill">No ribbons this time</span>'}<br><br>⭐ Life Points earned: <b>+${S.earned||0}</b> (total ${M.points})`));
+ const heir=k.filter(c=>c.alive).sort((a,b)=>b.age-a.age)[0];
+ if(heir)w.append(opt('🌳',`Continue as ${heir.name}`,`Age ${heir.age} · inherits ${fmt(Math.max(0,net())*.6)}`,()=>continueAs(heir),{cls:'primary'}));
+ w.append(opt('👶','Start a new life','',()=>{closeSheet();startScreen()},{cls:heir?'':'primary'}));
+ w.append(opt('⭐','Spend Life Points','',upgradeSheet));
+ sheet('Rest in Peace',w,true)}
+function continueAs(h){const inh=Math.max(0,net())*.6;const deceased=S;const spouse=S.rel.find(r=>r.role==='Spouse'&&r.alive);const gen=S.gen+1;const parts=h.name.split(' ');
+ newLife({name:h.name,gender:h.gender,last:parts[parts.length-1],city:deceased.city,born:deceased.born+deceased.age-h.age,gen,noFamily:true});
+ S.age=h.age;S.money+=inh;S.st.smarts=clamp(S.st.smarts);
+ S.rel.push({id:uid(),name:deceased.name,role:deceased.gender==='male'?'Father':'Mother',gender:deceased.gender,age:deceased.age,rel:h.rel,alive:false});
+ if(spouse)S.rel.push({...spouse,role:spouse.gender==='male'?'Father':'Mother',rel:rnd(50,90)});
+deceased.rel.filter(r=>(r.role==='Son'||r.role==='Daughter')&&r.id!==h.id).forEach(s=>S.rel.push({...s,role:s.gender==='male'?'Brother':'Sister',rel:rnd(40,80)}));
+ const a=S.age;if(a>=5&&a<11)S.school={type:'Elementary School',left:11-a,perf:60};else if(a>=11&&a<14)S.school={type:'Middle School',left:14-a,perf:60};else if(a>=14&&a<18)S.school={type:'High School',left:18-a,perf:60};
+ if(a>=18)S.degrees.push('HS');if(a>=23&&chance(.6))S.degrees.push(pick(MAJORS));
+ if(a>=22&&chance(.7)){const opts=CAREER_LIST.filter(c=>!meets(c).length&&!c.fame);if(opts.length){const c=pick(opts);S.job={id:c.id,lvl:Math.min(c.lv.length-1,Math.floor((a-22)/10)),perf:55,years:rnd(1,8)};S.jobsHeld.push(c.id)}}
+ log(`I am ${S.name}, child of ${deceased.name}. Generation ${gen} begins. 🌳`,'big');
+ log(`I inherited ${fmt(inh)} from my parent's estate.`,'good');
+ checkAch();save();closeSheet();render()}
+function startScreen(){const w=el('div');w.append(el('div','title','Another Life'));w.append(el('div','tag','Every choice writes your story. One year at a time.'));
+ let g=pick(['male','female']);
+ w.append(el('label','lb','Gender'));const gs=el('select');gs.innerHTML='<option value="male">Male</option><option value="female">Female</option>';gs.value=g;w.append(gs);
+ w.append(el('label','lb','First name'));const fn=el('input');fn.type='text';fn.value=pick(g==='male'?MALE:FEMALE);w.append(fn);
+ w.append(el('label','lb','Last name'));const ln=el('input');ln.type='text';ln.value=pick(LAST);w.append(ln);
+ w.append(el('label','lb','Birthplace'));const cs=el('select');cs.innerHTML=CITIES.map(c=>`<option>${c}</option>`).join('');cs.value=pick(CITIES);w.append(cs);
+ gs.onchange=()=>{fn.value=pick(gs.value==='male'?MALE:FEMALE)};
+ const stats={};
+ if(has('creator')){w.append(sec('🪄 Creator Mode: design your stats'));['health','happy','smarts','looks'].forEach(k=>{stats[k]=rnd(50,90);w.append(el('label','lb',`${k} <span id="sv_${k}">${stats[k]}</span>`));const r=el('input');r.type='range';r.min=0;r.max=100;r.value=stats[k];r.oninput=()=>{stats[k]=+r.value;$('#sv_'+k).textContent=r.value};w.append(r)})}
+ w.append(opt('🎲','Randomize','',()=>{gs.value=pick(['male','female']);fn.value=pick(gs.value==='male'?MALE:FEMALE);ln.value=pick(LAST);cs.value=pick(CITIES)}));
+ w.append(opt('','Be born ✨','',()=>{newLife({name:(fn.value.trim()||'Alex')+' '+(ln.value.trim()||'Smith'),gender:gs.value,last:ln.value.trim()||'Smith',city:cs.value,stats:has('creator')?stats:null});closeSheet()},{cls:'primary'}));
+ w.append(opt('⭐',`Upgrades (${M.sandbox?'∞':M.points} points)`,'Spend Life Points before you start',upgradeSheet));
+ sheet('New Life',w,true)}
+
+// ---------- wiring ----------
+$('#ageBtn').onclick=ageUp;
+document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(sheetOpen||!S)return;if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
+$('#btnUp').onclick=()=>upgradeSheet();
+$('#btnAch').onclick=()=>S&&achSheet();
+$('#btnSound').onclick=()=>{M.sound=!M.sound;saveMeta();render()};
+$('#btnNew').onclick=()=>{const w=el('div');w.append(el('p','evt-text','Abandon this life and start over?'));w.append(opt('','Yes, start a new life','',()=>{closeSheet();setTimeout(startScreen,300)},{cls:'primary'}));w.append(opt('','Keep living','',closeSheet));sheet('New life?',w)};
+$('#btnRewind').onclick=()=>{if(!has('rewind'))return;if(!PREV)return toast('Nothing to rewind yet.');if(S.rewinds<=0)return toast('No rewinds left this life.');const r=S.rewinds-1;S=JSON.parse(PREV);S.rewinds=r;PREV=null;Q=[];if(sheetOpen){$('#sheet').classList.add('hidden');sheetOpen=false}log('⏪ I went back in time...');beep(300,.3,'sawtooth');save();render()};
+$('#btnCreator').onclick=()=>{if(S&&S.alive&&!sheetOpen)creatorSheet()};
+addEventListener('keydown',e=>{if(e.key===' '&&!sheetOpen&&document.activeElement.tagName!=='INPUT'){e.preventDefault();ageUp()}});
+
+// back-button navigation: wrap every menu
+jobSheet=nav('jobSheet',jobSheet);
+assetSheet=nav('assetSheet',assetSheet);
+relSheet=nav('relSheet',relSheet);
+actSheet=nav('actSheet',actSheet);
+personSheet=nav('personSheet',personSheet);
+findDate=nav('findDate',findDate);
+showCandidate=nav('showCandidate',showCandidate);
+bizSheet=nav('bizSheet',bizSheet);
+vacSheet=nav('vacSheet',vacSheet);
+uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
+gradOffer=nav('gradOffer',gradOffer);
+upgradeSheet=nav('upgradeSheet',upgradeSheet);
+achSheet=nav('achSheet',achSheet);
+creatorSheet=nav('creatorSheet',creatorSheet);
+startScreen=nav('startScreen',startScreen);
+showDeath=nav('showDeath',showDeath);
+// boot
+const saved=store.get('al_life');
+if(saved&&saved.alive){S=saved;render();toast(`Welcome back, ${first(S.name)}!`)}
+else{S={name:'Another Life',gender:'male',age:0,born:2026,city:'',alive:true,st:{health:50,happy:50,smarts:50,looks:50},fame:0,karma:50,money:0,debt:0,log:[],school:null,degrees:[],job:null,rel:[],assets:[],biz:[],pets:[],used:{},achs:[],jobsHeld:[],gen:1};render();startScreen()}
+</script>
+</body>
+</html>
