@@ -2,7 +2,7 @@
 // This keeps casual visitors out. It is not real security: the site files are public on GitHub.
 // To change the password, replace HASH with the SHA-256 of "sl:" + the new password.
 (function () {
-    var HASH = 'eff465697895dbd55383595b9423c5251f28aabc5d225ec17870c409050cf527';
+    var HASH = '7d98c3580cda107a7a734411d19c11cc71dfb490dae8a098c2ada47e582d30f5';
     var KEY = 'sl_gate';
 
     function saved() {
