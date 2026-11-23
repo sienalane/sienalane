@@ -355,7 +355,7 @@ function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
 function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
-let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
+let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
 function returnTarget(){const ok=e=>e&&e.title&&!e.forced&&!NO_AGAIN.includes(e.name);if(ok(curNav))return{e:curNav,stack:navStack.filter(ok)};for(let i=navStack.length-1;i>=0;i--)if(ok(navStack[i]))return{e:navStack[i],stack:navStack.slice(0,i).filter(ok)};const p=curNav&&PARENT_OF[curNav.name];if(p&&RAW[p])return{e:{key:p+':',name:p,go:()=>RAW[p](),title:p==='relSheet'?'People ❤️':p,forced:false},stack:[]};return null}
 function closeSheet(){const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack};$('#sheet').classList.add('hidden');document.body.classList.remove('panel-open');sheetOpen=false;sheetForced=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
@@ -363,7 +363,7 @@ function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
 $('#sheetBack').onclick=goBack;
 $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&$('#sheetClose').style.display!=='none')closeSheet()});
-function opt(ic,label,sub,fn,o={}){const b=el('button','opt'+(o.cls?' '+o.cls:''));b.innerHTML=`${ic?`<span class="ic">${ic}</span>`:''}<span class="tx">${label}${sub?`<span class="sub">${sub}</span>`:''}</span>${o.rt?`<span class="rt">${o.rt}</span>`:''}`;b.onclick=()=>{beep(520,.05);fn()};return b}
+function opt(ic,label,sub,fn,o={}){const b=el('button','opt'+(o.cls?' '+o.cls:''));b.innerHTML=`${ic?`<span class="ic">${ic}</span>`:''}<span class="tx">${label}${sub?`<span class="sub">${sub}</span>`:''}</span>${o.rt?`<span class="rt">${o.rt}</span>`:''}`;b.onclick=()=>{beep(520,.05);try{fn()}catch(e){console.warn(e);try{fix()}catch(x){}if(sheetOpen&&!sheetForced)closeSheet();toast('That option is not available right now.')}};return b}
 function sec(t){return el('div','sec',t)}
 function choice(title,text,chs,icon='❓'){const w=el('div');w.append(el('div','evt-icon',icon),el('p','evt-text',text));chs.forEach(([l,f])=>w.append(opt('',l,'',()=>{let r;try{r=f()}catch(e){r='Things changed before you could act on that.'};fix();if(r)result(title,r,icon);else closeSheet()})));sheet(title,w,true);beep(440,.1,'triangle')}
 function result(title,r,icon){log(r,/lost|hurt|fired|caught|died|broke|failed|sad|rejected|botched|declined/i.test(r)?'bad':'');const w=el('div');w.append(el('div','evt-icon',icon||'✨'),el('p','evt-text',r));const rt=returnTarget();if(rt)w.append(opt('‹',`Back to ${rt.e.title}`,'',()=>{navStack=rt.stack.slice();curNav=rt.e;rt.e.go()}));w.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet(title,w,true);fix()}
@@ -436,6 +436,7 @@ function ageUp(){
  if(!S.alive){Q=[showDeath];nextQ();return}
  if(S.jail){if(chance(.6))queuePrisonEvent()}else if(S.job&&chance(.55))queueJobEvent();
  if(!S.jail&&S.age>=4)queueNPC();
+ if(!S.jail&&S.school&&S.school.club&&chance(.5))queueSchoolEvent();
  if(!S.jail&&S.age>=2&&chance(S.job?.4:.6))queueEvent();
  if(chance(.08)&&S.age>=4)queueEvent();
  nextQ();
@@ -744,7 +745,7 @@ function npcEvents(){const out=[],a=S.age,p=partner(),f=x=>first(x.name),mine=S.
    ['Not yet',()=>{p.rel=clamp(p.rel-12);return `${f(p)} sighed. "Okay... but not forever."`}]]);
   // spouse wants a baby
   const kidsN=kids().filter(k=>k.alive).length;
-  if(p.role==='Spouse'&&a<46&&p.age<48&&kidsN<4&&p.rel>=50)add(.25,'👶',`${f(p)} curls up next to you. "I think I'm ready for ${kidsN?'another baby':'a baby'}. Are you?"`,[
+  if((p.role==='Spouse'||yrs>=2)&&a<46&&p.age<48&&kidsN<4&&p.rel>=50)add(.25,'👶',`${f(p)} curls up next to you. "I think I'm ready for ${kidsN?'another baby':'a baby'}. Are you?"`,[
    ['Yes, let\'s try',()=>{p.rel=clamp(p.rel+8);if(chance(.6)){babyBorn();return 'A year later, your family grew! 🍼'}return 'It has not happened yet, but you are both hopeful.'}],
    ['Let\'s adopt',()=>{if(S.money<20000)return 'You could not afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return 'You adopted a child together. 💛'}],
    ['Not now',()=>{p.rel=clamp(p.rel-8);return `${f(p)} looked disappointed.`}]]);
@@ -844,7 +845,7 @@ function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}
  if(r.role==='Partner'){w.append(opt('🍝','Date night ($200)','',go('night',()=>{S.money-=200;r.rel+=rnd(6,14);E({happy:6});return'We had a romantic dinner.'})));
   w.append(opt('💍','Propose ($3,000 ring)','',go('prop',()=>{S.money-=3000;if(r.rel>=60&&chance(.55+r.rel/300)){r.role=r.gender==='male'?'Fiancé':'Fiancée';r.since=S.age;E({happy:12});Q.push(confetti);return`${first(r.name)} said YES! We are engaged. 💍`}r.rel-=15;E({happy:-10});return`${first(r.name)} said they are not ready. Awkward.`})))}
  if(r.role==='Fiancé'||r.role==='Fiancée'){w.append(sec('Plan the wedding'));[['🏛️','Courthouse wedding',500],['🍇','Vineyard wedding',25000],['🏰','Grand ballroom wedding',80000],['🏝️','Destination wedding',150000]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(S.money<c&&c>500)return toast('Not enough money.');S.money-=c;r.role='Spouse';r.since=S.age;r.rel=clamp(r.rel+15);E({happy:15+Math.round(c/20000)});log(`I married ${r.name} with a ${n.toLowerCase()}! 💒`,'big');Q.push(confetti);result('Just married! 💒',`I married ${first(r.name)}. Best day of my life.`,'💒')})))}
- if(r.role==='Spouse'){w.append(opt('👶','Try for a baby','',go('baby',()=>{if(S.age>48||r.age>52)return'It is not happening for us at this age. Maybe adopt?';if(chance(.5)){babyBorn();return'We are having a baby! 🍼'}return'No luck this time.'})));
+ if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role)){w.append(opt('👶','Grow our family','Start trying for a baby together',go('baby',()=>{if(S.age>48||r.age>52)return'It is not happening for us at this age. Maybe adopt?';if(chance(.5)){babyBorn();return'We are having a baby! 🍼'}return'No luck this time.'})));
   w.append(opt('🏠','Adopt a child ($20,000)','',go('adopt',()=>{if(S.money<20000)return'We cannot afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return'We adopted a child! Our family grew. 💛'})))}
  if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role))w.append(opt('💔',r.role==='Spouse'?'Divorce':'Break up','',()=>{if(r.role==='Spouse'){const l=Math.max(0,S.money*.5);S.money-=l;log(`I divorced ${r.name}. I lost ${fmt(l)} in the settlement.`,'bad')}else log(`I broke up with ${r.name}.`,'bad');S.rel=S.rel.filter(x=>x!==r);E({happy:-10});closeSheet()},{cls:'danger'}));
  if(r.role!=='Spouse'&&!['Son','Daughter'].includes(r.role))w.append(opt('😤','Argue','',go('argue',()=>{r.rel-=rnd(6,15);return`${first(r.name)} and I got into a heated argument.`}),{cls:'danger'}));
@@ -872,7 +873,7 @@ function jobSheet(){P();if(S.jail)return prisonSheet();const w=el('div');
   if(S.age>=55)w.append(opt('🏖️','Retire','Get a pension',()=>{S.retired=Math.round(lv[1]*.4);log(`I retired from my job as ${lv[0]}. Pension: ${fmt(S.retired)}/yr. 🏖️`,'big');S.job=null;E({happy:12});closeSheet()}));
   w.append(opt('🚪','Quit','',()=>{log(`I quit my job as ${lv[0]}.`);S.job=null;closeSheet()},{cls:'danger'}))}
  if(S.retired)w.append(el('div','info',`<b>🏖️ Retired</b><br>Pension ${fmt(S.retired)}/yr`));
- if(S.school){const s=S.school;w.append(el('div','info',`<b>🏫 ${s.type}${s.major?' · '+s.major:''}</b><br>${s.left} year${s.left===1?'':'s'} left · Grades ${s.perf}%`));
+ if(S.school){const s=S.school;w.append(opt('🏫','School life','Teachers, classmates, clubs, prom',()=>schoolSheet(),{cls:'primary'}));w.append(el('div','info',`<b>🏫 ${s.type}${s.major?' · '+s.major:''}</b><br>${s.left} year${s.left===1?'':'s'} left · Grades ${s.perf}%`));
   w.append(opt('📚','Study harder','',()=>{if(!once('study'))return;s.perf=clamp(s.perf+rnd(8,15));E({smarts:rnd(1,4),happy:-2});act('Study','I hit the books hard this year.','📚')}));
   if(s.type==='High School'&&S.age>=16||!/School$/.test(s.type)||s.type.includes('Program')||s.type==='Medical School'||s.type==='Law School'||s.type==='Veterinary School')if(s.type!=='Elementary School'&&s.type!=='Middle School')w.append(opt('🚪','Drop out','',()=>{log(`I dropped out of ${s.type}.`,'bad');S.school=null;closeSheet()},{cls:'danger'}))}
  if(S.age>=18&&!S.school&&S.degrees.includes('HS')){w.append(sec('Education'));w.append(opt('🎓','Go to university','Pick a major',uniOfferAdult));if(S.degrees.some(d=>MAJORS.includes(d)))w.append(opt('🔬','Apply to grad school','',gradOffer))}
@@ -922,6 +923,12 @@ function actSheet(){P();if(S.jail)return prisonSheet();const w=el('div');const a
  A('💆','Salon & spa','Haircut, nails, spa day',12,spaSheet);
  A('🥋','Martial arts','Karate, jiu-jitsu, Muay Thai',6,martialSheet);
  A('🎸','Learn an instrument','Guitar, piano, drums, violin, singing',6,instrumentSheet);
+ w.append(sec('More things to do'));
+ if(S.school)A('🏫','School life','Teachers, classmates, clubs',5,()=>schoolSheet());
+ A('🎨','Hobbies','Painting, gardening, cooking, fishing and more',5,hobbySheet);
+ A('🤲','Volunteer','Shelter, food bank, hospital, beach',12,volunteerSheet);
+ A('🪂','Adventure','Skydiving, scuba, bungee, mountains',16,adventureSheet);
+ A('🌍','Travel the world','Italy, Japan, Kenya and more',18,travelSheet);
  w.append(sec('Shopping & Money'));
  A('🛍️','Go shopping','Clothes, jewelry, instruments, art',16,shopSheet);
  A('📈','Investing','Index funds, tech stocks, crypto',18,investSheet);
@@ -1154,6 +1161,86 @@ function premiumYear(){P();
  if(roy>0){S.money+=roy;log(`Royalties from my past work paid me ${fmt(roy)}. 💸`,'good')}
 }
 
+// ---------- SCHOOL LIFE ----------
+const SUBJECTS=['Math','English','Science','History','Art','Music','Spanish','PE','Computer Science','Drama'];
+const CLUBS=[['⚽','Soccer team','health'],['🏀','Basketball team','health'],['🏊','Swim team','health'],['🎭','Theater club','looks'],['🎺','Marching band','smarts'],['🗣️','Debate team','smarts'],['🤖','Robotics club','smarts'],['🎨','Art club','looks'],['♟️','Chess club','smarts'],['🏛️','Student government','looks'],['📸','Yearbook','looks'],['🌱','Environmental club','karma']];
+function schoolPeople(){const s=S.school;if(!s)return null;if(!s.people||s.people.type!==s.type){const t=SUBJECTS.slice().sort(()=>Math.random()-.5).slice(0,4).map(sub=>{const g=pick(['male','female']);return{id:uid(),name:(g==='male'?'Mr. ':'Ms. ')+pick(LAST),subject:sub,rel:rnd(35,70),gender:g}});
+  const used=[first(S.name)];const c=Array.from({length:5},()=>{const g=pick(['male','female']);const fn=pick((g==='male'?MALE:FEMALE).filter(n=>!used.includes(n)));used.push(fn);return{id:uid(),name:fn+' '+pick(LAST),gender:g,rel:rnd(25,65),vibe:pick(['sporty','nerdy','popular','artsy','quiet','class clown'])}});s.people={type:s.type,teachers:t,mates:c};s.club=null}return s.people}
+function schoolSheet(){P();if(!S.school){toast('You are not in school right now.');return closeSheet()}const s=S.school,sp=schoolPeople(),w=el('div');
+ w.append(el('div','info',`<b>🏫 ${s.type}${s.major?' · '+s.major:''}</b><br>${s.left} year${s.left===1?'':'s'} left · Grades ${s.perf}%${s.club?'<br>Club: '+s.club:''}`));
+ w.append(sec('Teachers'));sp.teachers.forEach(t=>w.append(opt('🧑‍🏫',t.name,`${t.subject} · relationship ${t.rel}%`,()=>teacherSheet(t),{rt:bar(t.rel)})));
+ w.append(sec('Classmates'));sp.mates.forEach(m=>w.append(opt(m.gender==='male'?'🧑':'👧',m.name,`${m.vibe} · ${m.rel}%`,()=>mateSheet(m),{rt:bar(m.rel)})));
+ w.append(sec('Clubs & teams'));w.append(opt('🏅',s.club?`Your club: ${s.club}`:'Join a club or team',s.club?'Big moments happen each year':'One at a time',clubSheet));
+ w.append(sec('School life'));
+ w.append(opt('📚','Study harder','+grades',()=>{if(!once('study'))return;s.perf=clamp(s.perf+rnd(8,15));E({smarts:rnd(1,4),happy:-2});act('Study','You hit the books hard this year.','📚')}));
+ w.append(opt('🙈','Skip class','Risky',()=>{if(!once('skip'))return;if(chance(.6)){E({happy:6});s.perf=clamp(s.perf-4);act('Skipped class',pick(['You spent the day at the arcade.','You went to the beach with friends.','You napped in the park.']),'🙈')}else{s.perf=clamp(s.perf-10);E({happy:-4});act('Busted','The principal caught you. Detention for a week.','🚨')}}));
+ if(['High School','Middle School','University'].includes(s.type))w.append(opt('🗳️','Run for class president','',()=>{if(!once('pres'))return;const ok=resolve('looks',{job:false,g:{happy:8,fame:1}});if(ok)S.flags.president=1;fix();act('Election',ok?'You won by a landslide! 🎉':'You lost to the popular kid.','🗳️')}));
+ if(s.type==='High School'&&S.age>=16)w.append(opt('💃','Go to prom','',promSheet));
+ if(s.perf>=85)w.append(opt('🏅','Apply for the honor society','',()=>{if(!once('honor'))return;S.flags.honor=1;E({happy:6,smarts:2});act('Honor society','You are in! Your parents framed the letter.','🏅')}));
+ if(s.type==='High School'&&s.left<=1)w.append(opt('💰','Apply for scholarships','',()=>{if(!once('schol'))return;if(chance(s.perf/140+L())){const m=rnd(5,40)*1000;S.money+=m;act('Scholarship',`You won a ${fmt(m)} scholarship!`,'💰')}else act('Scholarship','No luck this time.','📭')}));
+ sheet('School Life 🏫',w)}
+const bar=v=>`<div class="bar" style="width:60px"><i style="width:${v}%;background:${v>66?'var(--good)':v>33?'var(--mid)':'var(--bad)'}"></i></div>`;
+function teacherSheet(t){if(!S.school){toast('You are not in school anymore.');return closeSheet()}const w=el('div'),k=a=>`t_${t.id}_${a}`,s=S.school;w.append(el('div','info',`<b>${t.name}</b><br>Teaches ${t.subject} · relationship ${t.rel}%`));
+ const go=(a,fn)=>()=>{if(!once(k(a)))return;const r=fn();t.rel=clamp(t.rel);s.perf=clamp(s.perf);fix();act(t.name,r,'🧑‍🏫')};
+ w.append(opt('🙋','Ask for help after class','+grades',go('help',()=>{t.rel+=rnd(3,8);s.perf+=rnd(4,9);return `${t.name} explained it until it clicked.`})));
+ w.append(opt('🍎','Bring them an apple','',go('apple',()=>{if(chance(.7)){t.rel+=rnd(6,12);return `${t.name} smiled. "Thank you!"`}t.rel-=2;return `${t.name} said it was not necessary.`})));
+ w.append(opt('⭐','Ask for extra credit','',go('extra',()=>{if(chance(t.rel/120)){s.perf+=rnd(6,12);return 'They gave you a bonus project. You aced it.'}return '"Just do the regular work," they said.'})));
+ w.append(opt('😤','Argue about a grade','',go('argue',()=>{if(chance(.25+S.st.smarts/300)){s.perf+=5;t.rel-=3;return 'You had a point. They raised your grade.'}t.rel-=rnd(8,15);return `${t.name} was not impressed.`}),{cls:'danger'}));
+ sheet(t.name,w)}
+function mateSheet(m){if(!S.school){toast('You are not in school anymore.');return closeSheet()}const w=el('div'),k=a=>`m_${m.id}_${a}`;w.append(el('div','info',`<b>${m.name}</b><br>The ${m.vibe} one · relationship ${m.rel}%`));
+ const go=(a,fn)=>()=>{if(!once(k(a)))return;const r=fn();m.rel=clamp(m.rel);fix();act(first(m.name),r,'🧑')};
+ w.append(opt('🤝','Hang out','',go('hang',()=>{m.rel+=rnd(5,12);E({happy:3});return pick([`You and ${first(m.name)} got milkshakes.`,`You played video games all afternoon.`,`You talked for hours.`])})));
+ w.append(opt('📖','Study together','',go('study',()=>{m.rel+=rnd(3,7);S.school.perf=clamp(S.school.perf+rnd(2,6));return 'You both did better on the test.'})));
+ w.append(opt('💛','Become best friends','Adds them to People',go('bff',()=>{if(m.rel<50)return `${first(m.name)} does not know you well enough yet.`;if(S.rel.some(r=>r.id===m.id))return 'You are already friends.';S.rel.push({id:m.id,name:m.name,gender:m.gender,age:S.age,rel:m.rel,role:'Friend',alive:true});E({happy:6});return `You and ${first(m.name)} are officially best friends.`})));
+ w.append(opt('😜','Prank them','',go('prank',()=>{if(chance(.5)){m.rel+=4;E({happy:5});return 'They laughed so hard. Legendary.'}m.rel-=12;return 'They did not think it was funny.'})));
+ if(S.age>=14)w.append(opt('💌','Ask them to the dance','',go('dance',()=>{if(chance(S.st.looks/130+m.rel/250)){E({happy:10});m.rel+=10;return `${first(m.name)} said yes! You danced all night.`}E({happy:-6});return `${first(m.name)} said they already have a date.`})));
+ w.append(opt('😠','Start drama','',go('drama',()=>{m.rel-=rnd(10,20);E({karma:-3});return 'The whole school was talking about it.'}),{cls:'danger'}));
+ sheet(m.name,w)}
+function clubSheet(){if(!S.school){toast('You are not in school anymore.');return closeSheet()}const s=S.school,w=el('div');if(s.club)w.append(opt('🚪',`Quit ${s.club}`,'',()=>{s.club=null;toast('You quit.');clubSheet()},{cls:'danger'}));
+ w.append(el('p','evt-text','Pick a club or team. Each year something big happens with it.'));CLUBS.forEach(([ic,n,st])=>w.append(opt(ic,n,`Uses ${st}`,()=>{if(s.club===n)return toast('You are already in it.');const tryout=['Soccer team','Basketball team','Swim team'].includes(n);if(tryout&&!chance(.4+S.st.health/180+L())){act('Tryouts',`You did not make the ${n.toLowerCase()} this year.`,'😞');return}s.club=n;S.flags.clubs=(S.flags.clubs||0)+1;log(`I joined the ${n.toLowerCase()}. ${ic}`,'good');E({happy:5});fix();act(n,`Welcome to the ${n.toLowerCase()}!`,ic)},{rt:s.club===n?'✅':''})));sheet('Clubs & Teams 🏅',w)}
+function promSheet(){if(!S.school){toast('You are not in school anymore.');return closeSheet()}if(!once('prom'))return;const w=el('div');w.append(el('div','evt-icon','💃'),el('p','evt-text','Prom night! How do you go?'));
+ [['With a date',()=>{const ok=chance(S.st.looks/120+.2);E({happy:ok?12:-4});return ok?'Your date loved the corsage. Magical night.':'Your date bailed last minute. You went with friends anyway.'}],['With a group of friends',()=>{E({happy:9});return 'You danced in a big circle all night.'}],['Run for prom royalty',()=>{const ok=chance(S.st.looks/150+L());E({happy:ok?14:3,fame:ok?2:0});return ok?'You were crowned! 👑':'You did not win, but had a blast.'}],['Skip it',()=>{E({happy:-2});return 'You watched movies at home.'}]].forEach(([l,f])=>w.append(opt('',l,'',()=>{const r=f();fix();log(r);act('Prom',r,'💃')})));
+ sheet('Prom 💃',w)}
+const CLUB_EV={health:['The championship game comes down to the final seconds.',[['Give it everything','health','You scored the winning point! The crowd stormed the field.','You came up just short.'],['Pass to a teammate','smarts','Your assist won the game.','They fumbled it.']]],
+ looks:['Opening night of the big show is here.',[['Go for the spotlight','looks','Standing ovation. The local paper wrote about you.','You forgot your lines.'],['Stick to the script','smarts','Flawless performance.','A little stiff, but fine.']]],
+ smarts:['The regional competition is today.',[['Take the risky strategy','smarts','You won first place! 🏆','The risk did not pay off.'],['Play it safe','smarts','Solid second place.','Knocked out early.']]],
+ karma:['Your club is planning a big community project.',[['Lead the project','karma','You planted 200 trees. The mayor came!','Only three people showed up.'],['Help behind the scenes','karma','It went perfectly.','It rained out.']]]};
+function queueSchoolEvent(){const s=S.school;if(!s||!s.club)return;const c=CLUBS.find(x=>x[1]===s.club);if(!c)return;const [t,chs]=CLUB_EV[c[2]];Q.push(()=>choice(`${c[0]} ${s.club}`,t,chs.map(([l,st,g,b])=>[l,()=>{const ok=resolve(st,{job:false,g:{happy:6}});if(ok&&S.school)S.school.perf=clamp(S.school.perf+3);return ok?g:b}]),c[0]))}
+
+// ---------- MORE ACTIVITIES ----------
+let hobbySheet=()=>choiceMenu('Hobbies 🎨','hobby',[['🎨','Painting','',['','looks','You painted something you are proud of.','It looks like a toddler made it.',{g:{happy:6},job:false}]],['🌻','Gardening','',['','health','Your tomatoes are thriving.','Something ate all your lettuce.',{g:{happy:5,health:2},job:false}]],['🍳','Cooking class','',['','smarts','You made pasta from scratch!','You set off the smoke alarm.',{g:{happy:5,smarts:1},job:false}]],['📷','Photography','',['','looks','One of your photos got featured online.','Everything came out blurry.',{g:{happy:5},job:false}]],['🎣','Fishing','',['','health','You caught a huge one!','Nothing bit all day. Peaceful though.',{g:{happy:6},b:{happy:2},job:false}]],['🎮','Video games','',['','smarts','You beat the final boss!','Rage quit.',{g:{happy:6},b:{happy:-1},job:false}]],['🧶','Knitting','',['','smarts','You made a cozy scarf.','It is more of a knot.',{g:{happy:4},job:false}]],['✍️','Write a story','',['','smarts','Your story won a local contest!','Writer\'s block all month.',{g:{happy:6,smarts:2},job:false}]]]);
+let adventureSheet=()=>choiceMenu('Adventure 🪂','adv',[['🪂','Skydiving ($300)','',['','health','Free fall was the best minute of your life!','Your chute opened late. Terrifying.',{g:{happy:12,money:-300},b:{health:-6,money:-300},job:false}]],['🤿','Scuba diving ($200)','',['','health','You swam with sea turtles.','Your ears hurt for a week.',{g:{happy:10,money:-200},b:{health:-2,money:-200},job:false}]],['🪢','Bungee jumping ($150)','',['','health','You screamed the whole way. Amazing.','You threw up after.',{g:{happy:9,money:-150},b:{happy:-2,money:-150},job:false}]],['🎈','Hot air balloon ($400)','',['','happy','The sunrise view was unreal.','Too windy. Cancelled.',{g:{happy:10,money:-400},b:{money:-100},job:false}]],['🏄','Surfing lessons ($100)','',['','health','You stood up on your first wave!','You swallowed half the ocean.',{g:{happy:8,health:3,money:-100},b:{money:-100},job:false}]],['🏔️','Climb a mountain','',['','health','You made it to the summit!','Altitude sickness. You turned back.',{g:{happy:12,health:4},b:{health:-5},job:false}]]]);
+let volunteerSheet=()=>choiceMenu('Volunteer 🤲','vol',[['🐾','Animal shelter','',['','karma','A dog you walked got adopted that day.','A cat scratched you. Still worth it.',{g:{karma:7,happy:5},b:{karma:4},job:false}]],['🥫','Food bank','',['','karma','You packed 500 meals.','It was hectic, but you helped.',{g:{karma:7,happy:4},b:{karma:4},job:false}]],['🏥','Hospital','',['','karma','A patient said you made their week.','Long day on your feet.',{g:{karma:6,happy:5},b:{karma:3},job:false}]],['🏖️','Beach cleanup','',['','karma','You filled ten bags of trash.','It rained, but you stayed.',{g:{karma:6,health:2},b:{karma:3},job:false}]],['📖','Tutor kids','',['','smarts','Your student finally got fractions!','They mostly wanted to talk about video games.',{g:{karma:6,smarts:1},b:{karma:3},job:false}]]]);
+let travelSheet=()=>{const w=el('div');[['🇮🇹','Italy',4000,'You ate gelato every day and saw the Colosseum.'],['🇯🇵','Japan',5000,'You visited temples and ate the best ramen of your life.'],['🇲🇽','Mexico',2000,'Tacos, beaches and ancient pyramids.'],['🇮🇸','Iceland',4500,'You saw the northern lights.'],['🇰🇪','Kenya',6000,'A lion walked right past your jeep.'],['🇵🇪','Peru',3500,'You hiked to Machu Picchu at sunrise.'],['🇬🇷','Greece',3500,'White houses, blue water, perfect sunsets.'],['🇦🇺','Australia',6000,'You held a koala and snorkeled the reef.']].forEach(([ic,n,c,t])=>w.append(opt(ic,n,'',()=>{if(S.age<18)return toast('You must be 18.');if(S.money<c)return toast('Not enough money.');if(!once('travel'))return;S.money-=c;E({happy:rnd(10,16),smarts:2});S.flags.countries=(S.flags.countries||0)+1;log(`I traveled to ${n}. ${ic}`,'good');fix();act(n,t,ic)},{rt:fmt(c)})));sheet('Travel the World 🌍',w)};
+
+// ---------- MORE LIFE EVENTS ----------
+EV.push(
+ {a:[3,7],ic:'🎂',t:'It is your birthday party! What theme do you want?',c:[['Dinosaurs',()=>{E({happy:8});return 'Best party ever. Rawr.'}],['Princesses and knights',()=>{E({happy:8});return 'Everyone wore crowns.'}],['Outer space',()=>{E({happy:8,smarts:1});return 'You got a telescope!'}]]},
+ {a:[5,10],ic:'🦷',t:'Your first tooth fell out!',c:[['Put it under your pillow',()=>{S.money+=5;E({happy:4});return 'The tooth fairy left you $5!'}],['Keep it in a jar',()=>'You have a weird tooth collection now.']]},
+ {a:[6,12],ic:'🚲',t:'You are learning to ride a bike without training wheels.',c:[['Go for it',()=>{if(chance(.6)){E({happy:7});return 'You did it! You rode around the whole block.'}E({health:-3});return 'You scraped your knee. Try again tomorrow.'}],['Keep the training wheels',()=>'Maybe next summer.']]},
+ {a:[8,14],ic:'🏕️',t:'Your parents want to send you to summer camp.',c:[['Go to camp',()=>{E({happy:8});const g=pick(['male','female']);S.rel.push({id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:S.age,rel:rnd(55,80),role:'Friend',alive:true});return 'You made a best friend at camp!'}],['Stay home',()=>{E({happy:2});return 'You played video games all summer.'}]]},
+ {a:[10,16],ic:'📱',t:'Everyone at school has a phone except you.',c:[['Beg your parents',()=>{if(chance(.5)){E({happy:8});return 'They caved! New phone.'}E({happy:-4});return '"When you are older," they said.'}],['Save up for one',()=>{E({smarts:1});return 'You started saving your allowance.'}]]},
+ {a:[13,17],ic:'🎸',t:'Your friends want to start a band.',c:[['Join as the singer',()=>{P();S.music.skill=clamp(S.music.skill+5);E({happy:6,fame:1});return 'Your band played the school talent show!'}],['Play guitar',()=>{P();S.music.skill=clamp(S.music.skill+6);E({happy:5});return 'You learned five songs.'}],['Pass',()=>'Not your thing.']]},
+ {a:[14,18],ic:'🎤',t:'There is a school dance this Friday.',c:[['Go and dance',()=>{E({happy:7});return 'You danced like nobody was watching.'}],['Hang by the snacks',()=>{E({happy:2});return 'The snacks were great.'}],['Skip it',()=>'You stayed home.']]},
+ {a:[16,19],ic:'🎓',t:'College recruiters are visiting your school.',c:[['Talk to every booth',()=>{E({smarts:2});return 'You got a lot of brochures and ideas.'}],['Skip it',()=>'You will figure it out later.']]},
+ {a:[18,30],ic:'🏠',t:'A friend needs a roommate.',c:[['Move in together',()=>{E({happy:5});return 'Roommate life! Mostly fun.'}],['Live alone',()=>'You like your own space.']]},
+ {a:[18,40],ic:'💸',t:'You find a $100 bill in an old jacket.',c:[['Treat yourself',()=>{E({happy:5});return 'You bought something nice.'}],['Save it',()=>{S.money+=100;return 'Into savings it goes.'}],['Donate it',()=>{E({karma:5});return 'You felt great.'}]]},
+ {a:[18,60],ic:'🚦',t:'You get stuck in a 2-hour traffic jam.',c:[['Sing along to the radio',()=>{E({happy:3});return 'Car karaoke saved the day.'}],['Honk angrily',()=>{E({happy:-3,karma:-1});return 'Nobody moved faster.'}],['Listen to a podcast',()=>{E({smarts:1});return 'You learned about octopuses.'}]]},
+ {a:[20,60],ic:'🐱',t:'A stray cat keeps showing up at your door.',c:[['Adopt it',()=>{addPet(PETS[1]);return 'It moved right in like it owned the place.'}],['Feed it but keep it outside',()=>{E({karma:3});return 'It visits every morning now.'}],['Shoo it away',()=>{E({karma:-2});return 'It looked offended.'}]]},
+ {a:[20,70],ic:'🎟️',t:'A coworker gives you two free concert tickets.',c:[['Take your partner',()=>{const p=partner();if(p){p.rel=clamp(p.rel+8);E({happy:7});return `${first(p.name)} loved it.`}E({happy:5});return 'You went with a friend.'}],['Sell them',()=>{S.money+=150;return 'You sold them for $150.'}]]},
+ {a:[22,65],ic:'🌧️',t:'A storm floods your basement.',c:[['Pay for repairs ($3,000)',()=>{S.money-=3000;return 'Good as new.'}],['DIY it',()=>{if(chance(.5)){E({happy:4});return 'You fixed it yourself! Proud moment.'}S.money-=4500;return 'You made it worse. Repairs cost $4,500.'}]]},
+ {a:[25,70],ic:'📚',t:'You are invited to join a book club.',c:[['Join',()=>{E({smarts:2,happy:4});return 'Great books, better snacks.'}],['Decline',()=>'Not your thing.']]},
+ {a:[25,70],ic:'🏃',t:'Your doctor says you should get more exercise.',c:[['Start running',()=>{E({health:6});return 'You feel amazing.'}],['Join a dance class',()=>{E({health:4,happy:5});return 'You love it.'}],['Ignore it',()=>{E({health:-3});return 'Your back hurts more.'}]]},
+ {a:[30,80],ic:'🧬',t:'A DNA test says you have relatives in another country.',c:[['Reach out',()=>{E({happy:6});return 'You found cousins and they invited you to visit!'}],['Leave it',()=>'Interesting, but you moved on.']]},
+ {a:[30,75],ic:'🎙️',t:'A local radio show wants to interview you.',c:[['Do it',()=>{E({fame:3,happy:4});return 'You were charming on air.'}],['Decline',()=>'You prefer to stay low-key.']]},
+ {a:[35,70],ic:'🔑',t:'Your neighbor asks you to watch their house while they travel.',c:[['Sure!',()=>{E({karma:4});return 'They brought you a gift from their trip.'}],['Sorry, I am busy',()=>'They asked someone else.']]},
+ {a:[40,70],ic:'🏍️',t:'Midlife crisis? You suddenly want a motorcycle.',c:[['Buy one ($15,000)',()=>{if(S.money<15000)return 'You could not afford it.';S.money-=15000;S.assets.push({kind:'car',name:'Motorcycle',ic:'🏍️',val:15000});E({happy:10});return 'You feel 25 again.'}],['Get a new hobby instead',()=>{E({happy:4});return 'You took up pottery.'}]]},
+ {a:[50,85],ic:'💌',t:'An old flame finds you online.',c:[['Catch up over coffee',()=>{E({happy:6});return 'You laughed about old times.'}],['Ignore the message',()=>'Some doors stay closed.']]},
+ {a:[60,95],ic:'🎉',t:'Your family throws you a surprise party.',c:[['Give a speech',()=>{E({happy:12});return 'Everyone cried happy tears.'}],['Just enjoy the cake',()=>{E({happy:9});return 'Best cake ever.'}]]},
+ {a:[60,95],ic:'🧓',t:'Your grandkids want you to teach them something.',cond:()=>S.rel.some(r=>r.alive&&['Grandson','Granddaughter'].includes(r.role)),c:[['Teach them to cook',()=>{E({happy:10});return 'Your secret recipe lives on.'}],['Teach them to fish',()=>{E({happy:9});return 'They caught their first fish!'}]]},
+ {a:[65,95],ic:'🪑',t:'You are offered a spot at a retirement community.',c:[['Move in',()=>{E({happy:6});return 'Bingo nights are surprisingly competitive.'}],['Stay in your home',()=>'You love your home.']]}
+);
+
 // ---------- upgrades / ribbons / creator ----------
 function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
  UPGRADES.forEach(u=>{const own=has(u.id);w.append(opt(u.ic,u.n,u.d,()=>{if(own)return toast('Already unlocked!');if(M.points<u.cost)return toast(`You need ${u.cost} Life Points.`);M.points-=u.cost;M.up[u.id]=1;saveMeta();confetti();toast(`${u.n} unlocked!`);render();upgradeSheet()},{rt:own?'✅':`⭐ ${u.cost}`}))});
@@ -1266,6 +1353,9 @@ ACH.push(['plat','💿','Platinum Record','Release a platinum album',20,()=>S.mu
  ['escape','🏃','Escape Artist','Escape from prison',10,()=>!!S.flags.escaped],
  ['investor','📈','Investor','Grow your investments past $1M',15,()=>invTotal()>=1e6],
  ['general','⭐','Top Brass','Reach the top rank in the military',20,()=>S.job&&CAR[S.job.id].g==='Military'&&S.job.lvl===CAR[S.job.id].lv.length-1],
+ ['globe','🌍','Globetrotter','Travel to 5 countries',15,()=>(S.flags.countries||0)>=5],
+ ['prez','🗳️','Class President','Win a school election',10,()=>!!S.flags.president],
+ ['joiner','🏅','Joiner','Join 3 clubs or teams',10,()=>(S.flags.clubs||0)>=3],
  ['licensed','🪪','Fully Licensed','Earn every license',10,()=>S.lic&&LICENSES.every(l=>S.lic[l[0]])]);
 // back-button navigation: wrap every menu
 jobSheet=nav('jobSheet',jobSheet);
@@ -1282,6 +1372,16 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+schoolSheet=nav('schoolSheet',schoolSheet);
+teacherSheet=nav('teacherSheet',teacherSheet);
+mateSheet=nav('mateSheet',mateSheet);
+clubSheet=nav('clubSheet',clubSheet);
+promSheet=nav('promSheet',promSheet);
+hobbySheet=nav('hobbySheet',hobbySheet);
+adventureSheet=nav('adventureSheet',adventureSheet);
+volunteerSheet=nav('volunteerSheet',volunteerSheet);
+travelSheet=nav('travelSheet',travelSheet);
+
 gymSheet=nav('gymSheet',gymSheet);
 libSheet=nav('libSheet',libSheet);
 medSheet=nav('medSheet',medSheet);
