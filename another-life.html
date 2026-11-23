@@ -56,6 +56,7 @@ nav button:hover{background:#ffffff10}
 #ageBtn span{color:#0b1220;font-size:11px;margin-top:-6px}
 #ageBtn:hover{background:linear-gradient(135deg,hsl(calc(var(--hue) + 150) 90% 65%),hsl(calc(var(--hue) + 190) 90% 58%))}
 @keyframes pulse{0%,100%{box-shadow:0 10px 30px hsl(calc(var(--hue) + 150) 80% 50% / .45),0 0 0 0 hsl(calc(var(--hue) + 150) 80% 60% / .5)}50%{box-shadow:0 10px 30px hsl(calc(var(--hue) + 150) 80% 50% / .45),0 0 0 12px transparent}}
+#againBtn{align-self:center;margin-top:8px;background:var(--card);border:1px solid var(--acc);color:var(--txt);border-radius:999px;padding:7px 16px;font:600 14px Fredoka;cursor:pointer;animation:fadein .4s both;box-shadow:0 4px 14px #0005}#againBtn:hover{background:hsl(var(--hue) 35% 26%)}#againBtn.hidden{display:none}
 #sheet{position:fixed;inset:0;background:#0009;display:flex;align-items:flex-end;justify-content:center;z-index:20;transition:opacity .25s}
 #sheet.hidden{opacity:0;pointer-events:none}
 .sheet-inner{width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,hsl(var(--hue) 35% 20%),hsl(var(--hue) 40% 12%));border:1px solid var(--line);border-bottom:none;border-radius:24px 24px 0 0;padding:16px;transform:translateY(0);transition:transform .3s cubic-bezier(.2,.9,.3,1.2)}
@@ -113,6 +114,7 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
   </div>
   <main id="log"></main>
   <section id="stats"></section>
+  <button id="againBtn" class="hidden"></button>
   <nav>
     <button data-a="job">💼<span>Career</span></button>
     <button data-a="assets">🏠<span>Assets</span></button>
@@ -247,7 +249,7 @@ function newLife(o={}){
  if(o.stats)Object.assign(S.st,o.stats);
  if(has('trust'))S.money+=50000;
  if(o.money)S.money+=o.money;
- PREV=null;Q=[];
+ PREV=null;Q=[];lastMenu=null;
  if(!o.noFamily){
   const mom={id:uid(),name:pick(FEMALE)+' '+last,role:'Mother',gender:'female',age:rnd(20,40),rel:rnd(60,100),alive:true};
   const dad={id:uid(),name:pick(MALE)+' '+last,role:'Father',gender:'male',age:rnd(21,45),rel:rnd(55,100),alive:true};
@@ -286,11 +288,12 @@ let tt;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('sh
 
 // ---------- sheets ----------
 let navStack=[],curNav=null;
-function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen)navStack=[];if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,go:()=>fn(...args),title:null};fn(...args)}}
+function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen)navStack=[];if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,name,go:()=>fn(...args.map(a=>a&&typeof a==='object'&&a.id&&S?(S.rel.find(x=>x.id===a.id)||S.biz.find(x=>x.id===a.id)||a):a)),title:null};fn(...args)}}
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
-function closeSheet(){$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
+let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
+function closeSheet(){if(curNav&&curNav.title&&!curNav.forced&&!NO_AGAIN.includes(curNav.name))lastMenu={title:curNav.title,go:curNav.go,name:curNav.name};$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
 function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
 $('#sheetBack').onclick=goBack;
 $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
@@ -319,6 +322,7 @@ function render(){
  $('#btnRewind').textContent=`⏪ Rewind (${S.rewinds})`;
  $('#btnCreator').classList.toggle('hidden',!has('creator'));
  $('#btnSound').textContent=M.sound?'🔊':'🔇';
+ const ag=$('#againBtn');if(lastMenu&&S.alive){ag.textContent='↩ Back to '+lastMenu.title;ag.classList.remove('hidden')}else ag.classList.add('hidden');
  // log
  const lg=$('#log');lg.innerHTML='';let cur=null,box;
  S.log.slice(-250).forEach(e=>{if(e.a!==cur){cur=e.a;box=el('div','yr');box.append(el('h4','',`Age ${e.a} · ${S.born+e.a}`));lg.append(box)}box.append(el('div','ent '+e.c,e.t))});
@@ -654,6 +658,7 @@ function startScreen(){const w=el('div');w.append(el('div','title','Another Life
 
 // ---------- wiring ----------
 $('#ageBtn').onclick=ageUp;
+$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=[];m.go()};
 document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(sheetOpen||!S)return;if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
 $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnAch').onclick=()=>S&&achSheet();
