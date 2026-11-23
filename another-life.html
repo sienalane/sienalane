@@ -293,7 +293,7 @@ function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();curNav=
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
-function closeSheet(){if(curNav&&curNav.title&&!curNav.forced&&!NO_AGAIN.includes(curNav.name))lastMenu={title:curNav.title,go:curNav.go,name:curNav.name};$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
+function closeSheet(){if(curNav&&curNav.title&&!curNav.forced&&!NO_AGAIN.includes(curNav.name))lastMenu={title:curNav.title,go:curNav.go,name:curNav.name,stack:navStack.filter(e=>!e.forced&&!NO_AGAIN.includes(e.name))};$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
 function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
 $('#sheetBack').onclick=goBack;
 $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
@@ -658,7 +658,7 @@ function startScreen(){const w=el('div');w.append(el('div','title','Another Life
 
 // ---------- wiring ----------
 $('#ageBtn').onclick=ageUp;
-$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=[];m.go()};
+$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();m.go()};
 document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(sheetOpen||!S)return;if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
 $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnAch').onclick=()=>S&&achSheet();
