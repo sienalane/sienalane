@@ -355,7 +355,7 @@ function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
 function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
-let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet'];
+let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet','switchSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
 function returnTarget(){const ok=e=>e&&e.title&&!e.forced&&!NO_AGAIN.includes(e.name);if(ok(curNav))return{e:curNav,stack:navStack.filter(ok)};for(let i=navStack.length-1;i>=0;i--)if(ok(navStack[i]))return{e:navStack[i],stack:navStack.slice(0,i).filter(ok)};const p=curNav&&PARENT_OF[curNav.name];if(p&&RAW[p])return{e:{key:p+':',name:p,go:()=>RAW[p](),title:p==='relSheet'?'People ❤️':p,forced:false},stack:[]};return null}
 function closeSheet(){const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack};$('#sheet').classList.add('hidden');document.body.classList.remove('panel-open');sheetOpen=false;sheetForced=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
@@ -842,7 +842,7 @@ function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}
  w.append(opt('💬','Have a conversation','Dreams, memories, advice, gossip',()=>talkSheet(r)));
  w.append(opt('🎁','Give a gift','Flowers, jewelry, even a car',()=>giftSheet(r)));
  if(['Mother','Father'].includes(r.role))w.append(opt('💵','Ask for money','',go('money',()=>{if(chance(r.rel/160+L())){const m=has('trust')?rnd(1000,25000):rnd(20,1500);S.money+=m;return`${first(r.name)} gave me ${fmt(m)}.`}r.rel-=4;return`${first(r.name)} said no.`})));
- if(['Son','Daughter'].includes(r.role)){if(r.age<11)w.append(opt('📖','Read a bedtime story','',go('story',()=>{r.rel+=8;E({happy:5});return`I read ${first(r.name)} a bedtime story. They fell asleep smiling.`})));if(r.age>=18)w.append(opt('💸','Give $10,000','',go('give',()=>{if(S.money<10000)return'I could not afford it.';S.money-=10000;r.rel+=15;return`I gave ${first(r.name)} $10,000. They were thrilled.`})))}
+ if(['Son','Daughter'].includes(r.role)){w.append(opt('🔄',`Switch to ${first(r.name)}'s life`,'Play as them from now on',()=>switchSheet(r)));if(r.age<11)w.append(opt('📖','Read a bedtime story','',go('story',()=>{r.rel+=8;E({happy:5});return`I read ${first(r.name)} a bedtime story. They fell asleep smiling.`})));if(r.age>=18)w.append(opt('💸','Give $10,000','',go('give',()=>{if(S.money<10000)return'I could not afford it.';S.money-=10000;r.rel+=15;return`I gave ${first(r.name)} $10,000. They were thrilled.`})))}
  if(r.role==='Partner'){w.append(opt('🍝','Date night','Restaurant, stargazing, dancing and more',()=>dateNightSheet(r)));
   w.append(opt('💍','Propose ($3,000 ring)','',go('prop',()=>{S.money-=3000;if(r.rel>=60&&chance(.55+r.rel/300)){r.role=r.gender==='male'?'Fiancé':'Fiancée';r.since=S.age;E({happy:12});Q.push(confetti);return`${first(r.name)} said YES! We are engaged. 💍`}r.rel-=15;E({happy:-10});return`${first(r.name)} said they are not ready. Awkward.`})))}
  if(r.role==='Fiancé'||r.role==='Fiancée'){w.append(sec('Plan the wedding'));[['🏛️','Courthouse wedding',500],['🍇','Vineyard wedding',25000],['🏰','Grand ballroom wedding',80000],['🏝️','Destination wedding',150000]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(S.money<c&&c>500)return toast('Not enough money.');S.money-=c;r.role='Spouse';r.since=S.age;r.rel=clamp(r.rel+15);E({happy:15+Math.round(c/20000)});log(`I married ${r.name} with a ${n.toLowerCase()}! 💒`,'big');Q.push(confetti);result('Just married! 💒',`I married ${first(r.name)}. Best day of my life.`,'💒')})))}
@@ -901,6 +901,7 @@ function assetSheet(){const w=el('div');
  if(has('mogul')){w.append(sec('🏢 My businesses'));S.biz.forEach(b=>{w.append(opt(b.icon,b.name,`Value ${fmt(b.val)}${b.ipo?' · Public 📈':''}`,()=>bizSheet(b)))});
   w.append(sec('Start a business'));BIZ.forEach(([n,ic,c],i)=>w.append(opt(ic,n,'',()=>{if(S.age<18)return toast('You must be 18.');if(S.money<c)return toast('Not enough cash.');S.money-=c;S.biz.push({id:uid(),name:n,icon:ic,val:c,mgmt:5});log(`I started a ${n}! ${ic}`,'big');Q.push(confetti);fix();closeSheet()},{rt:fmt(c)})))}
  else w.append(opt('🔒','Businesses','Unlock with the Mogul Pack in Upgrades',upgradeSheet,{cls:'locked'}));
+ w.append(sec('Estate'));w.append(opt('📜',S.will?'Update your will':'Write a will','Decide who inherits what',()=>willSheet()));
  w.append(sec('Real estate'));HOUSES.forEach(([n,ic,b],i)=>{const p=price(b,i);const cash=S.money>=p,mort=!cash&&S.money>=p*.2&&S.job;w.append(opt(ic,n,cash?'Buy with cash':mort?`Mortgage: ${fmt(p*.2)} down`:'Need '+fmt(p*.2)+' down + a job',()=>{if(S.age<18)return toast('You must be 18.');if(cash){S.money-=p}else if(mort){S.money-=p*.2;S.debt+=p*.8}else return toast('You cannot afford this yet.');S.assets.push({kind:'house',name:n,ic,val:p});E({happy:10});log(`I bought a ${n}! ${ic}`,'big');Q.push(confetti);fix();closeSheet()},{rt:fmt(p),cls:cash||mort?'':'locked'}))});
  w.append(sec('Vehicles'));CARS.forEach(([n,ic,b],i)=>{const p=price(b,i+3);w.append(opt(ic,n,S.money>=p?'':'Too pricey',()=>{if(S.age<16)return toast('You must be 16.');if(S.money<p)return toast('Not enough cash.');S.money-=p;S.assets.push({kind:'car',name:n,ic,val:p});E({happy:6});log(`I bought a ${n}! ${ic}`,'good');fix();closeSheet()},{rt:fmt(p),cls:S.money>=p?'':'locked'}))});
  sheet('Assets 🏠',w)}
@@ -1402,23 +1403,43 @@ function showDeath(){
  w.append(el('div','obit',`<b>${S.name}</b><br>${S.born} – ${year()}<br><br>Died at age ${S.age} from ${S.cause}.<br>${S.job?'Worked as '+job:'Career: '+job}. Net worth ${fmt(net())}.${p?'<br>Survived by spouse '+first(p.name)+'.':''}${k.length?`<br>Parent of ${k.length} ${k.length===1?'child':'children'}.`:''}`));
  const ribs=S.achs.map(id=>ACH.find(a=>a[0]===id)).filter(Boolean);
  w.append(el('div','info',`<b>Life summary</b><br>${S.degrees.filter(d=>d!=='HS').map(d=>`<span class="pill">🎓 ${GRAD[d]?GRAD[d].n:d}</span>`).join('')}${ribs.map(r=>`<span class="pill">${r[1]} ${r[2]}</span>`).join('')||'<span class="pill">No ribbons this time</span>'}<br><br>⭐ Life Points earned: <b>+${S.earned||0}</b> (total ${M.points})`));
- const heir=k.filter(c=>c.alive).sort((a,b)=>b.age-a.age)[0];
- if(heir)w.append(opt('🌳',`Continue as ${heir.name}`,`Age ${heir.age} · inherits ${fmt(Math.max(0,net())*.6)}`,()=>continueAs(heir),{cls:'primary'}));
+ const el2=estateLines();if(el2.length)w.append(el('div','info',`<b>📜 ${S.will?'Your will':'Default inheritance'}</b><br>${el2.join('<br>')}`));
+ const heirs=k.filter(c=>c.alive).sort((a,b)=>b.age-a.age);const heir=heirs[0];const sh=willShares().out;
+ if(heirs.length)w.append(sec('Continue as one of your children'));heirs.forEach((c,i)=>w.append(opt('🌳',`Continue as ${c.name}`,`Age ${c.age} · inherits ${fmt(Math.max(0,net())*(sh[c.id]||0))}`,()=>continueAs(c),{cls:i===0?'primary':''})));
  w.append(opt('👶','Start a new life','',()=>{closeSheet();startScreen()},{cls:heir?'':'primary'}));
  w.append(opt('⭐','Spend Life Points','',upgradeSheet));
  sheet('Rest in Peace',w,true)}
-function continueAs(h){const inh=Math.max(0,net())*.6;const deceased=S;const spouse=S.rel.find(r=>r.role==='Spouse'&&r.alive);const gen=S.gen+1;const parts=h.name.split(' ');
+const HEIRS=['Spouse','Partner','Fiancé','Fiancée','Son','Daughter','Grandson','Granddaughter','Mother','Father','Sister','Brother','Friend'];
+function willShares(){const live=S.rel.filter(r=>r.alive);const out={};let charity=0;
+ if(S.will&&S.will.shares){Object.entries(S.will.shares).forEach(([id,pct])=>{if(live.some(r=>r.id===id)&&pct>0)out[id]=pct/100});charity=(S.will.charity||0)/100;return{out,charity,custom:true}}
+ const sp=live.find(r=>r.role==='Spouse');const ks=live.filter(r=>['Son','Daughter'].includes(r.role));
+ if(sp&&ks.length){out[sp.id]=.5;ks.forEach(k=>out[k.id]=.5/ks.length)}else if(sp)out[sp.id]=1;else if(ks.length)ks.forEach(k=>out[k.id]=1/ks.length);
+ return{out,charity,custom:false}}
+function willSheet(){const w=el('div');const live=S.rel.filter(r=>r.alive&&HEIRS.includes(r.role)).sort((a,b)=>HEIRS.indexOf(a.role)-HEIRS.indexOf(b.role));const cur=(S.will&&S.will.shares)||{};const vals={};
+ w.append(el('div','info','<b>📜 Your will</b><br>Decide who gets what when you die. Anything you leave unassigned goes to the government. With no will, your spouse gets half and your kids split the rest.'));
+ const total=el('div','info');const upd=()=>{const t=Object.values(vals).reduce((a,b)=>a+b,0);total.innerHTML=`Total assigned: <b style="color:${t>100?'var(--bad)':'var(--good)'}">${t}%</b>${t>100?' (over 100%, it will be scaled down)':t<100?` · ${100-t}% goes to the government`:''}<br>Current estate: ${fmt(Math.max(0,net()))}`};
+ const row=(id,label,sub,v)=>{vals[id]=v;const lab=el('label','lb',`${label} · <span>${v}%</span>`);const r=el('input');r.type='range';r.min=0;r.max=100;r.step=5;r.value=v;r.oninput=()=>{vals[id]=+r.value;lab.querySelector('span').textContent=r.value+'%';upd()};w.append(lab);if(sub)w.append(el('div','tiny',sub));w.append(r)};
+ if(!live.length)w.append(el('div','info','You have nobody to leave things to yet. You can still give to charity.'));
+ live.forEach(r=>row(r.id,r.name,`${r.role} · age ${r.age}`,cur[r.id]||0));row('charity','🎗️ Charity','',(S.will&&S.will.charity)||0);
+ w.append(total);upd();
+ w.append(opt('💾','Save my will','',()=>{let t=Object.values(vals).reduce((a,b)=>a+b,0);const k=t>100?100/t:1;const shares={};Object.entries(vals).forEach(([id,v])=>{if(id!=='charity'&&v>0)shares[id]=Math.round(v*k)});S.will={shares,charity:Math.round((vals.charity||0)*k),age:S.age};log('I updated my will. 📜');fix();act('Will saved','Your will is signed and filed. 📜','📜')},{cls:'primary'}));
+ if(S.will)w.append(opt('🗑️','Tear up my will','Go back to the default split',()=>{S.will=null;log('I tore up my will.');fix();act('Will','Your will is gone. The default split applies again.','🗑️')},{cls:'danger'}));
+ sheet('Write a Will 📜',w)}
+function estateLines(){const estate=Math.max(0,net());const {out,charity}=willShares();const lines=Object.entries(out).map(([id,f])=>{const r=S.rel.find(x=>x.id===id);return r?`${r.name} (${r.role}): ${fmt(estate*f)}`:''}).filter(Boolean);if(charity>0)lines.push(`Charity: ${fmt(estate*charity)}`);return lines}
+function continueAs(h,alive=false){const estate=Math.max(0,net());const {out}=willShares();const inh=alive?0:Math.round(estate*(out[h.id]||0));const deceased=S;const spouse=S.rel.find(r=>r.role==='Spouse'&&r.alive);const gen=S.gen+1;const parts=h.name.split(' ');
  newLife({name:h.name,gender:h.gender,last:parts[parts.length-1],city:deceased.city,born:deceased.born+deceased.age-h.age,gen,noFamily:true});
  S.age=h.age;S.money+=inh;S.st.smarts=clamp(S.st.smarts);
- S.rel.push({id:uid(),name:deceased.name,role:deceased.gender==='male'?'Father':'Mother',gender:deceased.gender,age:deceased.age,rel:h.rel,alive:false});
+ S.rel.push({id:uid(),name:deceased.name,role:deceased.gender==='male'?'Father':'Mother',gender:deceased.gender,age:deceased.age,rel:h.rel,alive:alive});
  if(spouse)S.rel.push({...spouse,role:spouse.gender==='male'?'Father':'Mother',rel:rnd(50,90)});
-deceased.rel.filter(r=>(r.role==='Son'||r.role==='Daughter')&&r.id!==h.id).forEach(s=>S.rel.push({...s,role:s.gender==='male'?'Brother':'Sister',rel:rnd(40,80)}));
+ deceased.rel.filter(r=>(r.role==='Son'||r.role==='Daughter')&&r.id!==h.id).forEach(s=>S.rel.push({...s,role:s.gender==='male'?'Brother':'Sister',rel:rnd(40,80)}));
  const a=S.age;if(a>=5&&a<11)S.school={type:'Elementary School',left:11-a,perf:60};else if(a>=11&&a<14)S.school={type:'Middle School',left:14-a,perf:60};else if(a>=14&&a<18)S.school={type:'High School',left:18-a,perf:60};
  if(a>=18)S.degrees.push('HS');if(a>=23&&chance(.6))S.degrees.push(pick(MAJORS));
  if(a>=22&&chance(.7)){const opts=CAREER_LIST.filter(c=>!meets(c).length&&!c.fame);if(opts.length){const c=pick(opts);S.job={id:c.id,lvl:Math.min(c.lv.length-1,Math.floor((a-22)/10)),perf:55,years:rnd(1,8)};S.jobsHeld.push(c.id)}}
- log(`I am ${S.name}, child of ${deceased.name}. Generation ${gen} begins. 🌳`,'big');
- log(`I inherited ${fmt(inh)} from my parent's estate.`,'good');
+ if(alive){log(`I am ${S.name}, child of ${deceased.name}. The story now follows me. 🔄`,'big')}
+ else{log(`I am ${S.name}, child of ${deceased.name}. Generation ${gen} begins. 🌳`,'big');log(inh?`I inherited ${fmt(inh)} from my parent's estate.`:`My parent's will left me nothing.`,inh?'good':'bad')}
  checkAch();save();closeSheet();render()}
+function switchSheet(k){const w=el('div');w.append(el('div','evt-icon','🔄'),el('p','evt-text',`Switch to living as <b>${k.name}</b> (age ${k.age})?<br><br>${first(S.name)} stays alive in their life as their ${S.gender==='male'?'father':'mother'}. ${first(k.name)} starts with their own money, not yours.`));
+ w.append(opt('🔄',`Become ${first(k.name)}`,'',()=>continueAs(k,true),{cls:'primary'}));w.append(opt('','Stay as '+first(S.name),'',closeSheet));sheet('Switch Lives',w)}
 function startScreen(){const w=el('div');w.append(el('div','title','Another Life'));w.append(el('div','tag','Every choice writes your story. One year at a time.'));
  let g=pick(['male','female']);
  w.append(el('label','lb','Gender'));const gs=el('select');gs.innerHTML='<option value="male">Male</option><option value="female">Female</option>';gs.value=g;w.append(gs);
@@ -1454,7 +1475,7 @@ $('#btnSide').onclick=()=>{if(M.dock&&!M.side)toast('Undock first to use side vi
 $('#btnWide').onclick=()=>{M.wide=M.wide===false?true:false;saveMeta();if(sheetOpen&&!sheetForced)closeSheet();applySide();toast(M.wide!==false?'Wide layout on.':'Wide layout off.')};
 addEventListener('resize',applySide);applySide();
 $('#btnSound').onclick=()=>{M.sound=!M.sound;saveMeta();render()};
-$('#btnNew').onclick=()=>{const w=el('div');w.append(el('p','evt-text','Abandon this life and start over?'));w.append(opt('','Yes, start a new life','',()=>{closeSheet();setTimeout(startScreen,300)},{cls:'primary'}));w.append(opt('','Keep living','',closeSheet));sheet('New life?',w)};
+$('#btnNew').onclick=()=>{if(sheetOpen&&sheetForced)return;const w=el('div');const ks=S.alive?kids().filter(c=>c.alive):[];if(ks.length){w.append(el('p','evt-text','Switch to one of your children?'));ks.forEach(c=>w.append(opt('🔄',`Live as ${c.name}`,`${c.role} · age ${c.age}`,()=>switchSheet(c))));w.append(sec('Or'))}w.append(el('p','evt-text','Abandon this life and start over?'));w.append(opt('','Yes, start a new life','',()=>{closeSheet();setTimeout(startScreen,300)},{cls:'primary'}));w.append(opt('','Keep living','',closeSheet));sheet('New life?',w)};
 $('#btnRewind').onclick=()=>{if(!has('rewind'))return;if(!PREV)return toast('Nothing to rewind yet.');if(S.rewinds<=0)return toast('No rewinds left this life.');const r=S.rewinds-1;S=JSON.parse(PREV);S.rewinds=r;PREV=null;Q=[];if(sheetOpen){$('#sheet').classList.add('hidden');sheetOpen=false}log('⏪ I went back in time...');beep(300,.3,'sawtooth');save();render()};
 $('#btnCreator').onclick=()=>{if(S&&S.alive&&!sheetOpen)creatorSheet()};
 addEventListener('keydown',e=>{if(e.key===' '&&!sheetOpen&&document.activeElement.tagName!=='INPUT'){e.preventDefault();ageUp()}});
@@ -1485,6 +1506,8 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+willSheet=nav('willSheet',willSheet);
+switchSheet=nav('switchSheet',switchSheet);
 timeSheet=nav('timeSheet',timeSheet);
 talkSheet=nav('talkSheet',talkSheet);
 giftSheet=nav('giftSheet',giftSheet);
