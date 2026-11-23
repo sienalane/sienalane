@@ -570,7 +570,16 @@ function relSheet(){const w=el('div');
   list.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';w.append(opt(r.alive?(r.gender==='male'?'🧑':'👩'):'🪦',`${r.name}`,`${r.role} · ${r.alive?'age '+r.age:'deceased'}`,()=>personSheet(r),{rt:r.alive?`<div class="bar" style="width:70px"><i style="width:${r.rel}%;background:${c}"></i></div>`:''}))});
   if(g==='Love'&&!partner())w.append(opt('💘','Find a date','Meet someone new',findDate))});
  if(S.pets.length){w.append(sec('Pets'));S.pets.forEach(p=>w.append(opt(p.alive?p.ic:'🌈',p.name,`${p.type} · ${p.alive?'age '+p.age:'passed away'}`,()=>{if(!p.alive)return;if(!once('pet'+p.name))return;E({happy:5});act(p.name,`I played with ${p.name}. Pure joy. ${p.ic}`,p.ic)})))}
- if(S.rel.some(r=>r.alive)){w.append(sec('Everyone'));w.append(opt('💞','Fill all relationships','Every living person goes to 100%, once a year',()=>{if(!once('fillrel'))return;const n=S.rel.filter(r=>r.alive).length;S.rel.forEach(r=>{if(r.alive)r.rel=100});E({happy:6});act('Reconnected',`I spent the year reconnecting with everyone. All ${n} of my relationships are at 100%. 💞`,'💞')}))}
+ if(S.rel.some(r=>r.alive)){w.append(sec('Everyone'));w.append(opt('💞','Spend time with everyone','Does Spend time and Have a conversation with every person, plus plays with your pets',()=>{
+  let t=0,c=0,pp=0;const lines=[];
+  S.rel.filter(r=>r.alive).forEach(r=>{const k=a=>`p_${r.id}_${a}`;
+   if(!S.used[k('time')]){S.used[k('time')]=1;r.rel+=rnd(4,12);E({happy:4});t++;log(`I spent quality time with ${first(r.name)}.`)}
+   if(!S.used[k('talk')]){S.used[k('talk')]=1;r.rel+=rnd(2,7);c++;log(pick([`${first(r.name)} and I talked about life.`,`${first(r.name)} and I laughed about old memories.`,`${first(r.name)} gave me some good advice.`]))}
+   r.rel=clamp(r.rel)});
+  S.pets.filter(p=>p.alive).forEach(p=>{if(!S.used['pet'+p.name]){S.used['pet'+p.name]=1;E({happy:5});pp++;log(`I played with ${p.name}. ${p.ic}`)}});
+  if(!t&&!c&&!pp)return toast('You already spent time with everyone this year. Age up!');
+  fix();const parts=[];if(t)parts.push(`spent time with ${t} ${t===1?'person':'people'}`);if(c)parts.push(`had ${c} conversation${c===1?'':'s'}`);if(pp)parts.push(`played with ${pp} pet${pp===1?'':'s'}`);
+  const w2=el('div');w2.append(el('div','evt-icon','💞'),el('p','evt-text',`This year I ${parts.join(', ')}.`));const rt=returnTarget();if(rt)w2.append(opt('‹',`Back to ${rt.e.title}`,'',()=>{navStack=rt.stack.slice();curNav=rt.e;rt.e.go()}));w2.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet('Quality time',w2,true)}))}
  w.append(sec('Social'));w.append(opt('🤝','Make a new friend','Once a year',()=>{if(S.age<5)return toast('Too young.');if(!once('friend'))return;const g=pick(['male','female']);const f={id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:Math.max(5,S.age+rnd(-3,3)),rel:rnd(45,75),role:'Friend',alive:true};S.rel.push(f);E({happy:4});act('New friend',`I made a new friend: ${f.name}. 😊`,'🤝')}));
  sheet('People ❤️',w)}
 
