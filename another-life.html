@@ -293,7 +293,9 @@ function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
-function closeSheet(){if(curNav&&curNav.title&&!curNav.forced&&!NO_AGAIN.includes(curNav.name))lastMenu={title:curNav.title,go:curNav.go,name:curNav.name,stack:navStack.filter(e=>!e.forced&&!NO_AGAIN.includes(e.name))};$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
+const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
+function returnTarget(){const ok=e=>e&&e.title&&!e.forced&&!NO_AGAIN.includes(e.name);if(ok(curNav))return{e:curNav,stack:navStack.filter(ok)};for(let i=navStack.length-1;i>=0;i--)if(ok(navStack[i]))return{e:navStack[i],stack:navStack.slice(0,i).filter(ok)};const p=curNav&&PARENT_OF[curNav.name];if(p&&RAW[p])return{e:{key:p+':',name:p,go:()=>RAW[p](),title:p==='relSheet'?'People ❤️':p,forced:false},stack:[]};return null}
+function closeSheet(){const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack};$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
 function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
 $('#sheetBack').onclick=goBack;
 $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
@@ -301,7 +303,7 @@ $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&$('#sheetClos
 function opt(ic,label,sub,fn,o={}){const b=el('button','opt'+(o.cls?' '+o.cls:''));b.innerHTML=`${ic?`<span class="ic">${ic}</span>`:''}<span class="tx">${label}${sub?`<span class="sub">${sub}</span>`:''}</span>${o.rt?`<span class="rt">${o.rt}</span>`:''}`;b.onclick=()=>{beep(520,.05);fn()};return b}
 function sec(t){return el('div','sec',t)}
 function choice(title,text,chs,icon='❓'){const w=el('div');w.append(el('div','evt-icon',icon),el('p','evt-text',text));chs.forEach(([l,f])=>w.append(opt('',l,'',()=>{const r=f();fix();if(r)result(title,r,icon);else closeSheet()})));sheet(title,w,true);beep(440,.1,'triangle')}
-function result(title,r,icon){log(r,/lost|hurt|fired|caught|died|broke|failed|sad|rejected|botched|declined/i.test(r)?'bad':'');const w=el('div');w.append(el('div','evt-icon',icon||'✨'),el('p','evt-text',r));if(curNav&&curNav.title&&!curNav.forced)w.append(opt('‹',`Back to ${curNav.title}`,'',backToMenu));w.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet(title,w,true);fix()}
+function result(title,r,icon){log(r,/lost|hurt|fired|caught|died|broke|failed|sad|rejected|botched|declined/i.test(r)?'bad':'');const w=el('div');w.append(el('div','evt-icon',icon||'✨'),el('p','evt-text',r));const rt=returnTarget();if(rt)w.append(opt('‹',`Back to ${rt.e.title}`,'',()=>{navStack=rt.stack.slice();curNav=rt.e;rt.e.go()}));w.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet(title,w,true);fix()}
 function act(title,r,icon){result(title,r,icon)}
 
 // ---------- render ----------
@@ -671,7 +673,7 @@ addEventListener('keydown',e=>{if(e.key===' '&&!sheetOpen&&document.activeElemen
 // back-button navigation: wrap every menu
 jobSheet=nav('jobSheet',jobSheet);
 assetSheet=nav('assetSheet',assetSheet);
-relSheet=nav('relSheet',relSheet);
+RAW.relSheet=relSheet;relSheet=nav('relSheet',relSheet);
 actSheet=nav('actSheet',actSheet);
 personSheet=nav('personSheet',personSheet);
 findDate=nav('findDate',findDate);
