@@ -355,7 +355,7 @@ function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
 function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
-let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet'];
+let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
 function returnTarget(){const ok=e=>e&&e.title&&!e.forced&&!NO_AGAIN.includes(e.name);if(ok(curNav))return{e:curNav,stack:navStack.filter(ok)};for(let i=navStack.length-1;i>=0;i--)if(ok(navStack[i]))return{e:navStack[i],stack:navStack.slice(0,i).filter(ok)};const p=curNav&&PARENT_OF[curNav.name];if(p&&RAW[p])return{e:{key:p+':',name:p,go:()=>RAW[p](),title:p==='relSheet'?'People ❤️':p,forced:false},stack:[]};return null}
 function closeSheet(){const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack};$('#sheet').classList.add('hidden');document.body.classList.remove('panel-open');sheetOpen=false;sheetForced=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
@@ -376,7 +376,7 @@ function mood(){const h=S.st.happy;return h>80?'😄':h>60?'🙂':h>40?'😐':h>
 function openMenu(fn){if(sheetOpen){if(sheetForced)return;closeSheet()}fn()}
 function renderGlance(){const g=$('#glance');if(!g||!(document.body.classList.contains('wide')||document.body.classList.contains('glance-free'))||!S)return;g.innerHTML='';
  if(!S.alive){g.append(sec('Rest in peace'),el('div','info',`${S.name} lived to ${S.age}.`));return}
- g.append(sec('Right now'));if(S.jail)g.append(el('div','info',`<b>⛓️ In prison</b><br>${S.jail} year${S.jail===1?'':'s'} left.`));
+ g.append(sec('Right now'));if(S.preg)g.append(el('div','info',`<b>🤰 Baby on the way</b><br>Arriving next year.`));if(S.jail)g.append(el('div','info',`<b>⛓️ In prison</b><br>${S.jail} year${S.jail===1?'':'s'} left.`));
  const job=S.job?CAR[S.job.id]:null;
  g.append(el('div','info',job?`<b>${job.ic} ${job.lv[S.job.lvl][0]}</b><br>${fmt(job.lv[S.job.lvl][1]*(1+S.job.years*.015))}/yr · performance ${S.job.perf}%`:S.school?`<b>🏫 ${S.school.type}${S.school.major?' · '+S.school.major:''}</b><br>${S.school.left} yr left · grades ${S.school.perf}%`:S.retired?`<b>🏖️ Retired</b><br>Pension ${fmt(S.retired)}/yr`:S.age<16?'<b>🧸 Just a kid</b><br>Enjoy it while it lasts.':'<b>💼 No job yet</b><br>Check Career for openings.'));
  if(S.ill)g.append(el('div','info',`<b>🤒 Sick</b><br>${S.ill.n}. See a doctor in Activities.`));
@@ -445,6 +445,7 @@ function ageUp(){
 function yearly(){
  const a=S.age;
  premiumYear();
+ if(S.preg&&S.age>S.preg.age){S.preg=null;Q.push(()=>nameBabySheet(0))}
  // milestones
  if(a===1)log('I took my first steps! 👣');
  if(a===2)log(pick(['My first word was "no".','My first word was "dog".','My first word was "more".']));
@@ -746,7 +747,7 @@ function npcEvents(){const out=[],a=S.age,p=partner(),f=x=>first(x.name),mine=S.
   // spouse wants a baby
   const kidsN=kids().filter(k=>k.alive).length;
   if((p.role==='Spouse'||yrs>=2)&&a<46&&p.age<48&&kidsN<4&&p.rel>=50)add(.25,'👶',`${f(p)} curls up next to you. "I think I'm ready for ${kidsN?'another baby':'a baby'}. Are you?"`,[
-   ['Yes, let\'s try',()=>{p.rel=clamp(p.rel+8);if(chance(.6)){babyBorn();return 'A year later, your family grew! 🍼'}return 'It has not happened yet, but you are both hopeful.'}],
+   ['Yes, let\'s try',()=>{p.rel=clamp(p.rel+8);return tryBaby(p)}],
    ['Let\'s adopt',()=>{if(S.money<20000)return 'You could not afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return 'You adopted a child together. 💛'}],
    ['Not now',()=>{p.rel=clamp(p.rel-8);return `${f(p)} looked disappointed.`}]]);
   // spouse wants a house
@@ -812,7 +813,7 @@ function matchesSheet(pref){if(DATES.pref!==pref||!DATES.list.length){DATES={pre
  DATES.list.forEach(c=>w.append(opt(c.asked?'💔':(c.gender==='male'?'🧔':'👩‍🦰'),`${c.name}, ${c.age}`,c.asked?'Turned you down':`${c.job} · looks ${stars(c.looks)}`,()=>{if(c.asked)return toast(`${first(c.name)} already said no.`);showCandidate(c)},{cls:c.asked?'locked':''})));
  w.append(opt('🔄','Show new people','',()=>{DATES.list=Array.from({length:5},()=>meet(pref));matchesSheet(pref)}));
  sheet('Your Matches 💘',w)}
-function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else{p.asked=true;result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}}));w.append(opt('👋','Pass','',()=>{if(DATES.list.includes(p))goBack();else closeSheet()}));sheet('Your Date',w)}
+function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else{p.asked=true;result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}}));if(S.age>=18&&p.age>=18&&!partner())w.append(opt('😏','Go home with them','Skip the dating part',()=>hookupSheet(p)));w.append(opt('👋','Pass','',()=>{if(DATES.list.includes(p))goBack();else closeSheet()}));sheet('Your Date',w)}
 
 function relSheet(){const w=el('div');
  const groups=[['Family',['Mother','Father','Brother','Sister']],['Love',['Partner','Fiancé','Fiancée','Spouse']],['Children',['Son','Daughter']],['Grandchildren',['Grandson','Granddaughter']],['Friends',['Friend']]];
@@ -845,13 +846,13 @@ function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}
  if(r.role==='Partner'){w.append(opt('🍝','Date night ($200)','',go('night',()=>{S.money-=200;r.rel+=rnd(6,14);E({happy:6});return'We had a romantic dinner.'})));
   w.append(opt('💍','Propose ($3,000 ring)','',go('prop',()=>{S.money-=3000;if(r.rel>=60&&chance(.55+r.rel/300)){r.role=r.gender==='male'?'Fiancé':'Fiancée';r.since=S.age;E({happy:12});Q.push(confetti);return`${first(r.name)} said YES! We are engaged. 💍`}r.rel-=15;E({happy:-10});return`${first(r.name)} said they are not ready. Awkward.`})))}
  if(r.role==='Fiancé'||r.role==='Fiancée'){w.append(sec('Plan the wedding'));[['🏛️','Courthouse wedding',500],['🍇','Vineyard wedding',25000],['🏰','Grand ballroom wedding',80000],['🏝️','Destination wedding',150000]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(S.money<c&&c>500)return toast('Not enough money.');S.money-=c;r.role='Spouse';r.since=S.age;r.rel=clamp(r.rel+15);E({happy:15+Math.round(c/20000)});log(`I married ${r.name} with a ${n.toLowerCase()}! 💒`,'big');Q.push(confetti);result('Just married! 💒',`I married ${first(r.name)}. Best day of my life.`,'💒')})))}
- if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role)){w.append(opt('👶','Grow our family','Start trying for a baby together',go('baby',()=>{if(S.age>48||r.age>52)return'It is not happening for us at this age. Maybe adopt?';if(chance(.5)){babyBorn();return'We are having a baby! 🍼'}return'No luck this time.'})));
+ if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role)){if(S.age>=18&&r.age>=18)w.append(opt('💕','Make love','Protection, or try for a baby',()=>makeLoveSheet(r)));w.append(opt('👶','Grow our family',S.preg?'A baby is on the way! 🤰':'Try for a baby, IVF, surrogacy or adoption',()=>familySheet(r)));
   w.append(opt('🏠','Adopt a child ($20,000)','',go('adopt',()=>{if(S.money<20000)return'We cannot afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return'We adopted a child! Our family grew. 💛'})))}
  if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role))w.append(opt('💔',r.role==='Spouse'?'Divorce':'Break up','',()=>{if(r.role==='Spouse'){const l=Math.max(0,S.money*.5);S.money-=l;log(`I divorced ${r.name}. I lost ${fmt(l)} in the settlement.`,'bad')}else log(`I broke up with ${r.name}.`,'bad');S.rel=S.rel.filter(x=>x!==r);E({happy:-10});closeSheet()},{cls:'danger'}));
  if(r.role!=='Spouse'&&!['Son','Daughter'].includes(r.role))w.append(opt('😤','Argue','',go('argue',()=>{r.rel-=rnd(6,15);return`${first(r.name)} and I got into a heated argument.`}),{cls:'danger'}));
  if(r.role==='Friend')w.append(opt('🚪','End friendship','',()=>{S.rel=S.rel.filter(x=>x!==r);log(`I ended my friendship with ${r.name}.`);closeSheet()},{cls:'danger'}));
  sheet(r.role,w)}
-function babyBorn(age=0){const g=pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const taken=[first(S.name),...S.rel.map(r=>first(r.name))];const c={id:uid(),name:pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)))+' '+last,gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
+function babyBorn(age=0,nm,gg){const g=gg||pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const taken=[first(S.name),...S.rel.map(r=>first(r.name))];const c={id:uid(),name:nm||(pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)))+' '+last),gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
 
 // ---------- career ----------
 function meets(c){const r=c.req,miss=[];
@@ -1241,6 +1242,37 @@ EV.push(
  {a:[65,95],ic:'🪑',t:'You are offered a spot at a retirement community.',c:[['Move in',()=>{E({happy:6});return 'Bingo nights are surprisingly competitive.'}],['Stay in your home',()=>'You love your home.']]}
 );
 
+// ---------- romance and pregnancy (works like BitLife) ----------
+const sameSex=p=>p&&p.gender===S.gender;
+function fert(p){const fa=S.gender==='female'?S.age:(p?p.age:30);return fa<30?.5:fa<35?.42:fa<40?.28:fa<44?.12:fa<50?.03:0}
+function conceive(p){S.preg={pid:p?p.id:null,age:S.age,with:p?p.name:'a one-night stand'};const msg=S.gender==='female'?`You're pregnant! 🤰${p?` ${first(p.name)} is over the moon.`:''}`:`${p?first(p.name):'Your hookup'} is pregnant! 🤰 You are going to be a parent.`;log(msg,'big');Q.push(confetti);return msg}
+function tryBaby(p){if(S.preg)return 'A baby is already on the way! 🤰';if(sameSex(p))return 'You two would need IVF or a surrogate. Try "Grow our family" to explore that.';if(chance(fert(p)+L()/2))return conceive(p);return 'No baby yet. Keep trying.'}
+function makeLoveSheet(p){if(!p||!p.alive)return closeSheet();const w=el('div');w.append(el('div','evt-icon','💕'),el('p','evt-text',`A romantic evening with ${first(p.name)}...`));
+ const night=()=>{const firstTime=!S.used['love_'+p.id];S.used['love_'+p.id]=1;if(firstTime){p.rel=clamp(p.rel+rnd(5,10));E({happy:rnd(4,8)})}return pick([`You and ${first(p.name)} spent a romantic night together. 💕`,`Candles, music and ${first(p.name)}. A night to remember. 💕`,`You and ${first(p.name)} made love. 💕`])};
+ w.append(opt('🛡️','Use protection','',()=>{let t=night();if(!sameSex(p)&&!S.preg&&chance(.03))t+='<br><br>'+conceive(p);fix();act('Love',t,'💕')}));
+ if(!sameSex(p))w.append(opt('👶','Try for a baby','',()=>{let t=night();t+='<br><br>'+tryBaby(p);fix();act('Love',t,'💕')}));
+ w.append(opt('🙅','Not tonight','',()=>{p.rel=clamp(p.rel-2);fix();act('Love',`You told ${first(p.name)} you were too tired.`,'😴')}));
+ sheet('Make Love 💕',w)}
+function familySheet(p){if(!p||!p.alive)return closeSheet();const w=el('div');w.append(el('div','info',S.preg?'<b>🤰 A baby is on the way!</b><br>Age up to meet them.':`Ways to grow your family with ${first(p.name)}.`));
+ if(!sameSex(p))w.append(opt('💕','Try naturally','Same as Make love > Try for a baby',()=>makeLoveSheet(p)));
+ if(!(sameSex(p)&&S.gender==='male'))w.append(opt('🧪','IVF','$25,000 · higher odds',()=>{if(S.preg)return toast('A baby is already on the way.');if(!once('ivf'))return;if(S.money<25000)return toast('Not enough money.');S.money-=25000;const ok=chance(.6+L());fix();act('IVF',ok?conceive(p):'It did not work this round.','🧪')}));
+ if(sameSex(p))w.append(opt('🤱','Use a surrogate','$80,000',()=>{if(S.preg)return toast('A baby is already on the way.');if(!once('surro'))return;if(S.money<80000)return toast('Not enough money.');S.money-=80000;S.preg={pid:p.id,age:S.age,with:p.name};log('Our surrogate is pregnant! 🤰','big');Q.push(confetti);fix();act('Surrogacy','Your surrogate is pregnant! The baby arrives next year. 🤰','🤱')}));
+ w.append(opt('🏠','Adopt a child','$20,000',()=>{if(!once('adopt_k'))return;if(S.money<20000)return toast('Not enough money.');S.money-=20000;Q.push(()=>nameBabySheet(rnd(0,6)));fix();act('Adoption','The adoption was approved! Time to welcome your child home. 💛','🏠')}));
+ sheet('Grow Our Family 👶',w)}
+function nameBabySheet(age=0){const g=pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const taken=[first(S.name),...S.rel.map(r=>first(r.name))];const w=el('div');
+ w.append(el('div','evt-icon',age?'🧒':'👶'),el('p','evt-text',age?`Meet your new ${g==='male'?'son':'daughter'}, age ${age}! What name will you give them?`:`It's a ${g==='male'?'boy':'girl'}! 🎉 What do you want to name your baby?`));
+ const nm=el('input');nm.type='text';nm.value=pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)));w.append(el('label','lb','First name'),nm);
+ w.append(opt('🎲','Random name','',()=>{nm.value=pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)))}));
+ w.append(opt('','Welcome them home','',()=>{const fn=(nm.value.trim()||pick(g==='male'?MALE:FEMALE)).split(' ')[0];babyBorn(age,fn+' '+last,g);fix();closeSheet()},{cls:'primary'}));
+ sheet(age?'New Family Member 💛':'A Baby Is Born 👶',w,true)}
+function hookupSheet(p){if(S.age<18||p.age<18)return toast('You must both be 18.');const w=el('div');w.append(el('div','evt-icon','😏'),el('p','evt-text',`You and ${first(p.name)} head back to their place...`));
+ const go=prot=>()=>{if(!once('hookup'))return;E({happy:rnd(3,7),karma:-1});let t=`You and ${first(p.name)} had a fun night together.`;
+  if(!sameSex(p)&&!S.preg&&chance(prot?.03:fert(p)*.8))t+='<br><br>'+conceive(null);
+  if(chance(.3)&&!partner()){addPartner(p);t+=`<br><br>${first(p.name)} texted the next day. You are dating now! 💕`}
+  log(`I hooked up with ${p.name}.`);fix();act('Hookup',t,'😏')};
+ w.append(opt('🛡️','Use protection','',go(true)));w.append(opt('🎲','Skip protection','Risky',go(false)));w.append(opt('🙅','Change your mind','',()=>{closeSheet();toast('You called it a night.')}));
+ sheet('Hookup 😏',w)}
+
 // ---------- upgrades / ribbons / creator ----------
 function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
  UPGRADES.forEach(u=>{const own=has(u.id);w.append(opt(u.ic,u.n,u.d,()=>{if(own)return toast('Already unlocked!');if(M.points<u.cost)return toast(`You need ${u.cost} Life Points.`);M.points-=u.cost;M.up[u.id]=1;saveMeta();confetti();toast(`${u.n} unlocked!`);render();upgradeSheet()},{rt:own?'✅':`⭐ ${u.cost}`}))});
@@ -1372,6 +1404,9 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+makeLoveSheet=nav('makeLoveSheet',makeLoveSheet);
+familySheet=nav('familySheet',familySheet);
+hookupSheet=nav('hookupSheet',hookupSheet);
 schoolSheet=nav('schoolSheet',schoolSheet);
 teacherSheet=nav('teacherSheet',teacherSheet);
 mateSheet=nav('mateSheet',mateSheet);
