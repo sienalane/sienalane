@@ -62,7 +62,7 @@ nav button:hover{background:#ffffff10}
 #sheet.hidden .sheet-inner{transform:translateY(100%)}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .sheet-head h2{font:600 21px Fredoka}
-#sheetBack{background:#ffffff15;border:none;color:var(--txt);width:34px;height:34px;border-radius:50%;font:700 22px Fredoka;line-height:1;cursor:pointer;margin-right:10px;flex:none}#sheetBack:hover,#sheetClose:hover{background:#ffffff28}.sheet-head h2{flex:1}
+#sheetBack{background:#ffffff1f;border:1px solid var(--line);color:var(--txt);height:34px;padding:0 14px;border-radius:999px;font:600 15px Fredoka;line-height:1;white-space:nowrap;cursor:pointer;margin-right:10px;flex:none}#sheetBack:hover,#sheetClose:hover{background:#ffffff28}.sheet-head h2{flex:1}
 #sheetClose{background:#ffffff15;border:none;color:var(--txt);width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer}
 #sheetBody{overflow-y:auto;padding-bottom:12px}
 .opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#ffffff0d;border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:11px 13px;margin-bottom:7px;cursor:pointer;font:600 15px Nunito;transition:transform .1s,border-color .2s,background .2s}
@@ -121,7 +121,7 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
     <button data-a="act">🎯<span>Activities</span></button>
   </nav>
 </div>
-<div id="sheet" class="hidden"><div class="sheet-inner"><div class="sheet-head"><button id="sheetBack" title="Back">‹</button><h2 id="sheetTitle"></h2><button id="sheetClose">✕</button></div><div id="sheetBody"></div></div></div>
+<div id="sheet" class="hidden"><div class="sheet-inner"><div class="sheet-head"><button id="sheetBack" title="Back">‹ Back</button><h2 id="sheetTitle"></h2><button id="sheetClose">✕</button></div><div id="sheetBody"></div></div></div>
 <div id="toast"></div>
 <canvas id="fx"></canvas>
 
@@ -289,7 +289,7 @@ let navStack=[],curNav=null;
 function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen)navStack=[];if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,go:()=>fn(...args),title:null};fn(...args)}}
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
-function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=!forced&&navStack.length?'':'none';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
+function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 function closeSheet(){$('#sheet').classList.add('hidden');sheetOpen=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
 function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
 $('#sheetBack').onclick=goBack;
