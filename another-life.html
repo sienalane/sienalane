@@ -111,6 +111,9 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
  body.wide #sheet.hidden{transform:translateX(60px)}
  body.wide .sheet-inner{max-height:none;height:100%;border-radius:24px;border-bottom:1px solid var(--line);transform:none!important;box-shadow:0 20px 50px #0008}
 }
+body.glance-free #glance{display:block;position:fixed;top:var(--vidh,40vh);bottom:12px;width:min(440px,calc(100vw - max(480px,var(--dockw,52vw)) - 40px));margin:0;z-index:5;animation:fadein .4s both}
+body.glance-free.dock-left #glance{right:10px}
+body.glance-free.dock-right #glance{left:10px}
 #btnDock.on{border-color:var(--acc);color:var(--acc)}
 @media (min-width:600px){
  body.dock-left #app{margin-left:10px!important;margin-right:auto!important;max-width:max(480px,var(--dockw,52vw))!important}
@@ -312,7 +315,7 @@ function newLife(o={}){
   const mom={id:uid(),name:pick(FEMALE)+' '+last,role:'Mother',gender:'female',age:rnd(20,40),rel:rnd(60,100),alive:true};
   const dad={id:uid(),name:pick(MALE)+' '+last,role:'Father',gender:'male',age:rnd(21,45),rel:rnd(55,100),alive:true};
   S.rel.push(mom,dad);
-  for(let i=0;i<rnd(0,2);i++){const sg=pick(['male','female']);S.rel.push({id:uid(),name:pick(sg==='male'?MALE:FEMALE)+' '+last,role:sg==='male'?'Brother':'Sister',gender:sg,age:rnd(1,9),rel:rnd(40,90),alive:true})}
+  for(let i=0;i<rnd(0,2);i++){const sg=pick(['male','female']);const used=[first(S.name),...S.rel.map(r=>first(r.name))];S.rel.push({id:uid(),name:pick((sg==='male'?MALE:FEMALE).filter(n=>!used.includes(n)))+' '+last,role:sg==='male'?'Brother':'Sister',gender:sg,age:rnd(1,9),rel:rnd(40,90),alive:true})}
   log(`I was born a ${g==='male'?'boy':'girl'} in ${S.city}. 🎉`,'big');
   log(`My mother is ${mom.name} (${mom.age}) and my father is ${dad.name} (${dad.age}).`);
   const sibs=S.rel.filter(r=>r.role==='Brother'||r.role==='Sister');
@@ -350,7 +353,7 @@ function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev.parentEntry)navStack=[prev.parentEntry];curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
-function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
+function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
@@ -371,7 +374,7 @@ function stage(){const a=S.age;return a<3?0:a<13?1:a<20?2:a<60?3:4}
 function avatar(){if(!S.alive)return'🪦';const m=S.gender==='male',a=S.age;if(a<3)return'👶';if(a<13)return m?'👦':'👧';if(a<20)return m?'🧑':'👱‍♀️';if(a<60)return m?'👨':'👩';return m?'👴':'👵'}
 function mood(){const h=S.st.happy;return h>80?'😄':h>60?'🙂':h>40?'😐':h>20?'😟':'😢'}
 function openMenu(fn){if(sheetOpen){if(sheetForced)return;closeSheet()}fn()}
-function renderGlance(){const g=$('#glance');if(!g||!document.body.classList.contains('wide')||!S)return;g.innerHTML='';
+function renderGlance(){const g=$('#glance');if(!g||!(document.body.classList.contains('wide')||document.body.classList.contains('glance-free'))||!S)return;g.innerHTML='';
  if(!S.alive){g.append(sec('Rest in peace'),el('div','info',`${S.name} lived to ${S.age}.`));return}
  g.append(sec('Right now'));
  const job=S.job?CAR[S.job.id]:null;
@@ -588,7 +591,7 @@ function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}
  if(r.role!=='Spouse'&&!['Son','Daughter'].includes(r.role))w.append(opt('😤','Argue','',go('argue',()=>{r.rel-=rnd(6,15);return`${first(r.name)} and I got into a heated argument.`}),{cls:'danger'}));
  if(r.role==='Friend')w.append(opt('🚪','End friendship','',()=>{S.rel=S.rel.filter(x=>x!==r);log(`I ended my friendship with ${r.name}.`);closeSheet()},{cls:'danger'}));
  sheet(r.role,w)}
-function babyBorn(age=0){const g=pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const c={id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+last,gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
+function babyBorn(age=0){const g=pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const taken=[first(S.name),...S.rel.map(r=>first(r.name))];const c={id:uid(),name:pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)))+' '+last,gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
 
 // ---------- career ----------
 function meets(c){const r=c.req,miss=[];
@@ -753,7 +756,10 @@ function dockSheet(){const w=el('div');w.append(el('div','info','Dock the game t
  w.append(sec('Position'));[['left','⬅️','Dock left'],['right','➡️','Dock right'],[null,'⏺️','Center (no dock)']].forEach(([v,ic,l])=>w.append(opt(ic,l,'',()=>{M.dock=v;saveMeta();applySide();dockSheet()},{rt:M.dock===v?'✅':''})));
  w.append(sec('Game width'));const val=el('div','mini',`<span>Narrower</span><b id="dwv">${M.dockw||52}% of the screen</b><span>Wider</span>`);const r=el('input');r.type='range';r.min=35;r.max=80;r.value=M.dockw||52;
  r.oninput=()=>{M.dockw=+r.value;$('#dwv').textContent=r.value+'% of the screen';applySide()};r.onchange=()=>saveMeta();w.append(val,r);
- if(!M.dock)w.append(el('div','info','Pick Dock left or Dock right to use the width slider.'));
+ w.append(sec('Space for your video'));const vv=el('div','mini',`<span>None</span><b id="vhv">${M.vidh==null?40:M.vidh}% of the height</b><span>More</span>`);const vr=el('input');vr.type='range';vr.min=0;vr.max=75;vr.value=M.vidh==null?40:M.vidh;
+ vr.oninput=()=>{M.vidh=+vr.value;$('#vhv').textContent=vr.value+'% of the height';applySide()};vr.onchange=()=>saveMeta();w.append(vv,vr);
+ w.append(el('div','info','The at-a-glance panel (job, people, money, ribbons) fills the free side under your video. Set this to match your video\'s height.'));
+ if(!M.dock)w.append(el('div','info','Pick Dock left or Dock right to use these sliders.'));
  w.append(opt('','Done','',closeSheet,{cls:'primary'}));sheet('Dock 📺',w)}
 $('#btnDock').onclick=()=>{if(sheetOpen&&sheetForced)return toast('Start your life first, then set the dock.');openMenu(dockSheet)};
 $('#btnSide').onclick=()=>{if(M.dock&&!M.side)toast('Undock first to use side view.');M.side=!M.side;saveMeta();applySide();toast(!M.side?'Side view off.':WIDE()?'Side view on: menus open next to your game.':'Side view is on, but this screen is too narrow. Turn your device sideways or widen the window.')};
