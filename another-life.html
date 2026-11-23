@@ -113,10 +113,21 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
 }
 #btnDock.on{border-color:var(--acc);color:var(--acc)}
 @media (min-width:600px){
- body.dock-left #app{margin-left:10px!important;margin-right:auto!important;max-width:520px!important}
- body.dock-right #app{margin-right:10px!important;margin-left:auto!important;max-width:520px!important}
- body.dock-left #sheet{right:auto;width:540px}
- body.dock-right #sheet{left:auto;width:540px}
+ body.dock-left #app{margin-left:10px!important;margin-right:auto!important;max-width:max(520px,60vw)!important}
+ body.dock-right #app{margin-right:10px!important;margin-left:auto!important;max-width:max(520px,60vw)!important}
+ body.dock-left #sheet{right:auto;width:max(540px,calc(60vw + 20px))}
+ body.dock-right #sheet{left:auto;width:max(540px,calc(60vw + 20px))}
+ body.dock-left .sheet-inner,body.dock-right .sheet-inner{max-width:calc(100% - 20px)}
+}
+@media (min-width:1300px){
+ body.dock-left #app,body.dock-right #app{display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto auto auto 1fr auto auto;grid-template-areas:"head log" "tool log" "stats log" ". log" "again log" "nav log";column-gap:16px;padding:14px 0 0}
+ body.dock-left header,body.dock-right header{grid-area:head;flex-wrap:wrap;row-gap:4px}
+ body.dock-left .money,body.dock-right .money{flex-basis:100%;display:flex;gap:10px;align-items:baseline;text-align:left;padding-left:70px}
+ body.dock-left #toolbar,body.dock-right #toolbar{grid-area:tool}
+ body.dock-left #log,body.dock-right #log{grid-area:log;margin-bottom:14px}
+ body.dock-left #stats,body.dock-right #stats{grid-area:stats;grid-template-columns:1fr;margin-top:0}
+ body.dock-left #againBtn,body.dock-right #againBtn{grid-area:again;justify-self:center;margin-bottom:6px}
+ body.dock-left nav,body.dock-right nav{grid-area:nav}
 }
 #btnSide.on{border-color:var(--acc);color:var(--acc)}
 @media (min-width:760px){
@@ -144,6 +155,7 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
     <button id="btnRewind" class="hidden">⏪ Rewind</button>
     <button id="btnCreator" class="hidden">🪄 Creator</button>
     <button id="btnAch">🏆 Ribbons</button>
+    <button id="btnSave">💾 Save</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
   </div>
@@ -272,7 +284,17 @@ function saveMeta(){store.set('al_meta',M)}
 
 // ---------- state ----------
 let S=null,PREV=null,Q=[],sheetOpen=false;
-function save(){store.set('al_life',S);saveMeta()}
+function save(){if(!S||S.name==='Another Life'&&!S.log.length)return;store.set('al_life',S);if(S.age!==save._a){save._a=S.age;const b=store.get('al_life_bak')||[];b.unshift(S);store.set('al_life_bak',b.slice(0,3))}saveMeta()}
+function fixState(x){const d={gender:'female',age:0,born:2026,city:'',alive:true,st:{health:50,happy:50,smarts:50,looks:50},fame:0,karma:50,money:0,debt:0,log:[],school:null,degrees:[],job:null,retired:null,rel:[],assets:[],biz:[],pets:[],used:{},ill:null,flags:{},rewinds:3,gen:1,achs:[],jobsHeld:[],cause:null,paid:false};for(const k in d)if(x[k]===undefined)x[k]=JSON.parse(JSON.stringify(d[k]));for(const k in d.st)if(typeof x.st[k]!=='number')x.st[k]=50;if(x.job&&!CAR[x.job.id])x.job=null;return x}
+function encodeSave(){const s=JSON.parse(JSON.stringify(S));s.log=s.log.slice(-150);return 'AL1.'+btoa(unescape(encodeURIComponent(JSON.stringify({S:s,M:{points:M.points,up:M.up,ach:M.ach,lives:M.lives}}))))}
+function loadSave(code){const d=JSON.parse(decodeURIComponent(escape(atob(code.trim().replace(/^AL1\./,'')))));if(!d||!d.S||!d.S.name)throw new Error('bad');S=fixState(d.S);if(d.M){M.points=Math.max(M.points||0,d.M.points||0);Object.assign(M.up,d.M.up||{});Object.assign(M.ach,d.M.ach||{});M.lives=Math.max(M.lives||0,d.M.lives||0)}PREV=null;Q=[];lastMenu=null;lastSub={};save();render()}
+function saveSheet(){const w=el('div');w.append(el('div','info','<b>Your save code</b><br>Copy this somewhere safe, like your Notes app. If your character ever disappears, or you want to play on another device, paste it below to bring them back.'));
+ const ta=el('textarea');ta.readOnly=true;ta.value=encodeSave();ta.style.cssText='width:100%;height:90px;background:#ffffff12;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px;font:12px monospace;margin-bottom:8px';w.append(ta);
+ w.append(opt('📋','Copy save code','',()=>{const done=()=>toast('Save code copied!');try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();toast('Select all and copy the code.')})}catch(e){ta.select();toast('Select all and copy the code.')}},{cls:'primary'}));
+ w.append(sec('Load a save'));const inp=el('textarea');inp.placeholder='Paste a save code here';inp.style.cssText=ta.style.cssText;inp.readOnly=false;w.append(inp);
+ w.append(opt('📥','Load this save','Replaces your current life',()=>{try{loadSave(inp.value);closeSheet();toast(`Welcome back, ${first(S.name)}!`)}catch(e){toast('That code did not work. Check you copied all of it.')}}));
+ const bak=(store.get('al_life_bak')||[]).filter(b=>b&&b.name);if(bak.length){w.append(sec('Recent backups on this device'));bak.forEach(b=>w.append(opt('🕘',`${b.name}, age ${b.age}`,b.alive?'Restore this backup':'Deceased',()=>{S=fixState(JSON.parse(JSON.stringify(b)));PREV=null;Q=[];save();closeSheet();toast(`Restored ${first(S.name)}, age ${S.age}.`)})))}
+ sheet('Save & Restore 💾',w)}
 
 function newLife(o={}){
  const g=o.gender||pick(['male','female']);
@@ -725,6 +747,7 @@ $('#ageBtn').onclick=()=>{if(sheetOpen&&isSide()&&!sheetForced)closeSheet();ageU
 $('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();if(!navStack.length&&lastSub[m.name]&&lastSub[m.name].title)navStack=[Object.assign({},lastSub[m.name],{parentEntry:{key:'p:'+m.name,name:m.name,go:m.go,title:m.title,forced:false}})];m.go()};
 document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(!S)return;if(sheetOpen){if(isSide()&&!sheetForced)closeSheet();else return}if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
 $('#btnUp').onclick=()=>upgradeSheet();
+$('#btnSave').onclick=()=>{if(S&&S.log.length)openMenu(saveSheet);else toast('Start a life first.')};
 $('#btnAch').onclick=()=>S&&achSheet();
 $('#btnDock').onclick=()=>{M.dock=!M.dock?'left':M.dock==='left'?'right':null;saveMeta();applySide();toast(M.dock?`Game docked ${M.dock}. The other side is free for a video.${M.side?' Side view is paused while docked.':''}`:'Game is back in the center.')};
 $('#btnSide').onclick=()=>{if(M.dock&&!M.side)toast('Undock first to use side view.');M.side=!M.side;saveMeta();applySide();toast(!M.side?'Side view off.':WIDE()?'Side view on: menus open next to your game.':'Side view is on, but this screen is too narrow. Turn your device sideways or widen the window.')};
@@ -750,12 +773,15 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+saveSheet=nav('saveSheet',saveSheet);
 creatorSheet=nav('creatorSheet',creatorSheet);
 startScreen=nav('startScreen',startScreen);
 showDeath=nav('showDeath',showDeath);
 // boot
 const saved=store.get('al_life');
-if(saved&&saved.alive){S=saved;render();toast(`Welcome back, ${first(S.name)}!`)}
+let booted=false;if(saved&&saved.name&&saved.log&&saved.log.length){try{S=fixState(saved);render();booted=true;if(S.alive)toast(`Welcome back, ${first(S.name)}!`);else setTimeout(showDeath,300)}catch(e){booted=false}}
+if(!booted){const bak=(store.get('al_life_bak')||[]).find(b=>b&&b.alive&&b.log&&b.log.length);if(bak){try{S=fixState(bak);render();booted=true;toast(`Restored your last save: ${first(S.name)}.`)}catch(e){}}}
+if(booted){}
 else{S={name:'Another Life',gender:'male',age:0,born:2026,city:'',alive:true,st:{health:50,happy:50,smarts:50,looks:50},fame:0,karma:50,money:0,debt:0,log:[],school:null,degrees:[],job:null,rel:[],assets:[],biz:[],pets:[],used:{},achs:[],jobsHeld:[],gen:1};render();startScreen()}
 </script>
 </body>
