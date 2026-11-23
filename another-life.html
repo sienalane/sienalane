@@ -434,7 +434,8 @@ function ageUp(){
  yearly();
  fix();
  if(!S.alive){Q=[showDeath];nextQ();return}
- if(S.age>=2&&chance(.6))queueEvent();
+ if(S.job&&chance(.55))queueJobEvent();
+ if(S.age>=2&&chance(S.job?.4:.6))queueEvent();
  if(chance(.08)&&S.age>=4)queueEvent();
  nextQ();
 }
@@ -554,6 +555,178 @@ const EV=[
  {a:[18,70],ic:'🎰',t:'Walking past a casino, you feel lucky.',c:[['Bet $500 on red',()=>{S.money-=500;if(chance(.47+L())){S.money+=1000;return'Red! I doubled my money.'}return'Black. I lost $500.'}],['Keep walking',()=>{E({smarts:1});return'Smart move.'}]]},
  {a:[30,85],cond:()=>S.debt>0,ic:'💳',t:'The bank offers to refinance your debt at a lower rate.',c:[['Refinance',()=>{S.debt*=.93;return'I refinanced and cut my debt a little.'}],['No thanks',()=>'I kept my current terms.']]},
 ];
+// ---------- career stories ----------
+// Each choice: [label, stat used for the odds (or null), good outcome, bad outcome, options]
+// options: p = fixed chance, g = extra effects on success, b = extra effects on failure
+const JOBEV={
+ fast:[
+  {ic:'🍔',t:'A customer is yelling that their burger is wrong, and the line is out the door.',c:[['Remake it with a smile','karma','They calmed down and even left a tip.','They still left a one-star review naming you.'],['Get the manager','smarts','Your manager handled it and thanked you for staying calm.','Your manager sighed loudly and asked why you could not handle it.'],['Tell them to take it or leave it',null,'Weirdly, they respected that and left.','They filmed you. You are a local meme now.',{p:.25,g:{fame:2},b:{fame:3,karma:-4}}]]},
+  {ic:'🍟',t:'The fryer starts smoking during the lunch rush.',c:[['Grab the extinguisher','health','You put it out fast. The crew cheered.','You panicked and burned your hand.',{b:{health:-6}}],['Evacuate everyone','smarts','Everyone got out safely. Corporate praised you.','False alarm. You cleared the whole place for nothing.']]},
+ ],
+ barista:[
+  {ic:'☕',t:'A regular orders a drink so complicated it takes up the whole cup.',c:[['Nail every detail','smarts','Perfect. They tipped $20 and told the owner.','You forgot the oat milk. They noticed instantly.',{g:{money:20}}],['Make it your own way',null,'They loved it more than their usual.','They asked for a refund.',{p:.4}]]},
+  {ic:'🎨',t:'Your shift lead wants someone to enter the city latte art contest.',c:[['Enter it','looks','Your swan won second place!','Your swan looked like a potato.',{g:{fame:2}}],['Cover their shifts instead','karma','The team owes you one.','Nobody noticed you covered.']]},
+ ],
+ retail:[
+  {ic:'🛍️',t:'Black Friday. Doors open in five minutes and the crowd is huge.',c:[['Take the front door','health','You survived and sold a record amount.','You got trampled a little.',{b:{health:-5}}],['Hide in the stock room','smarts','You organized the whole back room. Quietly heroic.','Your manager found you.']]},
+  {ic:'🕵️',t:'You see someone slipping a jacket into their bag.',c:[['Calmly offer help','smarts','They put it back and left. Crisis avoided.','They ran out with it.'],['Report it to security','karma','Security caught them. You got a shout-out.','Security did not believe you.'],['Ignore it',null,'Not your problem.','The jacket came out of your bonus.',{p:.5}]]},
+ ],
+ guard:[
+  {ic:'🏊',t:'A kid is struggling in the deep end.',c:[['Dive in now','health','You pulled them out. Their parents cried and hugged you.','You got there late and had a big scare, but they are okay.',{g:{karma:8,fame:2}}],['Throw the flotation ring','smarts','Perfect throw. They grabbed it right away.','The ring landed too far away. You had to dive in anyway.']]},
+  {ic:'☀️',t:'It is 104°F and the pool is packed.',c:[['Enforce the rules strictly','smarts','Zero incidents all day.','Teens called you names all afternoon.'],['Organize water games','looks','Best day at the pool all summer.','Chaos. Someone lost a tooth.']]},
+ ],
+ delivery:[
+  {ic:'📦',t:'A huge storm hits during your route.',c:[['Push through',null,'Every package arrived on time. Hero status.','You slid into a ditch. Long day.',{p:.5,b:{health:-4}}],['Wait it out safely','smarts','Smart call. You finished once it cleared.','Your stops ran late and customers complained.']]},
+  {ic:'🐕',t:'A big dog guards the porch where your package goes.',c:[['Offer it a treat','karma','New best friend. It walks you to the truck now.','It took the treat and your sleeve.'],['Leave it at the gate',null,'Fine. The customer grabbed it.','The package got soaked.',{p:.6}]]},
+ ],
+ mech:[
+  {ic:'🔧',t:'A customer brings in a vintage car nobody else can fix.',c:[['Take on the challenge','smarts','You found the problem. Word spread fast.','You made it worse and had to call a specialist.',{g:{money:800}}],['Refer them elsewhere',null,'They appreciated your honesty.','They never came back.',{p:.7}]]},
+  {ic:'🧾',t:'Your boss wants you to add work the car does not need.',c:[['Refuse','karma','The customer became loyal for life.','Your boss gave you the worst jobs all month.',{g:{karma:6}}],['Go along with it',null,'Bigger paycheck this month.','The customer found out and left a scathing review.',{p:.5,g:{money:600,karma:-6},b:{karma:-8}}]]},
+ ],
+ elec:[
+  {ic:'⚡',t:'You are rewiring an old house and find a mess of wires.',c:[['Trace it carefully','smarts','You fixed it safely. The owner was amazed.','You got a nasty shock.',{b:{health:-8}}],['Recommend a full rewire',null,'They agreed. Big job for you.','They said it was too expensive.',{p:.5,g:{money:1500}}]]},
+  {ic:'🏟️',t:'The stadium needs someone for the lights before a big game.',c:[['Volunteer','health','The lights came on right at kickoff.','You missed the deadline and the game started late.',{g:{fame:2,money:1000}}],['Stay on your regular jobs',null,'Steady work. No drama.','Your coworker got the glory.',{p:.8}]]},
+ ],
+ plumb:[
+  {ic:'🚰',t:'A pipe bursts in a fancy restaurant during dinner service.',c:[['Fix it fast','health','You saved the night. They comped your dinner.','You got soaked in front of everyone.'],['Shut off the water first','smarts','Textbook. No damage and an easy fix.','The valve was stuck. Messy night.']]},
+  {ic:'💍',t:'A homeowner dropped their wedding ring down the drain.',c:[['Take apart the trap','smarts','Found it! They gave you a huge tip.','It was already gone.',{g:{money:300,karma:4}}],['Use the camera scope',null,'Spotted and retrieved. Easy.','The scope broke.',{p:.6}]]},
+ ],
+ chef:[
+  {ic:'👨‍🍳',t:'A famous food critic is in the dining room tonight.',c:[['Cook your signature dish','smarts','Glowing review. The restaurant is booked for months.','The review called your sauce "confusing".',{g:{fame:4}}],['Play it safe with a classic',null,'Solid review. Nothing fancy.','Boring, said the critic.',{p:.7}]]},
+  {ic:'🔥',t:'The head chef calls in sick on a Saturday.',c:[['Run the kitchen','health','You crushed it. The owner noticed.','Tickets backed up for an hour.'],['Simplify the menu','smarts','Fewer dishes, zero mistakes. Smart.','Guests complained about the limited menu.']]},
+ ],
+ fire:[
+  {ic:'🚒',t:'A call comes in: a cat is trapped in a burning shed.',c:[['Go in','health','You came out with a singed but happy cat.','The smoke got to you. You needed oxygen.',{g:{karma:6,fame:2},b:{health:-8}}],['Hold the line and wait for backup','smarts','The fire was contained and the cat escaped on its own.','The shed collapsed. Thankfully the cat ran out.']]},
+  {ic:'🧯',t:'You are asked to teach fire safety at an elementary school.',c:[['Bring the fire truck','looks','The kids lost their minds. Best day ever.','A kid honked the horn for 10 minutes straight.',{g:{karma:4}}],['Give a slideshow',null,'The teachers loved it.','Half the kids fell asleep.',{p:.5}]]},
+ ],
+ police:[
+  {ic:'🚓',t:'You pull over a speeding car. It is the mayor.',c:[['Write the ticket','karma','The story got out and people respected you.','The mayor made calls. Your sergeant was not happy.',{g:{karma:6}}],['Let it slide',null,'The mayor owes you one.','A dashcam caught it. Awkward.',{p:.5,b:{karma:-6}}]]},
+  {ic:'🔎',t:'A string of bike thefts has the neighborhood upset.',c:[['Go undercover','smarts','You caught the ring red-handed.','They spotted you instantly.',{g:{fame:2}}],['Hold a community meeting','looks','Neighbors shared tips that cracked the case.','Only two people showed up.']]},
+ ],
+ somm:[
+  {ic:'🍷',t:'A guest swears their bottle is corked. It smells fine to you.',c:[['Open a fresh bottle','karma','They were thrilled. Big tip.','The second bottle was "also corked".',{g:{money:100}}],['Explain the wine politely','smarts','They tasted again and agreed. Respect.','They complained to the owner.']]},
+  {ic:'🏆',t:'A regional blind tasting competition is coming up.',c:[['Compete','smarts','You named the grape, region and vintage. You won!','You called a Syrah a Malbec. Painful.',{g:{fame:3}}],['Help a coworker prep',null,'They placed and credited you.','They bombed anyway.',{p:.6}]]},
+ ],
+ pilot:[
+  {ic:'✈️',t:'Severe turbulence over the Rockies. Passengers are scared.',c:[['Calm them on the speaker','looks','Your voice settled the whole cabin.','Your voice cracked on the PA.'],['Climb to smoother air','smarts','Smooth as glass. Passengers applauded on landing.','Air traffic control denied it. Bumpy ride.']]},
+  {ic:'🛬',t:'A passenger feels sick and the nearest airport is small.',c:[['Divert','smarts','They got care quickly and thanked you later.','It turned out to be motion sickness. Big delay.',{g:{karma:6}}],['Continue on',null,'They felt better after an hour.','You had to divert later anyway.',{p:.5}]]},
+ ],
+ zoo:[
+  {ic:'🦒',t:'A giraffe calf is born overnight. The news wants a story.',c:[['Do the interview','looks','The clip went viral. Attendance spiked.','You stumbled over your words on live TV.',{g:{fame:4}}],['Stay with the calf','karma','The calf is thriving. The vet praised your care.','You missed the interview and your boss was annoyed.']]},
+  {ic:'🦦',t:'An otter has escaped its habitat and is wandering the gift shop.',c:[['Lure it with fish','smarts','Back home in minutes. Guests loved the show.','It ran off with a plush toy instead.'],['Clear the area first','karma','Safe and calm. Textbook recovery.','It took hours.']]},
+  {ic:'🐘',t:'A donor wants to name the new elephant habitat after themselves.',c:[['Give them a VIP tour','looks','They doubled the donation!','They got splashed by an elephant.',{g:{money:500}}],['Pitch a conservation program','smarts','They funded a whole program. Huge win.','They wanted something flashier.']]},
+ ],
+ mkt:[
+  {ic:'📣',t:'Your boss wants a campaign idea by tomorrow morning.',c:[['Pull an all-nighter','smarts','Your idea got picked for the big launch.','You were too tired to present well.',{b:{health:-3}}],['Pitch a trending idea',null,'It went viral.','Two other brands did the same thing that week.',{p:.45,g:{fame:2}}]]},
+  {ic:'📱',t:'A social post you scheduled went out with a typo. It is getting attention.',c:[['Own it with a funny reply','looks','People loved the reply more than the original.','It got ratioed.',{g:{fame:2}}],['Delete and repost',null,'Most people never noticed.','Screenshots live forever.',{p:.6}]]},
+ ],
+ design:[
+  {ic:'🎨',t:'A client says your logo needs to "pop more" but cannot explain how.',c:[['Show three new options','smarts','They loved option B. Approved.','They want the first one back.'],['Ask questions about their brand','karma','You found what they meant. Best work yet.','They said "just make it pop".']]},
+  {ic:'🏅',t:'A big design award is taking entries.',c:[['Submit your best piece','looks','You won a silver award!','It did not place this year.',{g:{fame:3}}],['Skip it',null,'More time for paid work.','Your rival won.',{p:.7}]]},
+ ],
+ journo:[
+  {ic:'📰',t:'An anonymous source has a tip about a local scandal.',c:[['Dig in','smarts','Front-page story. Award buzz.','The tip was fake. Your editor was furious.',{g:{fame:5}}],['Pass it to a colleague',null,'They shared credit with you.','They took all the credit.',{p:.5}]]},
+  {ic:'🎤',t:'You land an interview with a celebrity who hates the press.',c:[['Ask the tough questions','smarts','A legendary interview.','They walked out after two minutes.',{g:{fame:3}}],['Keep it friendly','looks','Warm, viral profile.','Fluffy, said the critics.']]},
+ ],
+ teach:[
+  {ic:'🍎',t:'A student who has been struggling suddenly stops turning in work.',c:[['Talk to them after class','karma','They opened up. Their grades bounced back.','They shut down. You will try again.',{g:{karma:6}}],['Call their parents',null,'The family helped turn things around.','Things got tense at home.',{p:.55}]]},
+  {ic:'🎓',t:'Your principal asks you to lead the school science night.',c:[['Go big with experiments','smarts','The volcano worked. The kids talked about it for weeks.','Fire alarm. Everyone evacuated.'],['Keep it simple',null,'Smooth, fun night.','A little boring.',{p:.7}]]},
+ ],
+ nurse:[
+  {ic:'💉',t:'A patient keeps pressing the call button for small things.',c:[['Sit with them for a minute','karma','They were lonely. They calmed down and thanked you.','You fell behind on your other patients.',{g:{karma:5}}],['Set clear expectations','smarts','They understood and relaxed.','They filed a complaint.']]},
+  {ic:'🚨',t:'Something seems off with a patient, but the doctor says it is fine.',c:[['Push back and ask for tests','smarts','The tests caught a serious problem. You saved a life.','Everything was normal. The doctor rolled their eyes.',{g:{karma:8}}],['Trust the doctor',null,'It really was fine.','It got worse overnight. Lesson learned.',{p:.6}]]},
+ ],
+ swe:[
+  {ic:'💻',t:'Production goes down at 2 a.m. You are on call.',c:[['Fix it yourself','smarts','Fixed in 20 minutes. The team called you a legend.','You made it worse before it got better.',{b:{health:-2}}],['Wake up the senior engineer',null,'Fixed fast. They taught you a lot.','They were grumpy about it all week.',{p:.65}]]},
+  {ic:'🤖',t:'Your team debates rewriting the whole app from scratch.',c:[['Argue for the rewrite','smarts','The new version is fast and everyone loves it.','Six months later, it is still not done.'],['Argue for small fixes','smarts','Steady progress. Leadership was happy.','Tech debt keeps biting.']]},
+ ],
+ data:[
+  {ic:'📈',t:'Your analysis says the company\'s favorite project is losing money.',c:[['Present it honestly','smarts','Leadership pivoted and saved millions.','A VP took it personally.',{g:{karma:4}}],['Soften the message',null,'Nobody got upset.','The project failed anyway.',{p:.5}]]},
+  {ic:'🧮',t:'Your model is 99% accurate. That seems too good.',c:[['Check for data leaks','smarts','You found a bug and fixed it before launch. Hero.','You could not find anything. Launch got delayed.'],['Ship it',null,'It worked great.','It flopped in the real world. Embarrassing.',{p:.3}]]},
+ ],
+ eng:[
+  {ic:'⚙️',t:'A bridge design you reviewed has a calculation that looks off.',c:[['Flag it','smarts','You caught a real error. Safety first.','It was right after all. You double-checked for nothing.',{g:{karma:6}}],['Assume it is fine',null,'It was fine.','It was not. Huge redesign.',{p:.5}]]},
+  {ic:'🏗️',t:'The project is behind schedule and the client is angry.',c:[['Propose a creative fix','smarts','Back on track and under budget.','It did not work.'],['Ask for more time','looks','They agreed after seeing the plan.','They brought in another firm.']]},
+ ],
+ arch:[
+  {ic:'📐',t:'A client wants a glass house on a windy cliff.',c:[['Design something daring','smarts','It won a design award.','The engineers said absolutely not.',{g:{fame:3}}],['Suggest a safer design','looks','They loved the compromise.','They found another architect.']]},
+  {ic:'🏛️',t:'The city opens a contest to design a new library.',c:[['Enter it','smarts','You won! Your name goes on a plaque.','A big firm won.',{g:{fame:4,money:3000}}],['Focus on paying clients',null,'Steady income.','Your rival won the contest.',{p:.7}]]},
+ ],
+ acct:[
+  {ic:'🧮',t:'It is the week before tax day and everyone is panicking.',c:[['Work late every night','health','Every return filed on time. Big bonus.','You burned out a little.',{g:{money:2000},b:{health:-5}}],['Prioritize the biggest clients','smarts','Smart triage. Nobody missed a deadline.','A small client was furious.']]},
+  {ic:'🔍',t:'The numbers in a client\'s books do not add up.',c:[['Investigate','smarts','You found the problem and saved the client a fortune.','It was an honest typo. Lots of hours spent.'],['Report it to your partner',null,'They took it from there and praised your eye.','They told you to drop it.',{p:.6}]]},
+ ],
+ bank:[
+  {ic:'🏦',t:'It is 11 p.m. and a managing director wants a new deck by morning.',c:[['Pull an all-nighter','health','The deck closed the deal.','You fell asleep in the meeting.',{g:{money:5000},b:{health:-6}}],['Push back on the timeline','looks','They respected it and gave you until noon.','They noted your "attitude".']]},
+  {ic:'💼',t:'A big merger is on the line in final negotiations.',c:[['Push for better terms','smarts','You squeezed out an extra 2%. Huge bonus.','The other side walked.',{g:{money:15000}}],['Close it as is',null,'Deal done. Champagne.','Your boss thinks you left money on the table.',{p:.7}]]},
+ ],
+ wine:[
+  {ic:'🍇',t:'A frost warning hits right before harvest.',c:[['Pick early tonight','health','You saved the crop. Long night, great wine.','The grapes were not ready. Thin vintage.'],['Run fans and heaters','smarts','The vineyard made it through.','Half the crop froze.']]},
+  {ic:'🏅',t:'A famous wine critic is visiting to taste your new vintage.',c:[['Pour your boldest wine','smarts','92 points! Sales tripled.','"Overextracted," said the critic.',{g:{fame:3}}],['Pour the crowd favorite',null,'Solid score and steady sales.','Forgettable.',{p:.7}]]},
+ ],
+ pol:[
+  {ic:'🏛️',t:'A reporter asks a tricky question at a press conference.',c:[['Answer directly','smarts','Voters loved the honesty.','The clip got twisted online.',{g:{fame:3}}],['Pivot to your talking points','looks','Smooth. Nobody noticed the dodge.','"Dodged the question," said every headline.']]},
+  {ic:'🗳️',t:'A lobbyist offers a big campaign donation, with strings attached.',c:[['Turn it down','karma','Voters found out and respected you more.','Your opponent outspent you.',{g:{karma:8}}],['Accept it',null,'Your war chest grew.','Scandal! It hit the front page.',{p:.5,g:{money:5000,karma:-8},b:{karma:-12}}]]},
+ ],
+ doc:[
+  {ic:'🩺',t:'A patient has symptoms nobody can explain.',c:[['Order more tests','smarts','You cracked the case. A rare condition, now treated.','The tests were inconclusive. Back to square one.',{g:{karma:5}}],['Consult a specialist',null,'Teamwork got them diagnosed.','The specialist was booked for months.',{p:.6}]]},
+  {ic:'🚑',t:'A mass emergency floods the ER on your night shift.',c:[['Take charge','health','You kept things organized. Lives were saved.','You were overwhelmed and exhausted.',{g:{karma:6},b:{health:-5}}],['Follow the attending\'s lead','smarts','Smooth teamwork all night.','Chaos anyway.']]},
+ ],
+ surg:[
+  {ic:'🔪',t:'A routine surgery becomes complicated halfway through.',c:[['Stay calm and adapt','smarts','Textbook save. The patient will be fine.','Long, tense hours, but the patient made it.'],['Call in a colleague',null,'Two experts, one great outcome.','They were slow to arrive.',{p:.7}]]},
+  {ic:'🎥',t:'A medical TV show wants to film you in the operating room.',c:[['Say yes','looks','You became a TV fan favorite.','You looked nervous on camera.',{g:{fame:6}}],['Decline','karma','Patient privacy first. Respect.','Your rival said yes and got famous.']]},
+ ],
+ vet:[
+  {ic:'🐶',t:'A family brings in their dog after it ate a sock.',c:[['Try to make it vomit first','smarts','Sock out. Happy dog, relieved family.','Did not work. Surgery needed after all.'],['Go straight to surgery',null,'Quick and clean.','Expensive, and the family was stressed.',{p:.7}]]},
+  {ic:'🦜',t:'Someone brings in an injured hawk they found by the road.',c:[['Treat it for free','karma','It healed and flew away. Beautiful moment.','It did not make it. Heartbreaking.',{g:{karma:8}}],['Refer them to wildlife rescue',null,'Experts took over. It survived.','The rescue was full.',{p:.6}]]},
+ ],
+ law:[
+  {ic:'⚖️',t:'Your client is clearly hiding something.',c:[['Confront them privately','smarts','They came clean and you built a better defense.','They fired you.'],['Work with what you have',null,'You won anyway.','It came out in court. Disaster.',{p:.45}]]},
+  {ic:'🏛️',t:'Closing arguments in your biggest trial yet.',c:[['Go emotional','looks','The jury was in tears. Verdict in your favor!','The judge told you to tone it down.',{g:{fame:3}}],['Stick to the facts','smarts','Airtight logic. You won.','The other side was more convincing.']]},
+ ],
+ prof:[
+  {ic:'🎓',t:'A top journal rejects your paper with harsh reviews.',c:[['Revise and resubmit','smarts','Accepted! It is getting cited everywhere.','Rejected again.',{g:{fame:2}}],['Send it to a smaller journal',null,'Published quickly.','Nobody read it.',{p:.7}]]},
+  {ic:'🧑‍🏫',t:'Students rate your lectures as "a bit dry".',c:[['Add stories and demos','looks','Your class now has a waitlist.','Students found it cringey.'],['Ignore the reviews',null,'Your research flourished.','Enrollment dropped.',{p:.5}]]},
+ ],
+ consult:[
+  {ic:'🧠',t:'A client\'s CEO rejects your team\'s recommendations.',c:[['Present the data again','smarts','They came around. Huge contract extension.','They ended the engagement.',{g:{money:5000}}],['Find a middle ground','looks','Everyone left happy.','A watered-down plan nobody liked.']]},
+  {ic:'✈️',t:'You have been on the road four weeks straight.',c:[['Ask for a local project','looks','Approved. You finally sleep in your own bed.','Denied. Another flight Monday.',{g:{happy:8}}],['Keep traveling for the promotion',null,'Partners noticed your hustle.','You burned out.',{p:.6,b:{health:-6}}]]},
+ ],
+ astro:[
+  {ic:'👩‍🚀',t:'During a spacewalk, a tool floats away from you.',c:[['Reach for it','health','Caught it with your fingertips. Mission saved.','It is now in orbit forever. Oops.'],['Let it go and use the backup','smarts','No risk, no problem.','The backup did not fit.']]},
+  {ic:'🚀',t:'A school calls into the space station to ask you questions.',c:[['Do a zero-gravity demo','looks','Kids everywhere watched the clip. You inspired thousands.','Your water ball splashed the camera.',{g:{fame:5,karma:5}}],['Answer seriously',null,'The teachers loved it.','The kids wanted backflips.',{p:.7}]]},
+ ],
+ actor:[
+  {ic:'🎬',t:'You are offered a role in a big superhero movie.',c:[['Take it','looks','Box office smash. You are a household name.','It flopped. Critics were brutal.',{g:{fame:8,money:50000}}],['Do an indie drama instead','smarts','Award buzz and critical love.','Nobody saw it.',{g:{fame:4}}]]},
+  {ic:'📸',t:'Paparazzi follow you to dinner.',c:[['Smile and wave','looks','Great photos. Your popularity soared.','An unflattering photo went viral.',{g:{fame:3}}],['Leave through the back',null,'Peaceful dinner.','"Rude star snubs fans," said the tabloids.',{p:.6}]]},
+ ],
+ music:[
+  {ic:'🎤',t:'Your mic cuts out in the middle of a big concert.',c:[['Lead the crowd in singing','looks','The crowd sang your song back to you. Iconic moment.','Awkward silence for a minute.',{g:{fame:5}}],['Play an instrumental solo','smarts','The solo went viral.','You missed a few notes.']]},
+  {ic:'💿',t:'A big label offers you a contract with tough terms.',c:[['Sign it','looks','Huge promotion. Your album went platinum.','They shelved your album.',{g:{fame:6,money:30000}}],['Stay independent','smarts','You own your music and your fans love it.','Growth is slow.']]},
+ ],
+ influ:[
+  {ic:'📱',t:'A brand offers a lot of money to promote a product you have never tried.',c:[['Try it first','karma','You loved it. Honest review, huge engagement.','It was bad. You turned it down.',{g:{money:8000}}],['Take the money',null,'Easy money.','Followers called you a sellout.',{p:.4,g:{money:10000},b:{fame:-5,karma:-4}}]]},
+  {ic:'🔥',t:'Another creator starts drama with you online.',c:[['Stay classy and ignore it','karma','Your fans loved how mature you were.','The drama trended anyway.'],['Clap back',null,'Your response broke the internet.','It got messy fast.',{p:.45,g:{fame:8},b:{fame:-3}}]]},
+ ],
+ athlete:[
+  {ic:'🏆',t:'It is the final seconds of the championship and you have the ball.',c:[['Take the shot','health','It went in! You are a legend.','You missed. It will haunt you.',{g:{fame:8}}],['Pass to the open teammate','smarts','They scored. You got the assist.','They missed.']]},
+  {ic:'🩹',t:'You tweak your knee in practice before a big game.',c:[['Play through it','health','You played great and nothing got worse.','It got worse. You missed a month.',{b:{health:-10}}],['Sit out to heal','smarts','You came back stronger.','Your backup played amazingly.']]},
+ ],
+ model:[
+  {ic:'📸',t:'You trip on the runway at a major fashion show.',c:[['Turn it into a pose','looks','Fashion people called it genius.','Everyone saw. Ouch.',{g:{fame:5}}],['Keep walking like nothing happened','health','Most people did not notice.','The video went viral.']]},
+  {ic:'👗',t:'A designer wants you to wear a really strange outfit.',c:[['Own it','looks','It became the look of the season.','Critics roasted it.',{g:{fame:4}}],['Ask for something else',null,'They respected you and adjusted.','They hired someone else.',{p:.5}]]},
+ ],
+ chefTV:[
+  {ic:'📺',t:'Live on air, your soufflé collapses.',c:[['Laugh it off and improvise','looks','Fans loved it. Best episode of the season.','It was awkward.',{g:{fame:4}}],['Blame the oven','smarts','The producers played along.','Viewers did not buy it.']]},
+  {ic:'🍽️',t:'A network offers you a competition show as a judge.',c:[['Be the tough judge','smarts','Iconic catchphrases. Ratings soared.','People called you mean.',{g:{fame:6,money:20000}}],['Be the kind judge','karma','Fans adore you.','The show got canceled.']]},
+ ],
+};
+function queueJobEvent(){if(!S.job)return;const pool=JOBEV[S.job.id];if(!pool||!pool.length)return;let list=pool.filter((e,i)=>S.flags.lastJE!==S.job.id+':'+i);if(!list.length)list=pool;const e=pick(list);S.flags.lastJE=S.job.id+':'+pool.indexOf(e);
+ const title=CAR[S.job.id].lv[S.job.lvl][0];
+ Q.push(()=>choice(`At work · ${title}`,e.t,e.c.map(([label,stat,good,bad,o={}])=>[label,()=>{if(!S.job)return good;const p=o.p!=null?o.p+L():.55+(stat?((stat==='karma'?S.karma:S.st[stat])-50)/150:0)+L();
+   if(chance(p)){S.job.perf=clamp(S.job.perf+rnd(6,12));E(Object.assign({happy:3},o.g||{}));return good}
+   S.job.perf=clamp(S.job.perf-rnd(5,10));E(Object.assign({happy:-3},o.b||{}));return bad}]),e.ic))}
+
 function queueEvent(){const pool=EV.filter(e=>S.age>=e.a[0]&&S.age<=e.a[1]&&(!e.cond||e.cond())&&(!e.rare||chance(e.rare)));if(!pool.length)return;const e=pick(pool);Q.push(()=>choice(`Age ${S.age}`,e.t,e.c,e.ic))}
 
 // ---------- people ----------
@@ -561,8 +734,15 @@ function meet(pref){const g=pref==='men'?'male':pref==='women'?'female':pick(['m
 function addPartner(p){p.role='Partner';delete p.looks;delete p.smarts;S.rel.push(p);S.st.happy+=8}
 function addPet(t){const p={name:pick(PETNAMES),type:t[0],ic:t[1],age:0,life:t[3]+rnd(-2,3),alive:true};S.pets.push(p);log(`I adopted a ${t[0].toLowerCase()} named ${p.name}! ${t[1]}`,'good');S.st.happy+=8}
 function stars(n){return'★'.repeat(Math.max(1,Math.round(n/20)))+'☆'.repeat(5-Math.max(1,Math.round(n/20)))}
-function findDate(){if(S.age<16)return toast('You are too young to date.');if(partner())return toast('You are already in a relationship.');const w=el('div');w.append(el('p','evt-text','Who are you looking for?'));[['men','👨 Men'],['women','👩 Women'],['any','💫 Anyone']].forEach(([k,l])=>w.append(opt('',l,'',()=>{if(!once('date'))return closeSheet();showCandidate(meet(k))})));sheet('Find a Date 💘',w)}
-function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}));w.append(opt('👋','Pass','',closeSheet));sheet('Your Date',w)}
+function findDate(){if(S.age<16)return toast('You are too young to date.');if(partner())return toast('You are already in a relationship.');const w=el('div');w.append(el('p','evt-text','Who are you looking for?'));[['men','👨 Men'],['women','👩 Women'],['any','💫 Anyone']].forEach(([k,l])=>w.append(opt('',l,'',()=>{DATES={pref:k,list:[]};matchesSheet(k)})));sheet('Find a Date 💘',w)}
+let DATES={pref:null,list:[]};
+function matchesSheet(pref){if(DATES.pref!==pref||!DATES.list.length){DATES={pref,list:Array.from({length:5},()=>meet(pref))}}const w=el('div');const p0=partner();
+ if(p0){w.append(el('div','info',`<b>💕 You are dating ${p0.name}.</b><br>Find them in People to plan date nights or propose.`));w.append(opt('❤️','Go to People','',()=>relSheet(),{cls:'primary'}));return sheet('Your Matches 💘',w)}
+ w.append(el('p','evt-text','Tap someone to see their profile and ask them out.'));
+ DATES.list.forEach(c=>w.append(opt(c.asked?'💔':(c.gender==='male'?'🧔':'👩‍🦰'),`${c.name}, ${c.age}`,c.asked?'Turned you down':`${c.job} · looks ${stars(c.looks)}`,()=>{if(c.asked)return toast(`${first(c.name)} already said no.`);showCandidate(c)},{cls:c.asked?'locked':''})));
+ w.append(opt('🔄','Show new people','',()=>{DATES.list=Array.from({length:5},()=>meet(pref));matchesSheet(pref)}));
+ sheet('Your Matches 💘',w)}
+function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else{p.asked=true;result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}}));w.append(opt('👋','Pass','',()=>{if(DATES.list.includes(p))goBack();else closeSheet()}));sheet('Your Date',w)}
 
 function relSheet(){const w=el('div');
  const groups=[['Family',['Mother','Father','Brother','Sister']],['Love',['Partner','Fiancé','Fiancée','Spouse']],['Children',['Son','Daughter']],['Friends',['Friend']]];
@@ -788,6 +968,7 @@ RAW.relSheet=relSheet;relSheet=nav('relSheet',relSheet);
 actSheet=nav('actSheet',actSheet);
 personSheet=nav('personSheet',personSheet);
 findDate=nav('findDate',findDate);
+matchesSheet=nav('matchesSheet',matchesSheet);
 showCandidate=nav('showCandidate',showCandidate);
 bizSheet=nav('bizSheet',bizSheet);
 vacSheet=nav('vacSheet',vacSheet);
