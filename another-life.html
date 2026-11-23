@@ -95,10 +95,10 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
 .pill{display:inline-block;background:#ffffff15;border-radius:99px;padding:2px 9px;font-size:12px;margin:2px 3px 2px 0}
 .obit{font-family:Fredoka;font-size:17px;line-height:1.5;text-align:center;margin-bottom:12px}
 #btnSide.on{border-color:var(--acc);color:var(--acc)}
-@media (min-width:1060px){
- body.side #app{transition:transform .45s cubic-bezier(.2,.9,.3,1)}
- body.side.panel-open #app{transform:translateX(-255px)}
- body.side #sheet{inset:10px auto 12px calc(50% + 15px);width:min(480px,calc(50% - 30px));background:none;align-items:stretch;transition:opacity .3s,transform .45s cubic-bezier(.2,.9,.3,1)}
+@media (min-width:760px){
+ body.side #app{margin-left:calc((100vw - min(520px,100vw)) / 2);transition:margin-left .45s cubic-bezier(.2,.9,.3,1),max-width .45s cubic-bezier(.2,.9,.3,1)}
+ body.side.panel-open #app{max-width:min(520px,calc(50vw - 20px));margin-left:calc(50vw - min(520px,calc(50vw - 20px)) - 5px)}
+ body.side #sheet{inset:10px auto 12px calc(50vw + 5px);width:min(480px,calc(50vw - 20px));background:none;align-items:stretch;transition:opacity .3s,transform .45s cubic-bezier(.2,.9,.3,1)}
  body.side #sheet.hidden{transform:translateX(70px)}
  body.side .sheet-inner{max-height:none;height:100%;border-radius:24px;border-bottom:1px solid var(--line);transform:none!important;box-shadow:0 20px 50px #0007}
 }
@@ -114,10 +114,10 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
   <div id="toolbar">
     <a id="btnGames" href="games.html">&larr; All games</a>
     <button id="btnUp">⭐ Upgrades<span class="badge" id="ptsBadge">0</span></button>
+    <button id="btnSide">🖥️ Side view</button>
     <button id="btnRewind" class="hidden">⏪ Rewind</button>
     <button id="btnCreator" class="hidden">🪄 Creator</button>
     <button id="btnAch">🏆 Ribbons</button>
-    <button id="btnSide" class="hidden">🖥️ Side view</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
   </div>
@@ -300,8 +300,8 @@ let navStack=[],curNav=null,lastSub={};
 function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen){navStack=[];const sub=lastSub[name];if(sub&&sub.title)navStack=[Object.assign({},sub,{parentEntry:{key,name,go:()=>fn(...args),title:null,forced:false}})]}if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,name,go:()=>fn(...args.map(a=>a&&typeof a==='object'&&a.id&&S?(S.rel.find(x=>x.id===a.id)||S.biz.find(x=>x.id===a.id)||a):a)),title:null};if(navStack.length&&!navStack[0].forced&&!['showCandidate','findDate','startScreen','showDeath','creatorSheet'].includes(name))lastSub[navStack[0].name]=curNav;fn(...args)}}
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev.parentEntry)navStack=[prev.parentEntry];curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
-let sheetForced=false;const WIDE=()=>innerWidth>=1060;const isSide=()=>!!M.side&&WIDE();
-function applySide(){document.body.classList.toggle('side',isSide());const b=$('#btnSide');b.classList.toggle('hidden',!WIDE());b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view'}
+let sheetForced=false;const WIDE=()=>innerWidth>=760;const isSide=()=>!!M.side&&WIDE();
+function applySide(){document.body.classList.toggle('side',isSide());const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
@@ -675,7 +675,7 @@ $('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=las
 document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(!S)return;if(sheetOpen){if(isSide()&&!sheetForced)closeSheet();else return}if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
 $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnAch').onclick=()=>S&&achSheet();
-$('#btnSide').onclick=()=>{M.side=!M.side;saveMeta();applySide();toast(M.side?'Side view on: menus open next to your game.':'Side view off.')};
+$('#btnSide').onclick=()=>{M.side=!M.side;saveMeta();applySide();toast(!M.side?'Side view off.':WIDE()?'Side view on: menus open next to your game.':'Side view is on, but this screen is too narrow. Turn your device sideways or widen the window.')};
 addEventListener('resize',applySide);applySide();
 $('#btnSound').onclick=()=>{M.sound=!M.sound;saveMeta();render()};
 $('#btnNew').onclick=()=>{const w=el('div');w.append(el('p','evt-text','Abandon this life and start over?'));w.append(opt('','Yes, start a new life','',()=>{closeSheet();setTimeout(startScreen,300)},{cls:'primary'}));w.append(opt('','Keep living','',closeSheet));sheet('New life?',w)};
