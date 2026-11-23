@@ -435,6 +435,7 @@ function ageUp(){
  fix();
  if(!S.alive){Q=[showDeath];nextQ();return}
  if(S.jail){if(chance(.6))queuePrisonEvent()}else if(S.job&&chance(.55))queueJobEvent();
+ if(!S.jail&&S.age>=4)queueNPC();
  if(!S.jail&&S.age>=2&&chance(S.job?.4:.6))queueEvent();
  if(chance(.08)&&S.age>=4)queueEvent();
  nextQ();
@@ -458,7 +459,7 @@ function yearly(){
  if(S.ill){S.st.health-=S.ill.sev;if(chance(.15)){log(`I recovered from ${S.ill.n} on my own.`,'good');S.ill=null}else if(S.st.health<35){log(`⚠️ My ${S.ill.n} is getting worse. I really need to see a doctor!`,'bad');Q.push(()=>toast('⚠️ Your health is failing. Visit a doctor in Activities.'))}}
  else if(chance(a>60?.12:a>40?.06:.035)){const i=pick(ILLS);S.ill={n:i[0],sev:i[1]};log(`I came down with ${i[0]}. 🤒 I should see a doctor.`,'bad');S.st.happy-=4}
  // people
- S.rel.forEach(r=>{if(!r.alive)return;r.age++;if(!['Son','Daughter'].includes(r.role))r.rel=clamp(r.rel-rnd(0,4));
+ S.rel.forEach(r=>{if(!r.alive)return;r.age++;if(!['Son','Daughter','Grandson','Granddaughter'].includes(r.role))r.rel=clamp(r.rel-rnd(0,4));
   const p=r.age>70?Math.pow((r.age-70)/32,2)*.7:0.002;
   if(chance(p)){r.alive=false;log(`My ${r.role.toLowerCase()} ${r.name} died at age ${r.age}. 🕊️`,'bad');S.st.happy-=r.rel>60?18:8;sad();
    if(['Mother','Father'].includes(r.role)&&chance(.45)){const inh=has('trust')?rnd(80000,600000):rnd(3000,90000);S.money+=inh;log(`I inherited ${fmt(inh)}.`,'good')}
@@ -728,11 +729,78 @@ function queueJobEvent(){if(!S.job)return;const pool=JOBEV[S.job.id];if(!pool||!
    if(chance(p)){S.job.perf=clamp(S.job.perf+rnd(6,12));E(Object.assign({happy:3},o.g||{}));return good}
    S.job.perf=clamp(S.job.perf-rnd(5,10));E(Object.assign({happy:-3},o.b||{}));return bad}]),e.ic))}
 
+// ---------- people make their own decisions ----------
+const isKid=r=>['Son','Daughter'].includes(r.role);
+function npcEvents(){const out=[],a=S.age,p=partner(),f=x=>first(x.name),mine=S.name.split(' ').slice(-1)[0];
+ const add=(w,ic,t,c)=>out.push({w,ic,t,c});
+ if(p){if(p.since==null)p.since=a;const yrs=a-p.since,pr=p.gender==='male'?'he':'she',obj=p.gender==='male'?'him':'her';
+  // partner proposes
+  if(p.role==='Partner'&&yrs>=1&&p.rel>=65)add(.3,'💍',`${f(p)} takes your hand at dinner, gets down on one knee and asks you to marry ${obj}!`,[
+   ['Say yes! 💍',()=>{p.role=p.gender==='male'?'Fiancé':'Fiancée';p.since=a;p.rel=clamp(p.rel+15);E({happy:14});Q.push(confetti);log(`${p.name} proposed and I said yes! 💍`,'big');return `You said yes! You and ${f(p)} are engaged.`}],
+   ['I need more time',()=>{p.rel=clamp(p.rel-20);if(p.rel<40&&chance(.5)){S.rel=S.rel.filter(r=>r!==p);E({happy:-12});log(`${p.name} proposed, I said no, and ${pr} left me.`,'bad');return `${f(p)} was heartbroken and ended things.`}return `${f(p)} was hurt but said ${pr} would wait.`}]]);
+  // fiancé pushes for a wedding
+  if((p.role==='Fiancé'||p.role==='Fiancée')&&yrs>=1)add(.45,'💒',`${f(p)} is ready to set a wedding date. "Let's do this!"`,[
+   ['Courthouse wedding ($500)',()=>wed(p,'courthouse wedding',500)],['Vineyard wedding ($25,000)',()=>wed(p,'vineyard wedding',25000)],['Big ballroom wedding ($80,000)',()=>wed(p,'ballroom wedding',80000)],
+   ['Not yet',()=>{p.rel=clamp(p.rel-12);return `${f(p)} sighed. "Okay... but not forever."`}]]);
+  // spouse wants a baby
+  const kidsN=kids().filter(k=>k.alive).length;
+  if(p.role==='Spouse'&&a<46&&p.age<48&&kidsN<4&&p.rel>=50)add(.25,'👶',`${f(p)} curls up next to you. "I think I'm ready for ${kidsN?'another baby':'a baby'}. Are you?"`,[
+   ['Yes, let\'s try',()=>{p.rel=clamp(p.rel+8);if(chance(.6)){babyBorn();return 'A year later, your family grew! 🍼'}return 'It has not happened yet, but you are both hopeful.'}],
+   ['Let\'s adopt',()=>{if(S.money<20000)return 'You could not afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return 'You adopted a child together. 💛'}],
+   ['Not now',()=>{p.rel=clamp(p.rel-8);return `${f(p)} looked disappointed.`}]]);
+  // spouse wants a house
+  if(p.role==='Spouse'&&!S.assets.some(x=>x.kind==='house')&&a>=22)add(.15,'🏡',`${f(p)} keeps sending you house listings. "We need a place of our own."`,[
+   ['Start house hunting',()=>{p.rel=clamp(p.rel+6);Q.push(()=>assetSheet());return 'You started browsing homes together.'}],['We can\'t afford it yet',()=>{p.rel=clamp(p.rel-4);return `${f(p)} understood, mostly.`}]]);
+  // partner wants a pet
+  if(yrs>=1&&!S.pets.some(x=>x.alive))add(.12,'🐶',`${f(p)} found a ${pick(['puppy','kitten'])} at the shelter and is already in love. "Can we keep it?"`,[
+   ['Of course',()=>{addPet(chance(.5)?PETS[0]:PETS[1]);p.rel=clamp(p.rel+8);return 'Your home just got a lot more fun.'}],['No pets',()=>{p.rel=clamp(p.rel-6);return `${f(p)} pouted all week.`}]]);
+  // partner surprises you
+  if(p.rel>=55)add(.18,'🎁',`${f(p)} planned a surprise for you!`,[
+   ['Open it',()=>{const s=pick(['a weekend getaway to the coast','tickets to your favorite band','a handwritten letter and breakfast in bed','a puppy-themed cake for no reason']);E({happy:10});p.rel=clamp(p.rel+6);log(`${p.name} surprised me with ${s}. 💕`,'good');return `It was ${s}. You felt so loved.`}]]);
+  // jealousy
+  if(S.rel.some(r=>r.alive&&r.role==='Friend'))add(.07,'😒',`${f(p)} is jealous of how much time you spend with your friends.`,[
+   ['Reassure them',()=>{if(chance(.6+S.karma/300)){p.rel=clamp(p.rel+5);return `${f(p)} felt better after you talked.`}p.rel=clamp(p.rel-6);return 'It turned into an argument.'}],['Tell them to relax',()=>{p.rel=clamp(p.rel-12);return `${f(p)} gave you the silent treatment.`}]]);
+  // relationship in trouble
+  if(p.rel<30)add(.5,'💔',p.role==='Spouse'?`${f(p)} sits you down. "I'm not happy. I want a divorce."`:`${f(p)} says ${pr} needs to talk. "I don't think this is working."`,[
+   ['Fight for us',()=>{if(chance(.35+S.karma/250+S.st.looks/400)){p.rel=clamp(p.rel+25);return `You talked all night. ${f(p)} agreed to try again.`}return endIt(p)}],
+   ['Let them go',()=>endIt(p)]]);
+ }
+ // parents
+ ppl(['Mother','Father']).forEach(r=>{
+  if(a>=22&&S.money>5000)add(.06,'📞',`Your ${r.role.toLowerCase()} ${f(r)} calls. Money is tight and they ask for $3,000.`,[['Send it',()=>{S.money-=3000;r.rel=clamp(r.rel+15);E({karma:4});return `${f(r)} cried with relief.`}],['I can\'t right now',()=>{r.rel=clamp(r.rel-10);return `${f(r)} said they understood.`}]]);
+  if(a<18&&a>=6)add(.07,'💵',`${f(r)} gives you some money for doing chores.`,[['Thanks!',()=>{const m=has('trust')?rnd(100,1000):rnd(10,80);S.money+=m;r.rel=clamp(r.rel+3);return `You got ${fmt(m)}.`}]]);
+  if(a>=13&&a<18)add(.06,'🚫',`${f(r)} grounds you for staying out past curfew.`,[['Accept it',()=>{r.rel=clamp(r.rel+4);E({happy:-3});return 'You stayed in for two weeks.'}],['Sneak out anyway',()=>{if(chance(.5)){E({happy:5});return 'You got away with it.'}r.rel=clamp(r.rel-12);return 'Caught. Grounded for a month.'}]]);
+ });
+ const mom=ppl('Mother')[0],dad=ppl('Father')[0];
+ if(mom&&dad&&mom.age<70&&!S.flags.parentsSplit)add(.015,'💔',`${f(mom)} and ${f(dad)} announce they are getting divorced.`,[['Support them both',()=>{S.flags.parentsSplit=1;E({happy:-8});mom.rel=clamp(mom.rel+5);dad.rel=clamp(dad.rel+5);return 'It was hard, but you stayed close to both.'}]]);
+ // siblings
+ ppl(['Brother','Sister']).forEach(r=>{
+  if(r.age>=24&&r.age<=40&&!r.married)add(.05,'💒',`Your ${r.role.toLowerCase()} ${f(r)} is getting married and wants you there!`,[['Attend the wedding',()=>{r.married=1;r.rel=clamp(r.rel+12);E({happy:6});S.money-=300;return 'You danced all night.'}],['Skip it',()=>{r.married=1;r.rel=clamp(r.rel-20);return `${f(r)} won't forget that.`}]]);
+  if(a>=20&&S.money>3000)add(.04,'🤲',`${f(r)} asks to borrow $2,000.`,[['Lend it',()=>{S.money-=2000;r.rel=clamp(r.rel+10);if(chance(.5)){S.money+=2000;return 'They paid you back.'}return 'They never paid you back.'}],['No',()=>{r.rel=clamp(r.rel-8);return 'Awkward family dinner.'}]]);
+ });
+ // friends
+ S.rel.filter(r=>r.alive&&r.role==='Friend').forEach(r=>{
+  if(r.rel<15)add(.4,'👋',`${f(r)} stopped answering your texts.`,[['Let it go',()=>{S.rel=S.rel.filter(x=>x!==r);log(`My friendship with ${r.name} faded.`);return 'Some friendships fade.'}],['Reach out',()=>{if(chance(.5)){r.rel=clamp(r.rel+25);return 'You reconnected over coffee.'}S.rel=S.rel.filter(x=>x!==r);return 'They did not reply.'}]]);
+  else if(a>=12)add(.06,'🎉',`${f(r)} invites you ${pick(['on a road trip','to a concert','to a beach weekend','to a game night'])}.`,[['Go!',()=>{r.rel=clamp(r.rel+10);E({happy:7});if(a>=18)S.money-=200;return 'So much fun.'}],['Not this time',()=>{r.rel=clamp(r.rel-6);return `${f(r)} went without you.`}]]);
+ });
+ // kids
+ kids().filter(k=>k.alive).forEach(k=>{
+  if(k.age===16&&!k.car)add(.6,'🚗',`${f(k)} just got their license and begs you for a car.`,[['Buy a used car ($8,000)',()=>{if(S.money<8000)return 'You could not afford it.';S.money-=8000;k.car=1;k.rel=clamp(k.rel+20);return `${f(k)} screamed with joy.`}],['They can save up',()=>{k.car=1;k.rel=clamp(k.rel-10);return `${f(k)} slammed their door.`}]]);
+  if(k.age===18&&!k.college)add(.7,'🎓',`${f(k)} got into college! Tuition is $40,000.`,[['Pay for it',()=>{k.college=1;if(S.money<40000)return 'You could not afford it. They took loans.';S.money-=40000;k.rel=clamp(k.rel+20);return 'You are a proud parent.'}],['They take loans',()=>{k.college=1;k.rel=clamp(k.rel-5);return `${f(k)} understood.`}]]);
+  if(k.age>=14&&k.age<18)add(.05,'🌙',`You catch ${f(k)} sneaking out at midnight.`,[['Ground them',()=>{k.rel=clamp(k.rel-6);return `${f(k)} is furious, but home.`}],['Have a real talk',()=>{if(chance(.6)){k.rel=clamp(k.rel+8);return 'They opened up. You understand them better.'}k.rel=clamp(k.rel-4);return 'They rolled their eyes.'}]]);
+  if(k.age>=24&&k.age<=40&&!k.married)add(.08,'💒',`${f(k)} is getting married!`,[['Pay for part of the wedding ($15,000)',()=>{k.married=1;if(S.money>=15000){S.money-=15000;k.rel=clamp(k.rel+20)}E({happy:10});return 'You cried during the vows.'}],['Just attend',()=>{k.married=1;k.rel=clamp(k.rel+5);E({happy:8});return 'A beautiful day.'}]]);
+  if(k.married&&k.age<=45&&S.rel.filter(r=>['Grandson','Granddaughter'].includes(r.role)).length<6)add(.12,'👶',`${f(k)} calls with big news: you are going to be a grandparent!`,[['Celebrate!',()=>{const g=pick(['male','female']);const kl=k.name.split(' ').slice(-1)[0];S.rel.push({id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+kl,gender:g,age:0,rel:85,role:g==='male'?'Grandson':'Granddaughter',alive:true});E({happy:12});Q.push(confetti);log(`I became a grandparent! 👶`,'big');return 'Your heart is so full.'}]]);
+ });
+ return out}
+function wed(p,kind,cost){if(S.money<cost&&cost>500)return 'You could not afford that. Maybe a smaller wedding?';S.money-=cost;p.role='Spouse';p.since=S.age;p.rel=clamp(p.rel+15);E({happy:15+Math.round(cost/20000)});Q.push(confetti);log(`I married ${p.name} with a ${kind}! 💒`,'big');return `You married ${first(p.name)}. Best day of your life.`}
+function endIt(p){S.rel=S.rel.filter(r=>r!==p);E({happy:-14});if(p.role==='Spouse'){const l=Math.max(0,S.money*.5);S.money-=l;log(`${p.name} and I divorced. I lost ${fmt(l)}.`,'bad');return `The divorce is final. You lost ${fmt(l)} in the settlement.`}log(`${p.name} and I broke up.`,'bad');return `You and ${first(p.name)} broke up.`}
+function queueNPC(){const ev=npcEvents().filter(e=>chance(e.w));shuffle(ev).slice(0,2).forEach(e=>Q.push(()=>choice('Your people',e.t,e.c,e.ic)))}
+
 function queueEvent(){const pool=EV.filter(e=>S.age>=e.a[0]&&S.age<=e.a[1]&&(!e.cond||e.cond())&&(!e.rare||chance(e.rare)));if(!pool.length)return;const e=pick(pool);Q.push(()=>choice(`Age ${S.age}`,e.t,e.c,e.ic))}
 
 // ---------- people ----------
 function meet(pref){const g=pref==='men'?'male':pref==='women'?'female':pick(['male','female']);return{id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:Math.max(16,S.age+rnd(-4,4)),looks:rnd(20,99),smarts:rnd(20,99),job:pick(['nurse','barista','engineer','artist','teacher','chef','lawyer','student','zookeeper','photographer','pilot','designer']),rel:60,alive:true}}
-function addPartner(p){p.role='Partner';delete p.looks;delete p.smarts;S.rel.push(p);S.st.happy+=8}
+function addPartner(p){p.role='Partner';p.since=S.age;delete p.looks;delete p.smarts;S.rel.push(p);S.st.happy+=8}
 function addPet(t){const p={name:pick(PETNAMES),type:t[0],ic:t[1],age:0,life:t[3]+rnd(-2,3),alive:true};S.pets.push(p);log(`I adopted a ${t[0].toLowerCase()} named ${p.name}! ${t[1]}`,'good');S.st.happy+=8}
 function stars(n){return'★'.repeat(Math.max(1,Math.round(n/20)))+'☆'.repeat(5-Math.max(1,Math.round(n/20)))}
 function findDate(){if(S.age<16)return toast('You are too young to date.');if(partner())return toast('You are already in a relationship.');const w=el('div');w.append(el('p','evt-text','Who are you looking for?'));[['men','👨 Men'],['women','👩 Women'],['any','💫 Anyone']].forEach(([k,l])=>w.append(opt('',l,'',()=>{DATES={pref:k,list:[]};matchesSheet(k)})));sheet('Find a Date 💘',w)}
@@ -746,7 +814,7 @@ function matchesSheet(pref){if(DATES.pref!==pref||!DATES.list.length){DATES={pre
 function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else{p.asked=true;result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}}));w.append(opt('👋','Pass','',()=>{if(DATES.list.includes(p))goBack();else closeSheet()}));sheet('Your Date',w)}
 
 function relSheet(){const w=el('div');
- const groups=[['Family',['Mother','Father','Brother','Sister']],['Love',['Partner','Fiancé','Fiancée','Spouse']],['Children',['Son','Daughter']],['Friends',['Friend']]];
+ const groups=[['Family',['Mother','Father','Brother','Sister']],['Love',['Partner','Fiancé','Fiancée','Spouse']],['Children',['Son','Daughter']],['Grandchildren',['Grandson','Granddaughter']],['Friends',['Friend']]];
  groups.forEach(([g,roles])=>{const list=S.rel.filter(r=>roles.includes(r.role));if(!list.length&&g!=='Love')return;w.append(sec(g));
   list.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';w.append(opt(r.alive?(r.gender==='male'?'🧑':'👩'):'🪦',`${r.name}`,`${r.role} · ${r.alive?'age '+r.age:'deceased'}`,()=>personSheet(r),{rt:r.alive?`<div class="bar" style="width:70px"><i style="width:${r.rel}%;background:${c}"></i></div>`:''}))});
   if(g==='Love'&&!partner())w.append(opt('💘','Find a date','Meet someone new',findDate))});
@@ -774,8 +842,8 @@ function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}
  if(['Mother','Father'].includes(r.role))w.append(opt('💵','Ask for money','',go('money',()=>{if(chance(r.rel/160+L())){const m=has('trust')?rnd(1000,25000):rnd(20,1500);S.money+=m;return`${first(r.name)} gave me ${fmt(m)}.`}r.rel-=4;return`${first(r.name)} said no.`})));
  if(['Son','Daughter'].includes(r.role)){if(r.age<11)w.append(opt('📖','Read a bedtime story','',go('story',()=>{r.rel+=8;E({happy:5});return`I read ${first(r.name)} a bedtime story. They fell asleep smiling.`})));if(r.age>=18)w.append(opt('💸','Give $10,000','',go('give',()=>{if(S.money<10000)return'I could not afford it.';S.money-=10000;r.rel+=15;return`I gave ${first(r.name)} $10,000. They were thrilled.`})))}
  if(r.role==='Partner'){w.append(opt('🍝','Date night ($200)','',go('night',()=>{S.money-=200;r.rel+=rnd(6,14);E({happy:6});return'We had a romantic dinner.'})));
-  w.append(opt('💍','Propose ($3,000 ring)','',go('prop',()=>{S.money-=3000;if(r.rel>=60&&chance(.55+r.rel/300)){r.role=r.gender==='male'?'Fiancé':'Fiancée';E({happy:12});Q.push(confetti);return`${first(r.name)} said YES! We are engaged. 💍`}r.rel-=15;E({happy:-10});return`${first(r.name)} said they are not ready. Awkward.`})))}
- if(r.role==='Fiancé'||r.role==='Fiancée'){w.append(sec('Plan the wedding'));[['🏛️','Courthouse wedding',500],['🍇','Vineyard wedding',25000],['🏰','Grand ballroom wedding',80000],['🏝️','Destination wedding',150000]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(S.money<c&&c>500)return toast('Not enough money.');S.money-=c;r.role='Spouse';r.rel=clamp(r.rel+15);E({happy:15+Math.round(c/20000)});log(`I married ${r.name} with a ${n.toLowerCase()}! 💒`,'big');Q.push(confetti);result('Just married! 💒',`I married ${first(r.name)}. Best day of my life.`,'💒')})))}
+  w.append(opt('💍','Propose ($3,000 ring)','',go('prop',()=>{S.money-=3000;if(r.rel>=60&&chance(.55+r.rel/300)){r.role=r.gender==='male'?'Fiancé':'Fiancée';r.since=S.age;E({happy:12});Q.push(confetti);return`${first(r.name)} said YES! We are engaged. 💍`}r.rel-=15;E({happy:-10});return`${first(r.name)} said they are not ready. Awkward.`})))}
+ if(r.role==='Fiancé'||r.role==='Fiancée'){w.append(sec('Plan the wedding'));[['🏛️','Courthouse wedding',500],['🍇','Vineyard wedding',25000],['🏰','Grand ballroom wedding',80000],['🏝️','Destination wedding',150000]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(S.money<c&&c>500)return toast('Not enough money.');S.money-=c;r.role='Spouse';r.since=S.age;r.rel=clamp(r.rel+15);E({happy:15+Math.round(c/20000)});log(`I married ${r.name} with a ${n.toLowerCase()}! 💒`,'big');Q.push(confetti);result('Just married! 💒',`I married ${first(r.name)}. Best day of my life.`,'💒')})))}
  if(r.role==='Spouse'){w.append(opt('👶','Try for a baby','',go('baby',()=>{if(S.age>48||r.age>52)return'It is not happening for us at this age. Maybe adopt?';if(chance(.5)){babyBorn();return'We are having a baby! 🍼'}return'No luck this time.'})));
   w.append(opt('🏠','Adopt a child ($20,000)','',go('adopt',()=>{if(S.money<20000)return'We cannot afford adoption yet.';S.money-=20000;babyBorn(rnd(0,6));return'We adopted a child! Our family grew. 💛'})))}
  if(['Partner','Fiancé','Fiancée','Spouse'].includes(r.role))w.append(opt('💔',r.role==='Spouse'?'Divorce':'Break up','',()=>{if(r.role==='Spouse'){const l=Math.max(0,S.money*.5);S.money-=l;log(`I divorced ${r.name}. I lost ${fmt(l)} in the settlement.`,'bad')}else log(`I broke up with ${r.name}.`,'bad');S.rel=S.rel.filter(x=>x!==r);E({happy:-10});closeSheet()},{cls:'danger'}));
