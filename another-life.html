@@ -917,8 +917,8 @@ function actSheet(){P();if(S.jail)return prisonSheet();const w=el('div');const a
  A('🏋️','Go to the gym','Lift, run, yoga, boxing, climbing',10,gymSheet);
  A('🧘','Meditate','Breathing, nature walk, retreat',8,medSheet);
  A('📖','Visit the library','Pick what to read',5,libSheet);
- A('🩺','See a doctor',S.age<18?'Free':'$300',0,()=>{if(!once('doc'))return;if(S.age>=18)S.money-=300;if(S.ill){if(chance(.8)){const n=S.ill.n;S.ill=null;E({health:8});act('Doctor',`The doctor treated my ${n}. I feel much better.`,'🩺')}else{E({health:-2});act('Doctor','The treatment did not work this time.','🩺')}}else{E({health:3});act('Doctor','A clean bill of health!','🩺')}});
- A('💉','Plastic surgery','$8,000',18,()=>{if(!once('surg'))return;if(S.money<8000)return toast('Not enough cash.');S.money-=8000;if(chance(.75+L())){E({looks:rnd(5,15)});act('Surgery','The surgery went great. I look amazing. ✨','💉')}else{E({looks:-10,happy:-8});act('Surgery','The surgery was botched. I look worse.','😬')}});
+ A('🩺','Doctor & health',S.ill?`You have ${S.ill.n}. Get treated`:'Checkups, treatment, therapy',0,()=>doctorSheet());
+ A('💉','Plastic surgery','Nose job, facelift, botox and more',18,surgerySheet);
  A('🌙','Night out','Club, bar, karaoke, bowling, comedy',18,nightSheet);
  A('🧳','Go on vacation','Pick a trip',18,vacSheet);
  A('💆','Salon & spa','Haircut, nails, spa day',12,spaSheet);
@@ -1273,6 +1273,29 @@ function hookupSheet(p){if(S.age<18||p.age<18)return toast('You must both be 18.
  w.append(opt('🛡️','Use protection','',go(true)));w.append(opt('🎲','Skip protection','Risky',go(false)));w.append(opt('🙅','Change your mind','',()=>{closeSheet();toast('You called it a night.')}));
  sheet('Hookup 😏',w)}
 
+
+// ---------- doctor & health (visit as often as you like) ----------
+function doctorSheet(){const w=el('div'),kid=S.age<18;const cost=c=>kid?0:c;
+ w.append(el('div','info',S.ill?`<b>🤒 You have ${S.ill.n}</b><br>It costs you health every year until it is treated. You can try as many treatments as you want.`:`<b>💚 You are not sick right now</b><br>Health ${S.st.health}%`+(kid?'<br>Your parents cover the bills.':'')));
+ const treat=(ic,n,c,p,minor)=>w.append(opt(ic,n,`${cost(c)?fmt(cost(c)):'Free'} · ${Math.round(p*100)}% chance${minor?' · minor illnesses only':''}`,()=>{if(!S.ill)return toast('You are not sick.');if(S.money<cost(c)&&cost(c)>0)return toast('Not enough money.');S.money-=cost(c);
+  const serious=S.ill.sev>=6;let pp=minor&&serious?.05:p;if(chance(pp+L())){const n2=S.ill.n;S.ill=null;E({health:rnd(6,12),happy:4});log(`${n} cured my ${n2}. 💊`,'good');fix();act(n,`Treatment worked! You are cured of ${n2}. 💚`,ic)}
+  else{E({happy:-2});fix();act(n,minor&&serious?`That is too serious for ${n.toLowerCase()}. Try a specialist or the ER.`:'The treatment did not work this time. You can try again or try something else.',ic)}}));
+ if(S.ill){w.append(sec('Get treated'));
+  treat('💊','Pharmacy medicine',30,.45,true);
+  treat('🏥','Urgent care',150,.6,true);
+  treat('🩺','Family doctor',300,.72);
+  treat('👩‍⚕️','Specialist',2500,.9);
+  treat('🚑','Emergency room',6000,.96);
+  treat('🌿','Herbal remedies',80,.2);
+  treat('📍','Acupuncture',200,.28);}
+ w.append(sec('Stay healthy'));
+ w.append(opt('📋','Yearly checkup',`${cost(250)?fmt(cost(250)):'Free'} · +health once a year`,()=>{if(!once('checkup'))return;S.money-=cost(250);E({health:rnd(2,5)});fix();act('Checkup',pick(['Clean bill of health!','The doctor says keep doing what you are doing.','All your numbers look good.']),'📋')}));
+ w.append(opt('🥗','See a nutritionist',`${cost(150)?fmt(cost(150)):'Free'} · once a year`,()=>{if(!once('nutri'))return;S.money-=cost(150);E({health:rnd(3,6)});fix();act('Nutritionist','You have a new meal plan and more energy.','🥗')}));
+ w.append(opt('🛋️','Talk to a therapist',`${cost(180)?fmt(cost(180)):'Free'} · +happiness once a year`,()=>{if(!once('therapy'))return;S.money-=cost(180);E({happy:rnd(6,12)});fix();act('Therapy','Talking it through really helped.','🛋️')}));
+ w.append(opt('🦷','Dentist',`${cost(120)?fmt(cost(120)):'Free'} · once a year`,()=>{if(!once('dentist'))return;S.money-=cost(120);E({looks:1,health:1});fix();act('Dentist',chance(.8)?'No cavities! 🦷':'One small cavity. Floss more.','🦷')}));
+ if(S.age>=18)w.append(opt('💉','Plastic surgery','Pick a procedure',surgerySheet));
+ sheet('Doctor & Health 🩺',w)}
+function surgerySheet(){const w=el('div');[['👃','Nose job',6000,8],['😁','Teeth whitening',600,3],['💆','Facelift',12000,10],['✨','Botox',800,4],['🏋️','Liposuction',9000,7]].forEach(([ic,n,c,g])=>w.append(opt(ic,n,'',()=>{if(S.money<c)return toast('Not enough money.');if(!once('surg_'+n))return;S.money-=c;if(chance(.8+L())){E({looks:rnd(Math.ceil(g/2),g),happy:5});fix();act(n,'You look amazing. ✨',ic)}else{E({looks:-rnd(3,8),happy:-8});fix();act(n,'The procedure was botched. You look worse. 😬',ic)}},{rt:fmt(c)})));sheet('Plastic Surgery 💉',w)}
 // ---------- upgrades / ribbons / creator ----------
 function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
  UPGRADES.forEach(u=>{const own=has(u.id);w.append(opt(u.ic,u.n,u.d,()=>{if(own)return toast('Already unlocked!');if(M.points<u.cost)return toast(`You need ${u.cost} Life Points.`);M.points-=u.cost;M.up[u.id]=1;saveMeta();confetti();toast(`${u.n} unlocked!`);render();upgradeSheet()},{rt:own?'✅':`⭐ ${u.cost}`}))});
@@ -1404,6 +1427,8 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+doctorSheet=nav('doctorSheet',doctorSheet);
+surgerySheet=nav('surgerySheet',surgerySheet);
 makeLoveSheet=nav('makeLoveSheet',makeLoveSheet);
 familySheet=nav('familySheet',familySheet);
 hookupSheet=nav('hookupSheet',hookupSheet);
