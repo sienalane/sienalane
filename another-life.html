@@ -328,7 +328,7 @@ function newLife(o={}){
 function log(t,cls=''){S.log.push({a:S.age,t,c:cls});if(S.log.length>600)S.log.splice(0,S.log.length-600)}
 function E(o){for(const k in o){if(k in S.st)S.st[k]+=o[k];else if(k==='money')S.money+=o[k];else S[k]+=o[k]}}
 function fix(){for(const k in S.st)S.st[k]=clamp(S.st[k]);S.karma=clamp(S.karma);S.fame=clamp(S.fame);checkAch();save();render()}
-const net=()=>S.money-S.debt+S.assets.reduce((a,b)=>a+b.val,0)+S.biz.reduce((a,b)=>a+b.val,0);
+const net=()=>S.money-S.debt+S.assets.reduce((a,b)=>a+b.val,0)+S.biz.reduce((a,b)=>a+b.val,0)+invTotal();
 const first=n=>n.split(' ')[0];
 const year=()=>S.born+S.age;
 const ppl=role=>S.rel.filter(r=>r.alive&&(Array.isArray(role)?role.includes(r.role):r.role===role));
@@ -365,7 +365,7 @@ $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&$('#sheetClose').style.display!=='none')closeSheet()});
 function opt(ic,label,sub,fn,o={}){const b=el('button','opt'+(o.cls?' '+o.cls:''));b.innerHTML=`${ic?`<span class="ic">${ic}</span>`:''}<span class="tx">${label}${sub?`<span class="sub">${sub}</span>`:''}</span>${o.rt?`<span class="rt">${o.rt}</span>`:''}`;b.onclick=()=>{beep(520,.05);fn()};return b}
 function sec(t){return el('div','sec',t)}
-function choice(title,text,chs,icon='❓'){const w=el('div');w.append(el('div','evt-icon',icon),el('p','evt-text',text));chs.forEach(([l,f])=>w.append(opt('',l,'',()=>{const r=f();fix();if(r)result(title,r,icon);else closeSheet()})));sheet(title,w,true);beep(440,.1,'triangle')}
+function choice(title,text,chs,icon='❓'){const w=el('div');w.append(el('div','evt-icon',icon),el('p','evt-text',text));chs.forEach(([l,f])=>w.append(opt('',l,'',()=>{let r;try{r=f()}catch(e){r='Things changed before you could act on that.'};fix();if(r)result(title,r,icon);else closeSheet()})));sheet(title,w,true);beep(440,.1,'triangle')}
 function result(title,r,icon){log(r,/lost|hurt|fired|caught|died|broke|failed|sad|rejected|botched|declined/i.test(r)?'bad':'');const w=el('div');w.append(el('div','evt-icon',icon||'✨'),el('p','evt-text',r));const rt=returnTarget();if(rt)w.append(opt('‹',`Back to ${rt.e.title}`,'',()=>{navStack=rt.stack.slice();curNav=rt.e;rt.e.go()}));w.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet(title,w,true);fix()}
 function act(title,r,icon){result(title,r,icon)}
 
@@ -376,7 +376,7 @@ function mood(){const h=S.st.happy;return h>80?'😄':h>60?'🙂':h>40?'😐':h>
 function openMenu(fn){if(sheetOpen){if(sheetForced)return;closeSheet()}fn()}
 function renderGlance(){const g=$('#glance');if(!g||!(document.body.classList.contains('wide')||document.body.classList.contains('glance-free'))||!S)return;g.innerHTML='';
  if(!S.alive){g.append(sec('Rest in peace'),el('div','info',`${S.name} lived to ${S.age}.`));return}
- g.append(sec('Right now'));
+ g.append(sec('Right now'));if(S.jail)g.append(el('div','info',`<b>⛓️ In prison</b><br>${S.jail} year${S.jail===1?'':'s'} left.`));
  const job=S.job?CAR[S.job.id]:null;
  g.append(el('div','info',job?`<b>${job.ic} ${job.lv[S.job.lvl][0]}</b><br>${fmt(job.lv[S.job.lvl][1]*(1+S.job.years*.015))}/yr · performance ${S.job.perf}%`:S.school?`<b>🏫 ${S.school.type}${S.school.major?' · '+S.school.major:''}</b><br>${S.school.left} yr left · grades ${S.school.perf}%`:S.retired?`<b>🏖️ Retired</b><br>Pension ${fmt(S.retired)}/yr`:S.age<16?'<b>🧸 Just a kid</b><br>Enjoy it while it lasts.':'<b>💼 No job yet</b><br>Check Career for openings.'));
  if(S.ill)g.append(el('div','info',`<b>🤒 Sick</b><br>${S.ill.n}. See a doctor in Activities.`));
@@ -401,7 +401,7 @@ function render(){
  document.documentElement.style.setProperty('--hue',[330,175,270,210,35][stage()]);
  $('#avatar').textContent=avatar();
  $('#pname').textContent=`${S.name} ${S.alive?mood():''}`;
- const title=S.job?CAR[S.job.id].lv[S.job.lvl][0]:S.school?S.school.type:S.retired?'Retired':S.age<5?'Toddler':S.age>=18?'Unemployed':'Kid';
+ const title=S.jail?`In prison (${S.jail} yr left)`:S.job?CAR[S.job.id].lv[S.job.lvl][0]:S.school?S.school.type:S.retired?'Retired':S.age<5?'Toddler':S.age>=18?'Unemployed':'Kid';
  $('#psub').textContent=`Age ${S.age} · ${title} · ${S.city}`;
  const pm=$('#pmoney');pm.textContent=fmt(S.money);pm.classList.toggle('neg',S.money<0);
  $('#pnet').textContent='Net worth '+fmt(net());
@@ -434,14 +434,15 @@ function ageUp(){
  yearly();
  fix();
  if(!S.alive){Q=[showDeath];nextQ();return}
- if(S.job&&chance(.55))queueJobEvent();
- if(S.age>=2&&chance(S.job?.4:.6))queueEvent();
+ if(S.jail){if(chance(.6))queuePrisonEvent()}else if(S.job&&chance(.55))queueJobEvent();
+ if(!S.jail&&S.age>=2&&chance(S.job?.4:.6))queueEvent();
  if(chance(.08)&&S.age>=4)queueEvent();
  nextQ();
 }
 
 function yearly(){
  const a=S.age;
+ premiumYear();
  // milestones
  if(a===1)log('I took my first steps! 👣');
  if(a===2)log(pick(['My first word was "no".','My first word was "dog".','My first word was "more".']));
@@ -476,7 +477,7 @@ function yearly(){
   else if(S.job.perf<15&&chance(.55)){log(`I was fired from my job as ${lv[0]}. 📦`,'bad');S.job=null;S.st.happy-=15}}
  if(S.retired)S.money+=S.retired;
  // expenses
- if(a>=18){let cost=0;const home=S.assets.some(x=>x.kind==='house');
+ if(a>=18&&!S.jail){let cost=0;const home=S.assets.some(x=>x.kind==='house');
   if(!(S.school&&S.school.type!=='High School'))cost+=home?9000:19000;
   else cost+=6000;
   const p=partner();if(p&&p.role==='Spouse')cost*=.7;
@@ -793,9 +794,10 @@ function meets(c){const r=c.req,miss=[];
  if(r.looks&&S.st.looks<r.looks)miss.push(`${r.looks} looks`);
  if(r.health&&S.st.health<r.health)miss.push(`${r.health} health`);
  return miss}
-function jobSheet(){const w=el('div');
+function jobSheet(){P();if(S.jail)return prisonSheet();const w=el('div');
  if(S.job){const c=CAR[S.job.id],lv=c.lv[S.job.lvl];const cl=S.job.perf>66?'var(--good)':S.job.perf>33?'var(--mid)':'var(--bad)';
   w.append(el('div','info',`<b>${c.ic} ${lv[0]}</b><br>Salary ${fmt(lv[1]*(1+S.job.years*.015))}/yr · ${S.job.years} yr${S.job.years===1?'':'s'} here<br>Level ${S.job.lvl+1} of ${c.lv.length}${S.job.lvl<c.lv.length-1?' · Next: '+c.lv[S.job.lvl+1][0]:' · Top of the ladder!'}<div style="margin-top:6px">Performance</div><div class="bar"><i style="width:${S.job.perf}%;background:${cl}"></i></div>`));
+  if(S.job.id==='music')w.append(opt('🎤','Music studio','Write songs, release albums, tour',()=>musicSheet(),{cls:'primary'}));else if(STUDIO[S.job.id])w.append(opt(STUDIO[S.job.id].proj.ic,`${c.n} studio`,`Create a ${STUDIO[S.job.id].proj.n.toLowerCase()}, signature actions, portfolio`,()=>studioSheet(),{cls:'primary'}));
   w.append(opt('💪','Work harder','+performance, -happiness',()=>{if(!once('work'))return;S.job.perf+=rnd(8,15);E({happy:-3,health:-1});act('Work','I put in long hours this year. My boss noticed.','💪')}));
   w.append(opt('📈','Ask for a promotion','',()=>{if(!once('promo'))return;if(S.job.lvl>=c.lv.length-1)return act('Promotion','I am already at the top!','🏔️');if(chance(S.job.perf/180+L())){promote();fix();closeSheet()}else{S.job.perf-=5;act('Promotion','My boss said not yet. Keep pushing.','🙅')}}));
   w.append(opt('🤝','Network with coworkers','',()=>{if(!once('net'))return;S.job.perf+=rnd(2,7);E({happy:2});act('Networking','I grabbed drinks with the team. Good vibes.','🍻')}));
@@ -809,7 +811,7 @@ function jobSheet(){const w=el('div');
  if(S.age>=18&&!S.school&&!S.degrees.includes('HS'))w.append(opt('📝','Get your GED','Earn a high school diploma',()=>{if(!once('ged'))return;if(chance(.5+S.st.smarts/200)){S.degrees.push('HS');act('GED','I passed the GED! I now have a high school diploma.','🎓')}else act('GED','I failed the GED. Try again next year.','📝')}));
  // listings
  if(S.age<16){w.append(el('div','info','You are too young to work. Enjoy being a kid! 🧸'));return sheet('Career 💼',w)}
- const groups=['Starter','Trades','Degree','Graduate','Spotlight'];
+ const groups=['Starter','Trades','Military','Degree','Graduate','Spotlight'];
  groups.forEach(g=>{if(S.age<18&&g!=='Starter')return;w.append(sec(g==='Spotlight'?'🌟 Spotlight':g==='Starter'?(S.age<18?'Part-time jobs':'No degree needed'):g));
   CAREER_LIST.filter(c=>c.g===g).forEach(c=>{const miss=meets(c);const cur=S.job&&S.job.id===c.id;w.append(opt(c.ic,c.lv[0][0],miss.length?'Needs: '+miss.join(', '):`${c.n} · up to ${c.lv[c.lv.length-1][0]}`,()=>{if(cur)return toast('You already work here.');if(miss.length)return toast('Requirements: '+miss.join(', '));interview(c)},{cls:miss.length?'locked':'',rt:fmt(c.lv[0][1])}))})});
  sheet('Career 💼',w)}
@@ -839,16 +841,27 @@ function bizSheet(b){const w=el('div');w.append(el('div','info',`<b>${b.icon} ${
  sheet(b.name,w)}
 
 // ---------- activities ----------
-function actSheet(){const w=el('div');const a=S.age;
+function actSheet(){P();if(S.jail)return prisonSheet();const w=el('div');const a=S.age;
  const A=(ic,n,sub,minAge,fn,lock)=>{if(lock)return w.append(opt('🔒',n,lock,upgradeSheet,{cls:'locked'}));w.append(opt(ic,n,a<minAge?`Age ${minAge}+`:sub,()=>{if(a<minAge)return toast(`You must be ${minAge}.`);fn()},{cls:a<minAge?'locked':''}))};
  w.append(sec('Mind & Body'));
- A('🏋️','Go to the gym','+health',10,()=>{if(!once('gym'))return;E({health:rnd(2,7),happy:2});if(chance(.3))E({looks:1});act('Gym',pick(['Leg day. I can barely walk.','I hit a new personal record! 💪','I took a spin class. Sweaty and happy.']),'🏋️')});
- A('🧘','Meditate','+happiness',8,()=>{if(!once('med'))return;E({happy:rnd(3,7),health:1});act('Meditate','I found some inner peace. 🌿','🧘')});
- A('📖','Visit the library','+smarts',5,()=>{if(!once('lib'))return;E({smarts:rnd(2,5)});act('Library',pick(['I read a book about space.','I read a history of ancient Rome.','I got lost in a mystery novel.','I learned the basics of coding.']),'📖')});
+ A('🏋️','Go to the gym','Lift, run, yoga, boxing, climbing',10,gymSheet);
+ A('🧘','Meditate','Breathing, nature walk, retreat',8,medSheet);
+ A('📖','Visit the library','Pick what to read',5,libSheet);
  A('🩺','See a doctor',S.age<18?'Free':'$300',0,()=>{if(!once('doc'))return;if(S.age>=18)S.money-=300;if(S.ill){if(chance(.8)){const n=S.ill.n;S.ill=null;E({health:8});act('Doctor',`The doctor treated my ${n}. I feel much better.`,'🩺')}else{E({health:-2});act('Doctor','The treatment did not work this time.','🩺')}}else{E({health:3});act('Doctor','A clean bill of health!','🩺')}});
  A('💉','Plastic surgery','$8,000',18,()=>{if(!once('surg'))return;if(S.money<8000)return toast('Not enough cash.');S.money-=8000;if(chance(.75+L())){E({looks:rnd(5,15)});act('Surgery','The surgery went great. I look amazing. ✨','💉')}else{E({looks:-10,happy:-8});act('Surgery','The surgery was botched. I look worse.','😬')}});
- A('🌙','Night out','$150',18,()=>{if(!once('night'))return;S.money-=150;E({happy:rnd(4,9),health:-1});if(!partner()&&chance(.35)){Q.push(()=>showCandidate(meet()));act('Night out','I danced all night... and someone caught my eye.','🪩')}else act('Night out','A great night out with friends. 🪩','🪩')});
+ A('🌙','Night out','Club, bar, karaoke, bowling, comedy',18,nightSheet);
  A('🧳','Go on vacation','Pick a trip',18,vacSheet);
+ A('💆','Salon & spa','Haircut, nails, spa day',12,spaSheet);
+ A('🥋','Martial arts','Karate, jiu-jitsu, Muay Thai',6,martialSheet);
+ A('🎸','Learn an instrument','Guitar, piano, drums, violin, singing',6,instrumentSheet);
+ w.append(sec('Shopping & Money'));
+ A('🛍️','Go shopping','Clothes, jewelry, instruments, art',16,shopSheet);
+ A('📈','Investing','Index funds, tech stocks, crypto',18,investSheet);
+ A('🎰','Casino','Blackjack, slots, horse racing',18,casinoSheet);
+ w.append(sec('Life Admin'));
+ A('🪪','Licenses','Driver, motorcycle, boat, pilot',16,licenseSheet);
+ w.append(sec('😈 Crime'));
+ A('😈','Commit a crime','Shoplifting to bank heists. Risky',14,crimeSheet);
  w.append(sec('Fortune'));
  A('🎟️','Buy a lottery ticket','$10',18,()=>{if(!once('lotto'))return;S.money-=10;const r=Math.random();if(r<(has('lucky')?1/1500:1/4000)){const m=rnd(1,60)*1e6;S.money+=m;log(`🎰 I WON THE LOTTERY: ${fmt(m)}!`,'big');Q.push(confetti);act('JACKPOT!!!',`I won ${fmt(m)}! My life just changed forever.`,'🤑')}else if(r<.06){const m=rnd(20,500);S.money+=m;act('Lottery',`I won ${fmt(m)}. Small win!`,'🎟️')}else act('Lottery','No luck this time.','🎟️')});
  w.append(sec('🌟 Spotlight'));
@@ -861,6 +874,217 @@ function actSheet(){const w=el('div');const a=S.age;
  if(S.age>=18&&S.money>1000)A('🎗️','Donate to charity','10% of cash',18,()=>{if(!once('donate'))return;const d=Math.round(S.money*.1);S.money-=d;E({karma:10,happy:5});act('Charity',`I donated ${fmt(d)} to charity. 💛`,'🎗️')});
  sheet('Activities 🎯',w)}
 function vacSheet(){const w=el('div');[['🚗','Road trip',800,6],['🏖️','Beach resort',3000,10],['🗼','Europe tour',7000,14],['🦓','African safari',12000,16],['🛳️','Luxury cruise',20000,18],['🚀','Space tourism',450000,30]].forEach(([ic,n,c,h])=>w.append(opt(ic,n,'',()=>{if(!once('vac'))return;if(S.money<c)return toast('Not enough cash.');S.money-=c;E({happy:h,health:2});act(n,`${pick(['What a trip!','I came back totally recharged.','Memories for a lifetime.','I did not want to come home.'])} ${ic}`,ic)},{rt:fmt(c)})));sheet('Vacation 🧳',w)}
+
+// ================= PREMIUM CONTENT =================
+function P(){if(!S)return;S.music=S.music||{skill:0,songs:[],albums:[],singles:[],tours:0};S.portfolio=S.portfolio||[];S.inv=S.inv||{index:0,tech:0,crypto:0};S.lic=S.lic||{};S.jail=S.jail||0;S.skills=S.skills||{};if(S.flags.license)S.lic.driver=1}
+const invTotal=()=>S&&S.inv?S.inv.index+S.inv.tech+S.inv.crypto:0;
+// generic outcome resolver used by studio actions and activity choices
+function resolve(stat,o={}){const v=stat?(stat==='karma'?S.karma:stat==='fame'?S.fame:stat==='skill'?(S.music?S.music.skill:50):S.st[stat]):50;const p=o.p!=null?o.p+L():.55+(v-50)/150+L();const ok=chance(p);
+ if(S.job&&o.job!==false)S.job.perf=clamp(S.job.perf+(ok?rnd(5,11):-rnd(4,9)));E(Object.assign({happy:ok?3:-3},(ok?o.g:o.b)||{}));return ok}
+function runAct(title,ic,a,key){if(key&&!once(key))return;const [label,stat,good,bad,o]=a;const ok=resolve(stat,o||{});fix();act(title,ok?good:bad,ic)}
+const NAMEA=['Midnight','Golden','Velvet','Northern','Electric','Paper','Silent','Wild','Blue','Neon','Crimson','Lucky','Hollow','Summer','Glass','Burning'];
+const NAMEB=['Horizon','Garden','Signal','Harbor','Echo','Summit','River','Atlas','Lantern','Orchard','Compass','Tide','Hearts','Static','Skyline','Letters'];
+const genName=()=>pick(NAMEA)+' '+pick(NAMEB);
+
+// ---------- MUSIC ----------
+const GENRES=['Pop','Rock','Hip-Hop','Country','R&B','Indie','Latin','Electronic','Jazz','K-Pop'];
+const ARTISTS=['Nova Reyes','The Midnight Owls','Kai Monroe','Luz Delgado','DJ Pulse','Harper Vale','Atlas Kid','Sienna Bloom','Echo Park Kids','Marlo Jae'];
+function trend(){if(!S.flags.trend||S.flags.trendAge!==S.age){S.flags.trend=pick(GENRES);S.flags.trendAge=S.age}return S.flags.trend}
+function songQ(genre){const m=S.music;let q=rnd(20,55)+m.skill*.35+S.st.smarts*.1+S.st.happy*.05;if(genre===trend())q+=10;return clamp(q)}
+const qLabel=q=>q>=90?'Masterpiece':q>=78?'Hit':q>=62?'Solid':q>=45?'Mixed':'Flop';
+const cert=s=>s>=10e6?'💎 Diamond':s>=1e6?'💿 Platinum':s>=5e5?'🥇 Gold':'';
+function musicSheet(){P();if(!S.job||S.job.id!=='music'){toast('You need to be a musician for that.');return closeSheet()}const m=S.music,w=el('div');const un=m.songs.filter(s=>!s.rel);
+ w.append(el('div','info',`<b>🎤 ${CAR.music.lv[S.job.lvl][0]}</b><br>Music skill ${m.skill}% · Fame ${S.fame}%<br>${un.length} unreleased song${un.length===1?'':'s'} · ${m.albums.length} album${m.albums.length===1?'':'s'} · ${m.singles.length} single${m.singles.length===1?'':'s'}<br>🔥 Trending genre this year: <b>${trend()}</b>`));
+ w.append(sec('Create'));
+ w.append(opt('✍️','Write a song','Up to 3 a year. Pick a genre',songSheet,{rt:`${3-(S.used.songs||0)} left`}));
+ w.append(opt('🎧','Release a single',un.length?'Pick one of your unreleased songs':'Write a song first',()=>{if(!un.length)return toast('Write a song first.');singleSheet()}));
+ w.append(opt('💿','Record an album',un.length>=4?'Name it, pick a budget, release it':'Needs at least 4 unreleased songs',()=>{if(un.length<4)return toast(`You need 4 unreleased songs (you have ${un.length}).`);albumSheet()}));
+ w.append(sec('Perform'));
+ w.append(opt('🚌','Go on tour','Earn money and fans, costs health',tourSheet));
+ w.append(opt('🎬','Shoot a music video','Boost your latest release',videoSheet));
+ w.append(opt('🤝','Collab with another artist','',()=>{if(!once('collab'))return;const a=pick(ARTISTS);if(chance(.3+S.fame/150+L())){E({fame:rnd(4,9),happy:6});S.job.perf+=8;log(`I recorded a duet with ${a}. 🎶`,'good');act('Collab',`${a} said yes! Your duet is all over the radio.`,'🤝')}else act('Collab',`${a}'s team never replied.`,'📵')}));
+ w.append(opt('🎪','Play a festival','',()=>runAct('Festival','🎪',['','fame',`You played ${pick(['Sunset Fields','Coastline Fest','Neon Valley','Riverbeat'])} and the crowd sang every word.`,'You got a tiny afternoon slot. Ten people watched.',{g:{fame:rnd(3,7),money:Math.round(2000+S.fame*800)}}],'fest')));
+ w.append(opt('🎹','Practice','+music skill',()=>{if(!once('practice'))return;m.skill=clamp(m.skill+rnd(3,8));fix();act('Practice',`I practiced every day. Music skill is now ${m.skill}%.`,'🎹')}));
+ if(m.albums.length||m.singles.length){w.append(sec('Discography'));
+  m.albums.slice().reverse().forEach(a=>w.append(opt('💿',`${a.title}`,`${a.genre} album · ${a.year} · ${a.score}/10 · peaked #${a.peak}`,()=>act(a.title,`${a.genre} album released in ${a.year}.<br>${a.tracks} tracks · Reviews ${a.score}/10 (${qLabel(a.q)})<br>Peaked at #${a.peak} · ${Math.round(a.sales).toLocaleString()} copies ${a.cert?'· '+a.cert:''}<br>Earned ${fmt(a.earned)} so far.`,'💿'),{rt:a.cert||''})));
+  m.singles.slice(-6).reverse().forEach(s=>w.append(el('div','mini',`<span>🎧 ${s.title} (${s.genre})</span><b>#${s.peak} · ${Math.round(s.streams/1e6*10)/10}M streams</b>`)))}
+ sheet('Music Studio 🎤',w)}
+function songSheet(){if(!S.job||S.job.id!=='music'){toast('You need to be a musician for that.');return closeSheet()}const w=el('div');w.append(el('div','info',`Trending this year: <b>${trend()}</b>. Songs in a trending genre usually do better.`));const nm=el('input');nm.type='text';nm.value=genName();w.append(el('label','lb','Song title'),nm);
+ w.append(sec('Pick a genre'));GENRES.forEach(g=>w.append(opt(g===trend()?'🔥':'🎵',g,'',()=>{S.used.songs=S.used.songs||0;if(S.used.songs>=3)return toast('You wrote 3 songs this year. Age up!');S.used.songs++;const q=songQ(g);S.music.songs.push({id:uid(),title:nm.value.trim()||genName(),genre:g,q,rel:false});S.music.skill=clamp(S.music.skill+1);S.job.perf=clamp(S.job.perf+3);fix();act('New song',`I wrote "${nm.value.trim()}", a ${g} song. It feels ${q>=78?'like a hit 🔥':q>=62?'pretty good':q>=45?'okay':'rough'}.`,'✍️')})));
+ sheet('Write a Song ✍️',w)}
+function releaseStats(q,mult=1){const reach=(1+S.fame/12)*(0.6+Math.random()*.8)*mult;const streams=Math.round(q*q*reach*400);const peak=Math.max(1,Math.min(100,Math.round(101-(q*.55+S.fame*.5)+rnd(-8,8))));return{streams,peak}}
+function singleSheet(){if(!S.job||S.job.id!=='music'){toast('You need to be a musician for that.');return closeSheet()}const w=el('div');w.append(el('p','evt-text','Which song is your next single?'));S.music.songs.filter(s=>!s.rel).forEach(s=>w.append(opt('🎧',s.title,`${s.genre}`,()=>{if(!once('single'+s.id))return;s.rel=true;const r=releaseStats(s.q);const pay=Math.round(r.streams*.004);S.money+=pay;E({fame:Math.round(s.q/12),happy:5});S.job.perf=clamp(S.job.perf+Math.round((s.q-45)/4));S.music.singles.push({title:s.title,genre:s.genre,q:s.q,peak:r.peak,streams:r.streams,year:year()});log(`My single "${s.title}" peaked at #${r.peak}. 🎧`,r.peak<=10?'big':'good');if(r.peak<=10)Q.push(confetti);fix();act('Single released',`"${s.title}" got ${(r.streams/1e6).toFixed(1)}M streams and peaked at <b>#${r.peak}</b>. It earned ${fmt(pay)}.`,r.peak<=10?'🔥':'🎧')})));sheet('Release a Single 🎧',w)}
+function albumSheet(){if(!S.job||S.job.id!=='music'){toast('You need to be a musician for that.');return closeSheet()}if(S.used.album)return toast('You already released an album this year.');const un=S.music.songs.filter(s=>!s.rel);const w=el('div');
+ const nm=el('input');nm.type='text';nm.value=genName();w.append(el('label','lb','Album title'),nm);
+ w.append(el('label','lb','Main genre'));const gs=el('select');gs.innerHTML=GENRES.map(g=>`<option${g===trend()?' selected':''}>${g}</option>`).join('');w.append(gs);
+ w.append(el('label','lb','Cover style'));const cs=el('select');cs.innerHTML=['Moody portrait','Bright and colorful','Minimal and clean','Vintage film','Abstract art'].map(c=>`<option>${c}</option>`).join('');w.append(cs);
+ w.append(el('div','info',`${Math.min(un.length,14)} tracks will go on this album.`));
+ w.append(sec('Production budget'));
+ [['🏠','Bedroom recording',0,0],['🎚️','Studio with a producer',20000,6],['🏆','Big-name producers',150000,14]].forEach(([ic,n,c,b])=>w.append(opt(ic,n,c?fmt(c):'Free',()=>{if(S.money<c)return toast('Not enough money.');S.money-=c;S.used.album=1;
+  const tracks=un.slice(0,14);tracks.forEach(t=>t.rel=true);let q=tracks.reduce((a,t)=>a+t.q,0)/tracks.length+b+(gs.value===trend()?6:0)+rnd(-5,5);q=clamp(q);
+  const r=releaseStats(q,1.5);const sales=Math.round(r.streams/30+q*q*(1+S.fame/10)*rnd(8,20));const score=(Math.round(q)/10).toFixed(1);const earned=Math.round(sales*2.2);S.money+=earned;
+  const a={id:uid(),title:nm.value.trim()||genName(),genre:gs.value,cover:cs.value,q,score,peak:r.peak,sales,cert:cert(sales),tracks:tracks.length,year:year(),age:S.age,earned};S.music.albums.push(a);
+  E({fame:Math.round(q/8),happy:8});S.job.perf=clamp(S.job.perf+Math.round((q-45)/3));S.music.skill=clamp(S.music.skill+2);
+  log(`I released my album "${a.title}". It debuted at #${a.peak}${a.cert?' and went '+a.cert:''}. 💿`,'big');Q.push(confetti);
+  if(q>=80&&chance(.5+L())){Q.push(()=>choice('Award nomination 🏆',`"${a.title}" is nominated for Album of the Year! The ceremony is tonight.`,[['Give a heartfelt speech if you win',()=>{if(chance(.4+q/400+L())){E({fame:8,happy:10});log(`"${a.title}" won Album of the Year! 🏆`,'big');Q.push(confetti);return 'You WON Album of the Year! Your speech made the whole room cry. 🏆'}E({happy:-3});return 'You lost to '+pick(ARTISTS)+'. You clapped like a pro.'}],['Skip the ceremony',()=>'You watched from home in sweatpants.']],'🏆'))}
+  fix();act(a.title,`"${a.title}" (${a.genre}, ${a.cover.toLowerCase()} cover)<br>Reviews: <b>${score}/10</b>, ${qLabel(q)}<br>Debuted at <b>#${a.peak}</b> · ${sales.toLocaleString()} copies ${a.cert?'· <b>'+a.cert+'</b>':''}<br>First-year earnings ${fmt(earned)}`,'💿')})));
+ sheet('Record an Album 💿',w)}
+function tourSheet(){if(!S.job||S.job.id!=='music'){toast('You need to be a musician for that.');return closeSheet()}const w=el('div');[['🎸','Club tour','10 cities',0,.9,6],['🚌','National tour','30 cities · needs 30 fame',30,2.5,12],['✈️','World tour','80 cities · needs 60 fame',60,6,20]].forEach(([ic,n,sub,need,mult,hp])=>w.append(opt(ic,n,sub,()=>{if(S.fame<need)return toast(`You need ${need} fame for this.`);if(!once('tour'))return;const pay=Math.round((3000+S.fame*S.fame*30)*mult*(0.7+Math.random()*.6));S.money+=pay;E({fame:Math.round(3*mult),happy:6,health:-hp});S.music.tours++;S.job.perf=clamp(S.job.perf+8);if(n==='World tour')S.flags.worldTour=1;log(`I went on a ${n.toLowerCase()} and earned ${fmt(pay)}. 🎤`,'good');fix();act(n,`${pick(['Sold-out nights, screaming fans and very little sleep.','Every city sang along. Your voice is shot but your heart is full.','Merch sold out by the second week.'])}<br>You earned <b>${fmt(pay)}</b>.`,ic)})));sheet('Go on Tour 🚌',w)}
+function videoSheet(){if(!S.job||S.job.id!=='music'){toast('You need to be a musician for that.');return closeSheet()}const last=[...S.music.singles,...S.music.albums].slice(-1)[0];if(!last)return toast('Release something first.');const w=el('div');w.append(el('p','evt-text',`A video for "${last.title}"`));[['📱','Phone-shot video',0,2],['🎥','Indie director',15000,5],['🌟','Blockbuster video',120000,10]].forEach(([ic,n,c,f])=>w.append(opt(ic,n,c?fmt(c):'Free',()=>{if(S.money<c)return toast('Not enough money.');if(!once('video'))return;S.money-=c;const ok=resolve('looks',{g:{fame:f+rnd(0,4)},b:{fame:1}});fix();act('Music video',ok?`The video for "${last.title}" went viral. 📈`:`The video for "${last.title}" got a lukewarm reaction.`,ic)})));sheet('Music Video 🎬',w)}
+
+// ---------- WORK STUDIO for every other career ----------
+// proj: n noun, ic, types, stat, aud audience label, per $ per audience unit, scale audience scale, tail yearly royalties
+const STUDIO={
+ fast:{proj:{n:'Menu special',ic:'🍔',types:['Spicy burger','Loaded fries','Breakfast sandwich','Dessert shake'],stat:'smarts',aud:'sold',per:1,scale:40},acts:[['⚡','Speed challenge','health','You set the store record for orders per hour.','You dropped a tray of sodas.'],['😊','Win over a regular','karma','They asked for you by name.','They switched to the place across the street.']]},
+ barista:{proj:{n:'Signature drink',ic:'☕',types:['Iced latte','Seasonal special','Tea blend','Cold brew'],stat:'smarts',aud:'cups sold',per:1.5,scale:30},acts:[['🎨','Practice latte art','looks','Your rosettas are perfect now.','Still looks like a blob.'],['🎵','Run open mic night','looks','The cafe was packed all night.','Crickets.']]},
+ retail:{proj:{n:'Store display',ic:'🛍️',types:['Holiday window','Back-to-school','Summer sale','Luxury corner'],stat:'looks',aud:'shoppers',per:.5,scale:60},acts:[['💬','Push the store card','looks','You signed up 20 people. Bonus!','Nobody wanted it.'],['📦','Organize inventory','smarts','The stockroom has never been cleaner.','You lost a box somewhere.']]},
+ guard:{proj:{n:'Swim program',ic:'🏊',types:['Kids lessons','Adult beginners','Water aerobics','Junior lifeguards'],stat:'health',aud:'swimmers',per:3,scale:6},acts:[['🏋️','Train hard','health','You are the fastest swimmer on staff.','You pulled a muscle.'],['🛟','Run a safety drill','smarts','Flawless drill. Your boss was impressed.','The drill turned into chaos.']]},
+ delivery:{proj:{n:'Route plan',ic:'🗺️',types:['Downtown','Suburbs','Rural','Express'],stat:'smarts',aud:'packages',per:.3,scale:80},acts:[['⏱️','Beat your route time','health','New record! Bonus.','You got a speeding ticket.',{b:{money:-150}}],['🤝','Befriend the regulars','karma','Customers leave you snacks now.','Someone reported you for honking.']]},
+ mech:{proj:{n:'Custom build',ic:'🏎️',types:['Restomod classic','Off-road truck','Street racer','Electric conversion'],stat:'smarts',aud:'show votes',per:4,scale:10},acts:[['🔧','Take a tricky repair','smarts','You fixed what three shops could not.','You stripped a bolt. Ugh.'],['📚','Get a new certification','smarts','Certified! Bigger jobs coming.','You failed the exam.']]},
+ elec:{proj:{n:'Smart home install',ic:'💡',types:['Solar setup','Home theater','Smart lighting','EV charger'],stat:'smarts',aud:'happy clients',per:60,scale:.6},acts:[['⚡','Take an emergency call','health','Lights back on in an hour. Big tip.','You got zapped.',{b:{health:-5}}],['📋','Pass inspection','smarts','Passed with zero notes.','Inspector made you redo it.']]},
+ plumb:{proj:{n:'Bathroom remodel',ic:'🛁',types:['Spa bathroom','Tiny house','Historic home','Modern loft'],stat:'smarts',aud:'referrals',per:40,scale:1},acts:[['🚿','Fix a nightmare clog','health','Victory. The homeowner hugged you.','It got worse before it got better.'],['💼','Start taking big jobs','smarts','A developer hired you for a whole building.','You underbid and lost money.']]},
+ chef:{proj:{n:'New menu',ic:'🍽️',types:['Tasting menu','Comfort food','Seasonal farm menu','Fusion menu'],stat:'smarts',aud:'covers',per:3,scale:20},acts:[['🔪','Master a new technique','smarts','Your knife work is stunning.','You nicked your finger.'],['🧑‍🍳','Train the new cooks','karma','The kitchen runs like clockwork.','They still overcook the fish.']]},
+ fire:{proj:{n:'Community program',ic:'🚒',types:['Fire safety week','Smoke alarm drive','Youth fire academy','Charity calendar'],stat:'karma',aud:'people reached',per:.5,scale:30},acts:[['💪','Pass the fitness test','health','Top score in the department.','You barely made it.'],['🔥','Lead a big call','smarts','Fire out, everyone safe.','It took all night.',{b:{health:-4}}]]},
+ police:{proj:{n:'Investigation',ic:'🔎',types:['Burglary ring','Fraud case','Missing person','Cold case'],stat:'smarts',aud:'leads followed',per:20,scale:2},acts:[['🚔','Patrol a rough area','health','You stopped a robbery in progress.','Quiet night, sore feet.'],['🤝','Community outreach','karma','The neighborhood trusts you now.','Not many showed up.']]},
+ somm:{proj:{n:'Wine list',ic:'🍷',types:['Old World classics','Natural wines','Big Napa reds','Sparkling focus'],stat:'smarts',aud:'bottles sold',per:12,scale:4},acts:[['👃','Blind tasting practice','smarts','You nailed six out of six.','You called a Pinot a Gamay. Close.'],['🍾','Host a wine dinner','looks','Sold out with a waitlist.','Half the seats were empty.']]},
+ pilot:{proj:{n:'Charity flight',ic:'✈️',types:['Medical supplies','Animal rescue','Disaster relief','Kids discovery flight'],stat:'smarts',aud:'people helped',per:2,scale:5},acts:[['🛫','Simulator training','smarts','Perfect emergency landing in the sim.','You crashed the sim twice.'],['🗺️','Fly a tricky route','health','Smooth landing in crosswinds.','Rough landing. Passengers gasped.']]},
+ zoo:{proj:{n:'Conservation program',ic:'🦏',types:['Rhino protection','Coral reef rescue','Bird breeding','Amphibian ark'],stat:'smarts',aud:'donors',per:30,scale:3},acts:[['🦁','Design an enrichment toy','smarts','The lions played with it all day.','They ignored it completely.'],['🎤','Give a keeper talk','looks','Kids asked a million questions. Perfect.','A goat interrupted the whole talk.']]},
+ mkt:{proj:{n:'Campaign',ic:'📣',types:['Social media','TV commercial','Influencer collab','Guerrilla stunt'],stat:'smarts',aud:'impressions',per:.02,scale:2000},acts:[['📊','Analyze the data','smarts','You found what was working and doubled down.','The numbers made no sense.'],['🎤','Pitch to leadership','looks','Approved on the spot.','They want "more energy".']]},
+ design:{proj:{n:'Brand identity',ic:'🎨',types:['Startup logo','Album cover','Restaurant brand','Museum poster'],stat:'looks',aud:'likes',per:.2,scale:300},acts:[['✏️','Experiment with a new style','smarts','Your new style is turning heads.','It looked like a ransom note.'],['🗂️','Update your portfolio','looks','Two new clients reached out.','Crickets.']]},
+ journo:{proj:{n:'Story',ic:'📰',types:['Investigative exposé','Human interest','Political profile','Travel feature'],stat:'smarts',aud:'readers',per:.05,scale:800},acts:[['📞','Chase a lead','smarts','The source talked. Huge story.','Dead end.'],['🎙️','Go on a podcast','looks','Great conversation. New followers.','You rambled.']]},
+ teach:{proj:{n:'Class project',ic:'🍎',types:['Science fair','School play','Garden project','Field trip'],stat:'karma',aud:'students inspired',per:5,scale:2},acts:[['📝','Grade papers all weekend','health','All caught up. Feels great.','Exhausted, and still behind.'],['🧑‍🏫','Try a new lesson plan','smarts','The kids were glued to it.','Total chaos.']]},
+ nurse:{proj:{n:'Patient care initiative',ic:'💉',types:['Fall prevention','Night shift wellness','Discharge planning','Pain management'],stat:'smarts',aud:'patients helped',per:6,scale:3},acts:[['⏱️','Work a double shift','health','You held the floor together.','You were running on fumes.',{b:{health:-5}}],['📚','Earn a specialty cert','smarts','Certified! Pay bump coming.','Failed by two points.']]},
+ swe:{proj:{n:'App',ic:'📱',types:['Productivity app','Mobile game','Social app','Developer tool'],stat:'smarts',aud:'downloads',per:.4,scale:600,tail:true},acts:[['🐛','Hunt a nasty bug','smarts','Found it after 3 hours. Legendary.','It was a missing semicolon. 9 hours.'],['🗣️','Give a tech talk','looks','The talk got shared everywhere.','The demo crashed live.']]},
+ data:{proj:{n:'Data model',ic:'📈',types:['Sales forecast','Recommendation engine','Fraud detector','Churn predictor'],stat:'smarts',aud:'users served',per:.05,scale:900},acts:[['🧹','Clean a messy dataset','smarts','Sparkling clean data. Chef kiss.','You deleted a column by accident.'],['📊','Build a dashboard','looks','Executives love it.','Nobody opens it.']]},
+ eng:{proj:{n:'Design project',ic:'⚙️',types:['Bridge','Wind turbine','Water system','Robot arm'],stat:'smarts',aud:'people served',per:.3,scale:150},acts:[['🧪','Run a stress test','smarts','It held up to 3x the load.','Something snapped. Back to the drawing board.'],['📐','Get a patent','smarts','Patent approved!','Rejected for now.']]},
+ arch:{proj:{n:'Building',ic:'🏛️',types:['Modern home','Museum','Skyscraper','Eco school'],stat:'smarts',aud:'visitors',per:.4,scale:200},acts:[['✏️','Sketch at a cafe','looks','You filled a notebook with great ideas.','Nothing clicked today.'],['🏆','Enter a competition','smarts','Shortlisted!','Did not place.']]},
+ acct:{proj:{n:'Client audit',ic:'🧮',types:['Startup books','Restaurant group','Nonprofit','Big corporation'],stat:'smarts',aud:'hours billed',per:15,scale:6},acts:[['🔍','Spot an error','smarts','You saved the client a fortune.','False alarm.'],['📚','Study for the CPA','smarts','Passed another section!','Need to retake.']]},
+ bank:{proj:{n:'Deal',ic:'💼',types:['Merger','IPO','Buyout','Bond issue'],stat:'smarts',aud:'millions raised',per:400,scale:.6},acts:[['📊','Build a killer model','smarts','The MD used your model in the pitch.','A broken formula. Caught it late.'],['🥂','Network at a gala','looks','You met a CEO who wants to work with you.','You spilled wine on a client.']]},
+ wine:{proj:{n:'Vintage',ic:'🍇',types:['Cabernet','Pinot Noir','Chardonnay','Rosé','Sparkling'],stat:'smarts',aud:'bottles sold',per:8,scale:20,tail:true},acts:[['🍇','Walk the vineyard','health','You caught mildew early and saved a block.','Long hot day.'],['🛢️','Experiment with oak barrels','smarts','The new barrels are magic.','Too much oak. Lesson learned.']]},
+ pol:{proj:{n:'Bill',ic:'📜',types:['Education','Healthcare','Climate','Small business'],stat:'smarts',aud:'votes',per:5,scale:5},acts:[['🗣️','Hold a town hall','looks','Standing ovation.','Someone heckled you all night.'],['🤝','Cross the aisle','karma','A bipartisan win.','Your party was annoyed.']]},
+ doc:{proj:{n:'Research study',ic:'🧬',types:['Heart health','New treatment trial','Sleep study','Vaccine research'],stat:'smarts',aud:'patients enrolled',per:20,scale:3},acts:[['🩺','Take a tough case','smarts','You diagnosed it when nobody else could.','Stumped. Referred out.'],['🏥','Volunteer at a free clinic','karma','You helped dozens of families.','Long, hard day.',{g:{karma:6}}]]},
+ surg:{proj:{n:'New technique',ic:'🔬',types:['Robotic surgery','Minimally invasive','Transplant method','Pediatric procedure'],stat:'smarts',aud:'surgeons trained',per:150,scale:.4},acts:[['🎯','Perform a rare surgery','smarts','Flawless. The hospital put out a press release.','Complications, but the patient pulled through.'],['🧑‍🏫','Teach residents','karma','Your residents adore you.','A resident fainted.']]},
+ vet:{proj:{n:'Clinic program',ic:'🐾',types:['Low-cost spay day','Senior pet care','Exotic animal clinic','Shelter partnership'],stat:'karma',aud:'pets treated',per:8,scale:4},acts:[['🐕','Treat a scared dog','karma','It licked your face by the end.','It bit you. Just a little.'],['🦎','See an exotic patient','smarts','The iguana is doing great.','You had to look up iguanas.']]},
+ law:{proj:{n:'Big case',ic:'⚖️',types:['Civil rights','Corporate lawsuit','Criminal defense','Environmental case'],stat:'smarts',aud:'billable hours',per:30,scale:4},acts:[['📚','Prep all night','smarts','You found the case that wins it.','Nothing useful. Coffee number 6.'],['🎤','Cross-examine a witness','looks','The witness cracked. Gasps in court.','The witness ran circles around you.']]},
+ prof:{proj:{n:'Research paper',ic:'📄',types:['Groundbreaking theory','Field study','Review article','Book'],stat:'smarts',aud:'citations',per:6,scale:6,tail:true},acts:[['🎓','Mentor a grad student','karma','They just won an award.','They switched advisors.'],['💰','Write a grant','smarts','Funded! Big grant.','Rejected this round.',{g:{money:5000}}]]},
+ consult:{proj:{n:'Client engagement',ic:'🧠',types:['Turnaround','Growth strategy','Digital transformation','Cost cutting'],stat:'smarts',aud:'client savings (k)',per:40,scale:4},acts:[['📊','Build the slide deck','smarts','The CEO called it "crystal clear".','Too many slides.'],['🤝','Win a new client','looks','New logo for the firm.','They chose a rival firm.']]},
+ astro:{proj:{n:'Space experiment',ic:'🧪',types:['Plant growth','Crystal formation','Human biology','Physics test'],stat:'smarts',aud:'data points',per:2,scale:30},acts:[['🌀','Centrifuge training','health','You handled 8G like a champ.','You blacked out briefly.'],['📡','Talk to mission control','looks','Smooth and professional.','You mixed up two checklists.']]},
+ actor:{proj:{n:'Movie',ic:'🎬',types:['Action blockbuster','Romantic comedy','Horror','Indie drama','Animated film'],stat:'looks',aud:'tickets sold',per:12,scale:400,tail:true},acts:[['🎭','Audition for a big role','looks','You got the part!','They went with someone more "edgy".'],['📺','Go on a talk show','looks','Charming. You trended for a day.','Awkward silence. Ouch.',{g:{fame:3}}]]},
+ influ:{proj:{n:'Content series',ic:'📱',types:['Day in my life','Cooking','Pranks','Travel vlogs','Get ready with me'],stat:'looks',aud:'views',per:.004,scale:30000,tail:true},acts:[['🤳','Post a viral challenge','looks','Millions joined in. 🔥','It flopped. Deleted.',{g:{fame:4}}],['🛍️','Launch merch','fame','Sold out in an hour!','Boxes of hoodies in your garage.',{g:{money:15000}}]]},
+ athlete:{proj:{n:'Season',ic:'🏆',types:['Go for the title','Chase personal records','Mentor rookies','Stay healthy'],stat:'health',aud:'fans in the stands',per:.5,scale:1500},acts:[['🏋️','Train in the off-season','health','You are in the best shape of your life.','You overtrained and got sore.'],['📝','Negotiate your contract','looks','Huge new contract!','The team lowballed you.',{g:{money:50000}}]]},
+ model:{proj:{n:'Photo campaign',ic:'📸',types:['Luxury fashion','Sportswear','Beauty brand','Magazine cover'],stat:'looks',aud:'magazine readers',per:.02,scale:5000},acts:[['💃','Practice your runway walk','looks','You own the runway now.','You twisted your ankle.'],['🌍','Fashion week abroad','looks','Every designer wants you.','Jet lag ruined your shoots.',{g:{fame:3}}]]},
+ chefTV:{proj:{n:'Cookbook',ic:'📕',types:['Weeknight dinners','Baking','Grilling','Healthy eats'],stat:'smarts',aud:'copies sold',per:8,scale:200,tail:true},acts:[['🎥','Film a viral recipe','looks','Millions recreated your dish.','The recipe did not work for anyone.'],['🍽️','Open a pop-up restaurant','smarts','Lines around the block.','Empty tables.']]},
+ army:{proj:{n:'Mission',ic:'🪖',types:['Peacekeeping','Disaster relief','Training exercise','Recon'],stat:'health',aud:'objectives met',per:50,scale:1},acts:[['🏃','Ace the fitness test','health','Top score in your unit.','You barely passed.'],['🎖️','Lead your squad','smarts','Your squad respects you.','Communication broke down.']]},
+ navy:{proj:{n:'Deployment',ic:'⚓',types:['Pacific patrol','Humanitarian mission','Training cruise','Search and rescue'],stat:'health',aud:'nautical miles',per:2,scale:30},acts:[['🌊','Stand night watch','health','Calm seas and a sky full of stars.','You nodded off. Chief noticed.'],['🧭','Navigation exam','smarts','Perfect score.','You plotted a course into land.']]},
+ airforce:{proj:{n:'Flight program',ic:'🛩️',types:['Fighter training','Cargo airlift','Air show','Rescue squadron'],stat:'smarts',aud:'flight hours',per:30,scale:2},acts:[['🛫','Flight simulator','smarts','Ace-level performance.','You stalled the jet in the sim.'],['🔧','Inspect the aircraft','smarts','You caught a real issue. Commended.','Missed a loose panel.']]},
+ marines:{proj:{n:'Operation',ic:'🎖️',types:['Amphibious landing','Embassy guard','Jungle training','Disaster response'],stat:'health',aud:'objectives met',per:50,scale:1},acts:[['🥾','20-mile ruck march','health','You carried a teammate\'s pack too.','Blisters on blisters.',{b:{health:-4}}],['🎯','Marksmanship qualification','smarts','Expert badge!','Missed expert by one point.']]},
+};
+function studioSheet(){P();if(!S.job||!STUDIO[S.job.id]){toast('That studio belongs to a job you no longer have.');return closeSheet()}const c=CAR[S.job.id],st=STUDIO[S.job.id];if(!st)return;const pr=st.proj;const mine=S.portfolio.filter(x=>x.car===S.job.id);const w=el('div');
+ w.append(el('div','info',`<b>${c.ic} ${c.lv[S.job.lvl][0]}</b><br>Performance ${S.job.perf}% · ${mine.length} ${pr.n.toLowerCase()}${mine.length===1?'':'s'} so far`));
+ w.append(sec('Create'));w.append(opt(pr.ic,`New ${pr.n.toLowerCase()}`,'Name it, pick a type and budget. Once a year',newProjSheet));
+ w.append(sec('On the job'));st.acts.forEach(([ic,l,stat,g,b,o],i)=>w.append(opt(ic,l,'Once a year',()=>runAct(l,ic,[l,stat,g,b,o],'sa'+i))));
+ if(mine.length){w.append(sec('Your portfolio'));mine.slice().reverse().forEach(x=>w.append(opt(pr.ic,x.n,`${x.type} · ${x.year} · ${x.score}/10`,()=>act(x.n,`${x.type} · ${x.year}<br>Rating <b>${x.score}/10</b> (${qLabel(x.q)})<br>${Math.round(x.aud).toLocaleString()} ${pr.aud}<br>Earned ${fmt(x.rev)}${pr.tail?' (still earning)':''}`,pr.ic),{rt:qLabel(x.q)})))}
+ sheet(`${c.n} Studio ${pr.ic}`,w)}
+function newProjSheet(){if(!S.job||!STUDIO[S.job.id]){toast('That studio belongs to a job you no longer have.');return closeSheet()}const c=CAR[S.job.id],pr=STUDIO[S.job.id].proj,sal=c.lv[S.job.lvl][1];const w=el('div');
+ const nm=el('input');nm.type='text';nm.value=genName();w.append(el('label','lb',`${pr.n} name`),nm);
+ w.append(el('label','lb','Type'));const ts=el('select');ts.innerHTML=pr.types.map(t=>`<option>${t}</option>`).join('');w.append(ts);
+ w.append(sec('Budget'));[['🪙','Shoestring',0,0],['💼','Standard',Math.round(sal*.08),6],['💎','All in',Math.round(sal*.35),14]].forEach(([ic,n,cost,bonus])=>w.append(opt(ic,n,cost?fmt(cost):'Free',()=>{if(S.money<cost)return toast('Not enough money.');if(!once('proj'))return;S.money-=cost;
+  const v=pr.stat==='karma'?S.karma:S.st[pr.stat];let q=clamp(rnd(22,58)+v*.22+S.job.lvl*4+S.job.perf/10+bonus+rnd(-6,6));
+  const aud=Math.round(q*q*pr.scale*(1+S.fame/30)*(0.6+Math.random()*.8));const rev=Math.round(aud*pr.per*(c.fame?1.5:1));S.money+=rev;
+  S.job.perf=clamp(S.job.perf+Math.round((q-48)/3));E({happy:q>=62?6:q<45?-4:1,fame:c.fame?Math.round(q/10):0});
+  const x={car:S.job.id,n:nm.value.trim()||genName(),type:ts.value,q,score:(Math.round(q)/10).toFixed(1),aud,rev,year:year(),age:S.age,tail:!!pr.tail};S.portfolio.push(x);
+  log(`My ${pr.n.toLowerCase()} "${x.n}" was ${qLabel(q)==='Flop'?'a flop':'a '+qLabel(q).toLowerCase()} (${x.score}/10). ${pr.ic}`,q>=78?'big':q<45?'bad':'good');if(q>=78)Q.push(confetti);
+  fix();act(x.n,`${x.type}<br>Rating <b>${x.score}/10</b>, ${qLabel(q)}<br>${aud.toLocaleString()} ${pr.aud}<br>You earned <b>${fmt(rev)}</b>`,pr.ic)})));
+ sheet(`New ${pr.n}`,w)}
+
+// ---------- military careers ----------
+CAREER_LIST.push(
+ {id:'army',n:'Army',ic:'🪖',g:'Military',req:{deg:'HS',health:50},lv:[['Private',32000],['Sergeant',45000],['Lieutenant',62000],['Captain',85000],['Colonel',120000],['General',200000]]},
+ {id:'navy',n:'Navy',ic:'⚓',g:'Military',req:{deg:'HS',health:50},lv:[['Seaman',32000],['Petty Officer',46000],['Ensign',62000],['Lieutenant Commander',90000],['Captain',125000],['Admiral',210000]]},
+ {id:'airforce',n:'Air Force',ic:'🛩️',g:'Military',req:{deg:'HS',health:55,smarts:50},lv:[['Airman',33000],['Staff Sergeant',47000],['Second Lieutenant',64000],['Major',92000],['Colonel',125000],['General',205000]]},
+ {id:'marines',n:'Marines',ic:'🎖️',g:'Military',req:{deg:'HS',health:65},lv:[['Private',33000],['Corporal',44000],['Sergeant',55000],['Lieutenant',66000],['Captain',88000],['Commandant',210000]]});
+CAREER_LIST.forEach(c=>CAR[c.id]=c);
+Object.assign(JOBEV,{
+ army:[{ic:'🪖',t:'A storm hits during a field exercise and your squad gets separated.',c:[['Lead them to shelter','smarts','You regrouped everyone safely. Commended.','It took all night to find everyone.'],['Wait for orders',null,'Orders came and everyone made it.','Cold, wet and miserable night.',{p:.6}]]},{ic:'🎖️',t:'Your commander asks for a volunteer for a tough assignment.',c:[['Volunteer','health','You crushed it. Promotion is on the table.','Brutal, but you survived it.'],['Let someone else go',null,'Quiet week.','You were passed over later.',{p:.6}]]}],
+ navy:[{ic:'⚓',t:'A crew member goes overboard during rough seas.',c:[['Throw a line','smarts','Perfect throw. They are safe.','It took three tries, but they made it.',{g:{karma:6}}],['Sound the alarm','smarts','The rescue team got them fast.','Chaos on deck.']]},{ic:'🌊',t:'Your ship docks in a foreign port for shore leave.',c:[['Explore the city','looks','Best day of your deployment.','You got lost and almost missed the ship.'],['Stay aboard and rest',null,'Well rested.','Everyone came back with great stories.',{p:.7}]]}],
+ airforce:[{ic:'🛩️',t:'Your aircraft has an instrument failure mid-flight.',c:[['Fly by hand','smarts','You landed it perfectly. Legend.','Hard landing, everyone okay.'],['Declare an emergency',null,'The tower guided you down safely.','Lots of paperwork.',{p:.8}]]},{ic:'🎆',t:'You are picked to fly in the big air show.',c:[['Pull off the hardest stunt','health','The crowd went wild.','You played it safe at the last second.',{g:{fame:3}}],['Fly a clean, safe routine',null,'Flawless.','A bit forgettable.',{p:.8}]]}],
+ marines:[{ic:'🎖️',t:'A recruit in your unit wants to quit.',c:[['Talk them through it','karma','They stayed and became your best Marine.','They left anyway.',{g:{karma:5}}],['Push them harder',null,'They found their grit.','They broke down.',{p:.5}]]},{ic:'🥾',t:'A brutal crucible training exercise begins.',c:[['Push to the front','health','You finished first. Respect earned.','You hit a wall but finished.'],['Help the slowest recruit','karma','Your whole team finished together.','You both finished last.']]}]});
+
+// ---------- prison ----------
+const CRIMES=[['🛒','Shoplift',14,.78,[30,400],[0,1]],['👛','Pickpocket',14,.7,[20,700],[1,1]],['🏚️','Burglary',16,.55,[500,9000],[2,4]],['🚗','Steal a car',16,.5,[3000,25000],[2,5]],['💳','Run a scam',18,.5,[2000,60000],[3,6]],['🏦','Rob a bank',18,.22,[100000,2000000],[8,20]]];
+function crimeSheet(){P();if(S.jail)return prisonSheet();const w=el('div');w.append(el('div','info','Crime pays sometimes. Getting caught means court, and maybe prison. Your karma will drop either way.'));
+ CRIMES.forEach(([ic,n,age,base,loot,sent])=>w.append(opt(ic,n,`Age ${age}+`,()=>{if(S.age<age)return toast(`You must be ${age}.`);if(!once('crime'))return;const p=base+(S.st.smarts-50)/250+L();E({karma:-rnd(4,10)});
+  if(chance(p)){const g=rnd(loot[0],loot[1]);S.money+=g;log(`I got away with a ${n.toLowerCase()} and made ${fmt(g)}.`,'');fix();act(n,`You got away with it. +${fmt(g)}. Nobody saw a thing... probably.`,'😈')}
+  else{fix();arrest(n,rnd(sent[0],sent[1]))}},{cls:S.age<age?'locked':''})));
+ sheet('Crime 😈',w)}
+function arrest(crime,years){log(`I was arrested for ${crime.toLowerCase()}. 🚨`,'bad');const w=el('div');w.append(el('div','evt-icon','🚨'),el('p','evt-text',`You were caught! The charge: <b>${crime}</b>. How do you handle court?`));
+ const verdict=(bonus,cost)=>{if(cost&&S.money<cost)return toast('Not enough money.');S.money-=cost;const free=years===0||chance(.25+bonus+L());if(free){log('The judge let me go. 😮‍💨','good');fix();return act('Court','Not guilty! You walked out free.','⚖️')}
+  const y=Math.max(1,years);S.jail=y;if(S.job){log(`I lost my job as ${CAR[S.job.id].lv[S.job.lvl][0]}.`,'bad');S.job=null}if(S.school&&S.school.type!=='Elementary School'&&S.school.type!=='Middle School')S.school=null;const p=partner();if(p&&chance(.4)){S.rel=S.rel.filter(r=>r!==p);log(`${p.name} left me.`,'bad')}
+  log(`I was sentenced to ${y} year${y===1?'':'s'} in prison. ⛓️`,'bad');E({happy:-20});fix();result('Sentenced',`Guilty. You were sentenced to <b>${y} year${y===1?'':'s'}</b> in prison.`,'⛓️')};
+ w.append(opt('👔','Hire a top lawyer',fmt(25000),()=>verdict(.35,25000)));w.append(opt('🧑‍⚖️','Public defender','Free',()=>verdict(.1,0)));w.append(opt('🙇','Plead guilty','Shorter sentence',()=>{years=Math.ceil(years/2);verdict(0,0)}));
+ sheet('Arrested 🚨',w,true)}
+function prisonSheet(){const w=el('div');w.append(el('div','info',`<b>⛓️ In prison</b><br>${S.jail} year${S.jail===1?'':'s'} left. Age up to serve your time.`));
+ w.append(opt('🏋️','Work out in the yard','+health',()=>{if(!once('pgym'))return;E({health:rnd(3,7)});fix();act('Yard','You are getting strong in here.','🏋️')}));
+ w.append(opt('📚','Prison library','+smarts',()=>{if(!once('plib'))return;E({smarts:rnd(3,6)});fix();act('Library','You read everything in the library.','📚')}));
+ w.append(opt('😇','Behave for early release','',()=>{if(!once('behave'))return;E({karma:4});if(chance(.3+L())&&S.jail>1){S.jail--;fix();act('Good behavior','The parole board cut a year off your sentence!','😇')}else act('Good behavior','The guards noticed. Keep it up.','😇')}));
+ w.append(opt('📝','File an appeal','Once per sentence',()=>{if(S.flags.appealed===S.age)return toast('Wait a year to appeal again.');S.flags.appealed=S.age;if(chance(.18+L())){S.jail=0;log('My appeal won. I am free! 🕊️','big');fix();act('Appeal','Your conviction was overturned. You are free!','🕊️')}else act('Appeal','Appeal denied.','📝')}));
+ w.append(opt('🕳️','Attempt an escape','Risky',()=>{if(!once('escape'))return;if(chance(.18+S.st.smarts/400+L())){S.jail=0;S.flags.escaped=1;log('I escaped from prison! 🏃','big');E({karma:-5});fix();act('Escape','You slipped out during laundry duty. You are free!','🏃')}else{S.jail+=2;E({health:-8});fix();act('Escape','Caught! Two years were added to your sentence.','🚨')}}));
+ w.append(opt('🤝','Make a friend inside','',()=>{if(!once('pfriend'))return;const g=pick(['male','female']);S.rel.push({id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:S.age+rnd(-5,10),rel:rnd(45,75),role:'Friend',alive:true});fix();act('Friend','You made a friend in your cell block.','🤝')}));
+ sheet('Prison ⛓️',w)}
+const PRISON_EV=[{ic:'🍲',t:'Someone tries to steal your lunch tray.',c:[['Stand up for yourself',()=>{if(chance(.5+S.st.health/300)){E({happy:4});return 'They backed off. Respect earned.'}E({health:-8});return 'You lost the fight.'}],['Let it go',()=>{E({happy:-3});return 'You went hungry.'}]]},{ic:'🗣️',t:'A riot is brewing in the yard.',c:[['Stay in your cell',()=>{E({karma:2});return 'You stayed out of it. Smart.'}],['Join in',()=>{if(chance(.5)){S.jail++;return 'You got caught. A year was added.'}return 'Chaos, but you got away with it.'}]]},{ic:'✉️',t:'You get a letter from home.',c:[['Write back',()=>{E({happy:8});S.rel.filter(r=>r.alive&&['Mother','Father'].includes(r.role)).forEach(r=>r.rel=clamp(r.rel+8));return 'It felt good to stay connected.'}],['Ignore it',()=>{E({happy:-4});return 'You put it in a drawer.'}]]}];
+function queuePrisonEvent(){const e=pick(PRISON_EV);Q.push(()=>choice('Prison',e.t,e.c,e.ic))}
+
+// ---------- casino ----------
+function casinoSheet(){const w=el('div');w.append(el('div','info','Gambling is risky. The house usually wins.'));
+ w.append(opt('🃏','Blackjack','Beat the dealer to 21',()=>betSheet('Blackjack',blackjack)));w.append(opt('🎰','Slots','Spin and pray',()=>betSheet('Slots',slots)));w.append(opt('🐎','Horse racing','Pick a horse',horseSheet));sheet('Casino 🎰',w)}
+function betSheet(game,fn){const w=el('div');w.append(el('p','evt-text',`How much do you bet on ${game}?`));[100,1000,10000,100000].forEach(b=>w.append(opt('💵',fmt(b),'',()=>{if(S.money<b)return toast('Not enough money.');fn(b)})));sheet(game,w)}
+function slots(b){S.money-=b;const sy=['🍒','🍋','🔔','💎','7️⃣'];const r=[pick(sy),pick(sy),pick(sy)];let win=0;if(r[0]===r[1]&&r[1]===r[2])win=b*(r[0]==='7️⃣'?50:r[0]==='💎'?20:8);else if(r[0]===r[1]||r[1]===r[2])win=b*1.5;S.money+=win;fix();act('Slots',`${r.join(' ')}<br>${win?'You won '+fmt(win)+'!':'You lost '+fmt(b)+'.'}`,'🎰')}
+function blackjack(b){const deck=()=>{const v=rnd(1,13);return v>10?10:v===1?11:v};const total=h=>{let t=h.reduce((a,c)=>a+c,0),aces=h.filter(c=>c===11).length;while(t>21&&aces--)t-=10;return t};
+ const you=[deck(),deck()],dealer=[deck(),deck()];S.money-=b;
+ const draw=()=>{const w=el('div');w.append(el('div','evt-icon','🃏'),el('p','evt-text',`Your hand: <b>${you.join(' + ')} = ${total(you)}</b><br>Dealer shows: <b>${dealer[0]}</b>`));
+  if(total(you)>21)return finish();w.append(opt('➕','Hit','',()=>{you.push(deck());draw()}));w.append(opt('✋','Stand','',finish));sheet('Blackjack',w,true)};
+ const finish=()=>{while(total(dealer)<17)dealer.push(deck());const y=total(you),d=total(dealer);let win=0,msg;
+  if(y>21)msg='You busted.';else if(y===21&&you.length===2){win=b*2.5;msg='Blackjack!'}else if(d>21||y>d){win=b*2;msg='You win!'}else if(y===d){win=b;msg='Push. You got your bet back.'}else msg='Dealer wins.';
+  S.money+=win;fix();result('Blackjack',`You: ${y} · Dealer: ${d}<br><b>${msg}</b> ${win>b?'+'+fmt(win-b):win===b?'':'-'+fmt(b)}`,'🃏')};
+ draw()}
+function horseSheet(){const horses=[['Thunderbolt',2],['Lucky Clover',4],['Midnight Run',6],['Old Pete',12],['Sugar Rush',20]];const w=el('div');w.append(el('p','evt-text','Pick your horse. Long shots pay more. $1,000 bet.'));
+ horses.forEach(([n,odds])=>w.append(opt('🐎',n,`Pays ${odds}:1`,()=>{if(S.money<1000)return toast('Not enough money.');if(!once('race'))return;S.money-=1000;const win=chance(1/(odds+1)+L()/3);if(win)S.money+=1000*(odds+1);fix();act('Race day',win?`${n} crossed the line first! You won ${fmt(1000*odds)}!`:`${n} finished ${pick(['third','last','fifth','second, by a nose'])}.`,'🐎')})));sheet('Horse Racing 🐎',w)}
+
+// ---------- investing ----------
+const FUNDS=[['index','📊','Index fund','Steady, usually 5 to 10% a year'],['tech','💻','Tech stocks','Bigger swings both ways'],['crypto','🪙','Crypto','Wild ride. Can double or crash']];
+function investSheet(){P();const w=el('div');w.append(el('div','info',`<b>💼 Portfolio: ${fmt(invTotal())}</b><br>Returns are applied each year when you age up. This is a game, not financial advice.`));
+ FUNDS.forEach(([k,ic,n,d])=>{w.append(sec(`${ic} ${n} · ${fmt(S.inv[k])}`));w.append(el('div','mini',`<span>${d}</span>`));
+  [1000,10000,100000].forEach(a=>w.append(opt('➕',`Buy ${fmt(a)}`,'',()=>{if(S.age<18)return toast('You must be 18.');if(S.money<a)return toast('Not enough cash.');S.money-=a;S.inv[k]+=a;fix();investSheet()})));
+  if(S.inv[k]>0)w.append(opt('💵',`Sell all (${fmt(S.inv[k])})`,'',()=>{S.money+=S.inv[k];log(`I sold my ${n.toLowerCase()} for ${fmt(S.inv[k])}.`);S.inv[k]=0;fix();investSheet()},{cls:'danger'}))});
+ sheet('Investing 📈',w)}
+
+// ---------- licenses ----------
+const LICENSES=[['driver','🚗',"Driver's license",16,0],['moto','🏍️','Motorcycle license',16,200],['boat','🚤','Boating license',16,300],['pilot','🛩️',"Pilot's license",18,12000]];
+function licenseSheet(){P();const w=el('div');LICENSES.forEach(([k,ic,n,age,cost])=>w.append(opt(ic,n,S.lic[k]?'You have this':`Age ${age}+ · ${cost?fmt(cost):'Free'}`,()=>{if(S.lic[k])return toast('You already have it.');if(S.age<age)return toast(`You must be ${age}.`);if(S.money<cost)return toast('Not enough money.');if(!once('lic'+k))return;S.money-=cost;
+  if(chance(.55+S.st.smarts/250+L())){S.lic[k]=1;if(k==='driver')S.flags.license=1;log(`I got my ${n.toLowerCase()}! ${ic}`,'good');fix();act(n,`You passed! ${ic}`,'🪪')}else{fix();act(n,'You failed the test. Try again next year.','📝')}},{rt:S.lic[k]?'✅':''})));sheet('Licenses 🪪',w)}
+
+// ---------- shopping ----------
+function shopSheet(){const w=el('div');const items=[['👗','Designer outfit',2500,{looks:3,happy:4}],['👟','Limited sneakers',800,{happy:5}],['⌚','Luxury watch',15000,{happy:8}],['💍','Diamond jewelry',40000,{happy:10,looks:2}],['🎸','Electric guitar',1200,{happy:4},'skill'],['🎹','Grand piano',30000,{happy:6},'skill'],['🖼️','Fine art painting',80000,{happy:8}],['📱','Newest phone',1200,{happy:4}]];
+ items.forEach(([ic,n,c,eff,sk])=>w.append(opt(ic,n,'',()=>{if(S.age<16)return toast('You must be 16.');if(S.money<c)return toast('Not enough money.');S.money-=c;E(eff);if(sk){P();S.music.skill=clamp(S.music.skill+4)}log(`I bought a ${n.toLowerCase()}. ${ic}`);fix();act('Shopping',`You bought a ${n.toLowerCase()}. ${pick(['Retail therapy works.','Worth it.','Your wallet is crying.'])}`,ic)},{rt:fmt(c)})));sheet('Shopping 🛍️',w)}
+
+// ---------- activity choice menus ----------
+function choiceMenu(title,key,items){const w=el('div');items.forEach(([ic,n,sub,a])=>w.append(opt(ic,n,sub,()=>runAct(n,ic,a,key))));sheet(title,w)}
+let gymSheet=()=>choiceMenu('Gym 🏋️','gym',[['🏋️','Lift weights','+health, +looks',['','health','You hit a new personal record! 💪','You pulled a muscle.',{g:{health:6,looks:2},b:{health:-2},job:false}]],['🏃','Cardio','+health',['','health','You ran 5 miles without stopping.','You were wheezing after one mile.',{g:{health:7},b:{health:1},job:false}]],['🧘','Yoga class','+health, +happiness',['','health','You feel bendy and calm.','You fell over in tree pose.',{g:{health:4,happy:5},job:false}]],['🥊','Boxing','+health',['','health','You landed a perfect combo on the bag.','You got winded fast.',{g:{health:6,happy:3},b:{health:-1},job:false}]],['🧗','Rock climbing','+health',['','health','You reached the top of the hardest wall.','You slipped halfway up.',{g:{health:6,happy:4},job:false}]]]);
+let libSheet=()=>choiceMenu('Library 📖','lib',[['🚀','Science book','+smarts',['','smarts','You learned how black holes work.','It went over your head.',{g:{smarts:5},b:{smarts:1},job:false}]],['🏛️','History book','+smarts',['','smarts','You could teach a class on ancient Rome now.','You fell asleep on page 12.',{g:{smarts:4,happy:2},b:{smarts:1},job:false}]],['🕵️','Mystery novel','+happiness',['','smarts','You guessed the twist!','The twist got you.',{g:{happy:5,smarts:2},b:{happy:3},job:false}]],['💻','Coding book','+smarts',['','smarts','You built your first little program.','Error messages everywhere.',{g:{smarts:5},b:{smarts:1},job:false}]],['🧠','Self-help book','+happiness',['','smarts','You feel like a new person.','It was mostly fluff.',{g:{happy:6,smarts:1},job:false}]]]);
+let medSheet=()=>choiceMenu('Meditate 🧘','med',[['🌬️','Breathing exercises','',['','happy','Calm washed over you.','Your mind kept wandering.',{g:{happy:6,health:1},b:{happy:2},job:false}]],['🌲','Walk in nature','',['','health','The fresh air did wonders.','It rained the whole time.',{g:{happy:6,health:2},b:{happy:1},job:false}]],['🎧','Guided meditation app','',['','happy','You finally get the hype.','The narrator voice annoyed you.',{g:{happy:5},b:{happy:1},job:false}]],['🛕','Silent retreat','',['','happy','A week of silence changed you.','You lasted one day.',{g:{happy:10,smarts:2},b:{happy:-2},job:false}]]]);
+let nightSheet=()=>{const w=el('div');[['🪩','Dance club',150],['🍸','Cocktail bar',100],['🎤','Karaoke',60],['🎳','Bowling with friends',40],['🎭','Comedy show',80]].forEach(([ic,n,c])=>w.append(opt(ic,n,fmt(c),()=>{if(!once('night'))return;if(S.money<c)return toast('Not enough money.');S.money-=c;const ok=resolve('looks',{g:{happy:rnd(6,10)},b:{happy:2},job:false});E({health:-1});fix();if(!partner()&&ok&&chance(.4)){Q.push(()=>showCandidate(meet()));act(n,'Great night... and someone caught your eye. 👀',ic)}else act(n,ok?pick(['Best night of the month.','You danced until close.','You laughed so hard your face hurt.']):pick(['It was kind of boring.','Too crowded.','You went home early.']),ic)})));sheet('Night Out 🌙',w)};
+let spaSheet=()=>choiceMenu('Salon & Spa 💆','spa',[['💇','New haircut','+looks',['','looks','You look amazing. Compliments all week.','It is shorter than you wanted.',{g:{looks:3,happy:4,money:-80},b:{looks:-1,money:-80},job:false}]],['💅','Manicure','+happiness',['','looks','Perfect nails.','Smudged one on the way out.',{g:{happy:4,money:-50},b:{money:-50},job:false}]],['🧖','Full spa day','+happiness, +health',['','happy','You floated out of there.','The massage was too intense.',{g:{happy:8,health:3,money:-300},b:{happy:2,money:-300},job:false}]]]);
+let martialSheet=()=>choiceMenu('Martial Arts 🥋','martial',[['🥋','Karate','',['','health','You earned a new belt!','You got knocked down in sparring.',{g:{health:5,happy:3},b:{health:-2},job:false}]],['🤼','Jiu-jitsu','',['','health','You tapped out your instructor once!','Tapped out ten times.',{g:{health:5,smarts:1},job:false}]],['🦵','Muay Thai','',['','health','Your kicks are fierce.','Your shins are bruised.',{g:{health:6},b:{health:-2},job:false}]]]);
+let instrumentSheet=()=>{P();choiceMenu('Learn an Instrument 🎸','instr',[['🎸','Guitar','+music skill',['','smarts','You can play your favorite song now!','Your fingers hurt.',{g:{happy:4},job:false}]],['🎹','Piano','+music skill',['','smarts','You played a full piece from memory.','Scales, scales, scales.',{g:{smarts:2},job:false}]],['🥁','Drums','+music skill',['','health','The neighbors complained. You rock.','You lost the beat.',{g:{happy:4},job:false}]],['🎻','Violin','+music skill',['','smarts','Beautiful vibrato.','It sounded like a sad cat.',{g:{smarts:2},job:false}]],['🎤','Singing lessons','+music skill',['','looks','Your voice is getting powerful.','Your voice cracked.',{g:{looks:1},job:false}]]]);
+ document.querySelectorAll('#sheetBody .opt').forEach(b=>{const f=b.onclick;b.onclick=()=>{const used=S.used.instr;f();if(!used&&S.used.instr){P();S.music.skill=clamp(S.music.skill+rnd(3,7));save()}}})};
+
+function premiumYear(){P();
+ if(S.jail>0){S.jail--;if(S.jail===0){log('I was released from prison. 🕊️','big');E({happy:15})}}
+ if(invTotal()>0){const r={index:rnd(-10,18),tech:rnd(-30,45),crypto:rnd(-70,150)};let before=invTotal();for(const k in r)if(S.inv[k]>0)S.inv[k]=Math.max(0,Math.round(S.inv[k]*(1+r[k]/100)));const d=invTotal()-before;if(Math.abs(d)>1000)log(`My investments ${d>=0?'gained':'lost'} ${fmt(Math.abs(d))} this year. ${d>=0?'📈':'📉'}`,d>=0?'good':'bad')}
+ let roy=0;S.music.albums.forEach(a=>{const y=S.age-a.age;if(y>0&&y<15){const r=Math.round(a.sales*.12*Math.pow(.6,y)*2.2);if(r>20){roy+=r;a.earned+=r}}});
+ S.portfolio.forEach(x=>{if(!x.tail)return;const y=S.age-x.age;if(y>0&&y<12){const r=Math.round(x.rev*.2*Math.pow(.6,y));if(r>20){roy+=r;x.rev+=r}}});
+ if(roy>0){S.money+=roy;log(`Royalties from my past work paid me ${fmt(roy)}. 💸`,'good')}
+}
 
 // ---------- upgrades / ribbons / creator ----------
 function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
@@ -893,6 +1117,12 @@ function creatorSheet(){const w=el('div');['health','happy','smarts','looks'].fo
  [['karma','Karma'],['fame','Fame']].forEach(([k,l])=>{w.append(el('label','lb',`${l} <span id="cv_${k}">${S[k]}</span>`));const r=el('input');r.type='range';r.min=0;r.max=100;r.value=S[k];r.oninput=()=>{S[k]=+r.value;$('#cv_'+k).textContent=r.value};w.append(r)});
  w.append(el('label','lb','Cash'));const m=el('input');m.type='number';m.value=Math.round(S.money);w.append(m);
  if(S.ill)w.append(opt('💊','Cure illness','',()=>{S.ill=null;toast('Cured!')}));
+ w.append(sec('God mode'));
+ w.append(opt('💞','Max every relationship','',()=>{S.rel.forEach(r=>{if(r.alive)r.rel=100});toast('Everyone loves you now.')}));
+ if(S.jail)w.append(opt('🔓','Release from prison','',()=>{S.jail=0;log('🪄 I was mysteriously released from prison.');toast('Free!')}));
+ w.append(opt('🎵','Max music skill','',()=>{P();S.music.skill=100;toast('Music skill 100%.')}));
+ w.append(opt('🪪','Get every license','',()=>{P();LICENSES.forEach(l=>S.lic[l[0]]=1);S.flags.license=1;toast('All licenses granted.')}));
+ if(S.job)w.append(opt('📈','Max job performance','',()=>{S.job.perf=100;toast('Performance 100%.')}));
  w.append(opt('','Save changes','',()=>{S.money=+m.value||0;log('🪄 Reality shifted slightly.');fix();closeSheet()},{cls:'primary'}));sheet('Creator Mode 🪄',w)}
 
 // ---------- death / start ----------
@@ -961,6 +1191,14 @@ $('#btnRewind').onclick=()=>{if(!has('rewind'))return;if(!PREV)return toast('Not
 $('#btnCreator').onclick=()=>{if(S&&S.alive&&!sheetOpen)creatorSheet()};
 addEventListener('keydown',e=>{if(e.key===' '&&!sheetOpen&&document.activeElement.tagName!=='INPUT'){e.preventDefault();ageUp()}});
 
+ACH.push(['plat','💿','Platinum Record','Release a platinum album',20,()=>S.music&&S.music.albums.some(a=>a.sales>=1e6)],
+ ['world','✈️','World Tour','Go on a world tour',15,()=>!!S.flags.worldTour],
+ ['hit','🔥','Number One','Reach #1 with a single',20,()=>S.music&&S.music.singles.some(x=>x.peak===1)],
+ ['master','🏅','Masterpiece','Create something rated 9.0 or higher',15,()=>(S.portfolio||[]).some(x=>x.q>=90)||(S.music&&S.music.albums.some(a=>a.q>=90))],
+ ['escape','🏃','Escape Artist','Escape from prison',10,()=>!!S.flags.escaped],
+ ['investor','📈','Investor','Grow your investments past $1M',15,()=>invTotal()>=1e6],
+ ['general','⭐','Top Brass','Reach the top rank in the military',20,()=>S.job&&CAR[S.job.id].g==='Military'&&S.job.lvl===CAR[S.job.id].lv.length-1],
+ ['licensed','🪪','Fully Licensed','Earn every license',10,()=>S.lic&&LICENSES.every(l=>S.lic[l[0]])]);
 // back-button navigation: wrap every menu
 jobSheet=nav('jobSheet',jobSheet);
 assetSheet=nav('assetSheet',assetSheet);
@@ -976,6 +1214,31 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+gymSheet=nav('gymSheet',gymSheet);
+libSheet=nav('libSheet',libSheet);
+medSheet=nav('medSheet',medSheet);
+nightSheet=nav('nightSheet',nightSheet);
+spaSheet=nav('spaSheet',spaSheet);
+martialSheet=nav('martialSheet',martialSheet);
+instrumentSheet=nav('instrumentSheet',instrumentSheet);
+
+musicSheet=nav('musicSheet',musicSheet);
+songSheet=nav('songSheet',songSheet);
+singleSheet=nav('singleSheet',singleSheet);
+albumSheet=nav('albumSheet',albumSheet);
+tourSheet=nav('tourSheet',tourSheet);
+videoSheet=nav('videoSheet',videoSheet);
+studioSheet=nav('studioSheet',studioSheet);
+newProjSheet=nav('newProjSheet',newProjSheet);
+crimeSheet=nav('crimeSheet',crimeSheet);
+prisonSheet=nav('prisonSheet',prisonSheet);
+casinoSheet=nav('casinoSheet',casinoSheet);
+horseSheet=nav('horseSheet',horseSheet);
+investSheet=nav('investSheet',investSheet);
+licenseSheet=nav('licenseSheet',licenseSheet);
+shopSheet=nav('shopSheet',shopSheet);
+dockSheet=nav('dockSheet',dockSheet);
+
 saveSheet=nav('saveSheet',saveSheet);
 creatorSheet=nav('creatorSheet',creatorSheet);
 startScreen=nav('startScreen',startScreen);
