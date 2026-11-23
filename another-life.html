@@ -94,6 +94,23 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 .pill{display:inline-block;background:#ffffff15;border-radius:99px;padding:2px 9px;font-size:12px;margin:2px 3px 2px 0}
 .obit{font-family:Fredoka;font-size:17px;line-height:1.5;text-align:center;margin-bottom:12px}
+#glance{display:none;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 14px 14px;margin-bottom:14px;backdrop-filter:blur(10px)}
+#btnWide.on{border-color:var(--acc);color:var(--acc)}
+.mini{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}.mini b{font-family:Fredoka;font-weight:600}
+@media (min-width:1000px){
+ body.wide #app{max-width:1500px;display:grid;grid-template-columns:310px minmax(0,1fr) 360px;grid-template-rows:auto auto auto 1fr auto auto;grid-template-areas:"head log glance" "tool log glance" "stats log glance" ". log glance" "again log glance" "nav log glance";column-gap:16px;padding:14px 16px 0}
+ body.wide header{grid-area:head;flex-wrap:wrap;row-gap:4px}
+ body.wide .money{flex-basis:100%;display:flex;gap:10px;align-items:baseline;justify-content:flex-start;text-align:left;padding-left:70px}
+ body.wide #toolbar{grid-area:tool}
+ body.wide #log{grid-area:log;margin-bottom:14px}
+ body.wide #stats{grid-area:stats;grid-template-columns:1fr;margin-top:0}
+ body.wide #againBtn{grid-area:again;justify-self:center;margin-bottom:6px}
+ body.wide nav{grid-area:nav}
+ body.wide #glance{grid-area:glance;display:block}
+ body.wide #sheet{inset:14px max(16px,calc((100vw - 1500px) / 2 + 16px)) 14px auto;width:410px;background:none;align-items:stretch;transition:opacity .3s,transform .45s cubic-bezier(.2,.9,.3,1)}
+ body.wide #sheet.hidden{transform:translateX(60px)}
+ body.wide .sheet-inner{max-height:none;height:100%;border-radius:24px;border-bottom:1px solid var(--line);transform:none!important;box-shadow:0 20px 50px #0008}
+}
 #btnDock.on{border-color:var(--acc);color:var(--acc)}
 @media (min-width:600px){
  body.dock-left #app{margin-left:10px!important;margin-right:auto!important;max-width:520px!important}
@@ -123,6 +140,7 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
     <button id="btnUp">⭐ Upgrades<span class="badge" id="ptsBadge">0</span></button>
     <button id="btnSide">🖥️ Side view</button>
     <button id="btnDock">📺 Dock</button>
+    <button id="btnWide" class="hidden">🗔 Wide layout</button>
     <button id="btnRewind" class="hidden">⏪ Rewind</button>
     <button id="btnCreator" class="hidden">🪄 Creator</button>
     <button id="btnAch">🏆 Ribbons</button>
@@ -132,6 +150,7 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
   <main id="log"></main>
   <section id="stats"></section>
   <button id="againBtn" class="hidden"></button>
+  <aside id="glance"></aside>
   <nav>
     <button data-a="job">💼<span>Career</span></button>
     <button data-a="assets">🏠<span>Assets</span></button>
@@ -308,8 +327,8 @@ let navStack=[],curNav=null,lastSub={};
 function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen){navStack=[];const sub=lastSub[name];if(sub&&sub.title)navStack=[Object.assign({},sub,{parentEntry:{key,name,go:()=>fn(...args),title:null,forced:false}})]}if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,name,go:()=>fn(...args.map(a=>a&&typeof a==='object'&&a.id&&S?(S.rel.find(x=>x.id===a.id)||S.biz.find(x=>x.id===a.id)||a):a)),title:null};if(navStack.length&&!navStack[0].forced&&!['showCandidate','findDate','startScreen','showDeath','creatorSheet'].includes(name))lastSub[navStack[0].name]=curNav;fn(...args)}}
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev.parentEntry)navStack=[prev.parentEntry];curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
-let sheetForced=false;const WIDE=()=>innerWidth>=760;const isSide=()=>!!M.side&&WIDE()&&!M.dock;
-function applySide(){document.body.classList.toggle('side',isSide());const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
+let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
+function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
@@ -329,6 +348,29 @@ function act(title,r,icon){result(title,r,icon)}
 function stage(){const a=S.age;return a<3?0:a<13?1:a<20?2:a<60?3:4}
 function avatar(){if(!S.alive)return'🪦';const m=S.gender==='male',a=S.age;if(a<3)return'👶';if(a<13)return m?'👦':'👧';if(a<20)return m?'🧑':'👱‍♀️';if(a<60)return m?'👨':'👩';return m?'👴':'👵'}
 function mood(){const h=S.st.happy;return h>80?'😄':h>60?'🙂':h>40?'😐':h>20?'😟':'😢'}
+function openMenu(fn){if(sheetOpen){if(sheetForced)return;closeSheet()}fn()}
+function renderGlance(){const g=$('#glance');if(!g||!document.body.classList.contains('wide')||!S)return;g.innerHTML='';
+ if(!S.alive){g.append(sec('Rest in peace'),el('div','info',`${S.name} lived to ${S.age}.`));return}
+ g.append(sec('Right now'));
+ const job=S.job?CAR[S.job.id]:null;
+ g.append(el('div','info',job?`<b>${job.ic} ${job.lv[S.job.lvl][0]}</b><br>${fmt(job.lv[S.job.lvl][1]*(1+S.job.years*.015))}/yr · performance ${S.job.perf}%`:S.school?`<b>🏫 ${S.school.type}${S.school.major?' · '+S.school.major:''}</b><br>${S.school.left} yr left · grades ${S.school.perf}%`:S.retired?`<b>🏖️ Retired</b><br>Pension ${fmt(S.retired)}/yr`:S.age<16?'<b>🧸 Just a kid</b><br>Enjoy it while it lasts.':'<b>💼 No job yet</b><br>Check Career for openings.'));
+ if(S.ill)g.append(el('div','info',`<b>🤒 Sick</b><br>${S.ill.n}. See a doctor in Activities.`));
+ g.append(opt('💼','Career','Jobs, school, promotions',()=>openMenu(jobSheet)));
+ g.append(sec('People'));
+ const order=['Spouse','Fiancé','Fiancée','Partner','Son','Daughter','Mother','Father','Sister','Brother','Friend'];
+ const ppl=S.rel.filter(r=>r.alive).sort((a,b)=>order.indexOf(a.role)-order.indexOf(b.role)).slice(0,6);
+ ppl.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';g.append(opt(r.gender==='male'?'🧑':'👩',r.name,`${r.role} · age ${r.age}`,()=>openMenu(()=>personSheet(r)),{rt:`<div class="bar" style="width:60px"><i style="width:${r.rel}%;background:${c}"></i></div>`}))});
+ S.pets.filter(p=>p.alive).slice(0,2).forEach(p=>g.append(el('div','mini',`<span>${p.ic} ${p.name}</span><span>${p.type}, age ${p.age}</span>`)));
+ g.append(opt('❤️','All people','Family, love, friends',()=>openMenu(relSheet)));
+ g.append(sec('Money'));
+ const h=S.assets.filter(a=>a.kind==='house').length,c=S.assets.filter(a=>a.kind==='car').length;
+ g.append(el('div','info',`<div class="mini"><span>Cash</span><b>${fmt(S.money)}</b></div><div class="mini"><span>Debt</span><b>${fmt(S.debt)}</b></div><div class="mini"><span>Net worth</span><b>${fmt(net())}</b></div><div class="mini"><span>Homes · Vehicles · Businesses</span><b>${h} · ${c} · ${S.biz.length}</b></div>`));
+ g.append(opt('🏠','Assets','Buy, sell, run businesses',()=>openMenu(assetSheet)));
+ g.append(sec('Ribbons'));
+ const last=S.achs.slice(-3).map(id=>ACH.find(a=>a[0]===id)).filter(Boolean);
+ g.append(el('div','info',`<b>${S.achs.length}</b> this life · <b>${Object.keys(M.ach).length}/${ACH.length}</b> all time${last.length?'<br>'+last.map(a=>`<span class="pill">${a[1]} ${a[2]}</span>`).join(''):''}`));
+ g.append(opt('🏆','See ribbons','',()=>openMenu(achSheet)));
+}
 function render(){
  if(!S)return;
  document.documentElement.style.setProperty('--hue',[330,175,270,210,35][stage()]);
@@ -348,6 +390,7 @@ function render(){
  const lg=$('#log');lg.innerHTML='';let cur=null,box;
  S.log.slice(-250).forEach(e=>{if(e.a!==cur){cur=e.a;box=el('div','yr');box.append(el('h4','',`Age ${e.a} · ${S.born+e.a}`));lg.append(box)}box.append(el('div','ent '+e.c,e.t))});
  lg.scrollTop=lg.scrollHeight;
+ renderGlance();
  // stats
  const st=$('#stats');st.innerHTML='';
  const list=[['❤️ Health',S.st.health],['😊 Happiness',S.st.happy],['🧠 Smarts',S.st.smarts],['✨ Looks',S.st.looks],['☯️ Karma',S.karma]];
@@ -685,6 +728,7 @@ $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnAch').onclick=()=>S&&achSheet();
 $('#btnDock').onclick=()=>{M.dock=!M.dock?'left':M.dock==='left'?'right':null;saveMeta();applySide();toast(M.dock?`Game docked ${M.dock}. The other side is free for a video.${M.side?' Side view is paused while docked.':''}`:'Game is back in the center.')};
 $('#btnSide').onclick=()=>{if(M.dock&&!M.side)toast('Undock first to use side view.');M.side=!M.side;saveMeta();applySide();toast(!M.side?'Side view off.':WIDE()?'Side view on: menus open next to your game.':'Side view is on, but this screen is too narrow. Turn your device sideways or widen the window.')};
+$('#btnWide').onclick=()=>{M.wide=M.wide===false?true:false;saveMeta();if(sheetOpen&&!sheetForced)closeSheet();applySide();toast(M.wide!==false?'Wide layout on.':'Wide layout off.')};
 addEventListener('resize',applySide);applySide();
 $('#btnSound').onclick=()=>{M.sound=!M.sound;saveMeta();render()};
 $('#btnNew').onclick=()=>{const w=el('div');w.append(el('p','evt-text','Abandon this life and start over?'));w.append(opt('','Yes, start a new life','',()=>{closeSheet();setTimeout(startScreen,300)},{cls:'primary'}));w.append(opt('','Keep living','',closeSheet));sheet('New life?',w)};
