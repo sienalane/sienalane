@@ -249,7 +249,7 @@ function newLife(o={}){
  if(o.stats)Object.assign(S.st,o.stats);
  if(has('trust'))S.money+=50000;
  if(o.money)S.money+=o.money;
- PREV=null;Q=[];lastMenu=null;
+ PREV=null;Q=[];lastMenu=null;lastSub={};
  if(!o.noFamily){
   const mom={id:uid(),name:pick(FEMALE)+' '+last,role:'Mother',gender:'female',age:rnd(20,40),rel:rnd(60,100),alive:true};
   const dad={id:uid(),name:pick(MALE)+' '+last,role:'Father',gender:'male',age:rnd(21,45),rel:rnd(55,100),alive:true};
@@ -287,9 +287,9 @@ function tick(){cx.clearRect(0,0,fx.width,fx.height);parts.forEach(p=>{p.x+=p.vx
 let tt;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2600)}
 
 // ---------- sheets ----------
-let navStack=[],curNav=null;
-function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen)navStack=[];if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,name,go:()=>fn(...args.map(a=>a&&typeof a==='object'&&a.id&&S?(S.rel.find(x=>x.id===a.id)||S.biz.find(x=>x.id===a.id)||a):a)),title:null};fn(...args)}}
-function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();curNav=prev;beep(420,.05);prev.go()}
+let navStack=[],curNav=null,lastSub={};
+function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof a==='object'?(a.id||a.name||''):String(a)).join(',');if(sheetOpen&&curNav&&curNav.key!==key)navStack.push(curNav);else if(!sheetOpen){navStack=[];const sub=lastSub[name];if(sub&&sub.title)navStack=[Object.assign({},sub,{parentEntry:{key,name,go:()=>fn(...args),title:null,forced:false}})]}if(!curNav||curNav.key!==key||!sheetOpen)curNav={key,name,go:()=>fn(...args.map(a=>a&&typeof a==='object'&&a.id&&S?(S.rel.find(x=>x.id===a.id)||S.biz.find(x=>x.id===a.id)||a):a)),title:null};if(navStack.length&&!navStack[0].forced&&!['showCandidate','findDate','startScreen','showDeath','creatorSheet'].includes(name))lastSub[navStack[0].name]=curNav;fn(...args)}}
+function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev.parentEntry)navStack=[prev.parentEntry];curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 function sheet(title,content,forced=false){if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
@@ -658,7 +658,7 @@ function startScreen(){const w=el('div');w.append(el('div','title','Another Life
 
 // ---------- wiring ----------
 $('#ageBtn').onclick=ageUp;
-$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();m.go()};
+$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();if(!navStack.length&&lastSub[m.name]&&lastSub[m.name].title)navStack=[Object.assign({},lastSub[m.name],{parentEntry:{key:'p:'+m.name,name:m.name,go:m.go,title:m.title,forced:false}})];m.go()};
 document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(sheetOpen||!S)return;if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
 $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnAch').onclick=()=>S&&achSheet();
