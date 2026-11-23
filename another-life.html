@@ -113,10 +113,10 @@ input[type=range]{width:100%;accent-color:var(--acc);margin-bottom:8px}
 }
 #btnDock.on{border-color:var(--acc);color:var(--acc)}
 @media (min-width:600px){
- body.dock-left #app{margin-left:10px!important;margin-right:auto!important;max-width:max(520px,60vw)!important}
- body.dock-right #app{margin-right:10px!important;margin-left:auto!important;max-width:max(520px,60vw)!important}
- body.dock-left #sheet{right:auto;width:max(540px,calc(60vw + 20px))}
- body.dock-right #sheet{left:auto;width:max(540px,calc(60vw + 20px))}
+ body.dock-left #app{margin-left:10px!important;margin-right:auto!important;max-width:max(480px,var(--dockw,52vw))!important}
+ body.dock-right #app{margin-right:10px!important;margin-left:auto!important;max-width:max(480px,var(--dockw,52vw))!important}
+ body.dock-left #sheet{right:auto;width:max(500px,calc(var(--dockw,52vw) + 20px))}
+ body.dock-right #sheet{left:auto;width:max(500px,calc(var(--dockw,52vw) + 20px))}
  body.dock-left .sheet-inner,body.dock-right .sheet-inner{max-width:calc(100% - 20px)}
 }
 @media (min-width:1300px){
@@ -350,7 +350,7 @@ function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev.parentEntry)navStack=[prev.parentEntry];curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
-function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
+function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
@@ -749,7 +749,13 @@ document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(!S)
 $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnSave').onclick=()=>{if(S&&S.log.length)openMenu(saveSheet);else toast('Start a life first.')};
 $('#btnAch').onclick=()=>S&&achSheet();
-$('#btnDock').onclick=()=>{M.dock=!M.dock?'left':M.dock==='left'?'right':null;saveMeta();applySide();toast(M.dock?`Game docked ${M.dock}. The other side is free for a video.${M.side?' Side view is paused while docked.':''}`:'Game is back in the center.')};
+function dockSheet(){const w=el('div');w.append(el('div','info','Dock the game to one side so a video can play on the other. Drag the slider until the game and your video both fit.'));
+ w.append(sec('Position'));[['left','⬅️','Dock left'],['right','➡️','Dock right'],[null,'⏺️','Center (no dock)']].forEach(([v,ic,l])=>w.append(opt(ic,l,'',()=>{M.dock=v;saveMeta();applySide();dockSheet()},{rt:M.dock===v?'✅':''})));
+ w.append(sec('Game width'));const val=el('div','mini',`<span>Narrower</span><b id="dwv">${M.dockw||52}% of the screen</b><span>Wider</span>`);const r=el('input');r.type='range';r.min=35;r.max=80;r.value=M.dockw||52;
+ r.oninput=()=>{M.dockw=+r.value;$('#dwv').textContent=r.value+'% of the screen';applySide()};r.onchange=()=>saveMeta();w.append(val,r);
+ if(!M.dock)w.append(el('div','info','Pick Dock left or Dock right to use the width slider.'));
+ w.append(opt('','Done','',closeSheet,{cls:'primary'}));sheet('Dock 📺',w)}
+$('#btnDock').onclick=()=>{if(sheetOpen&&sheetForced)return toast('Start your life first, then set the dock.');openMenu(dockSheet)};
 $('#btnSide').onclick=()=>{if(M.dock&&!M.side)toast('Undock first to use side view.');M.side=!M.side;saveMeta();applySide();toast(!M.side?'Side view off.':WIDE()?'Side view on: menus open next to your game.':'Side view is on, but this screen is too narrow. Turn your device sideways or widen the window.')};
 $('#btnWide').onclick=()=>{M.wide=M.wide===false?true:false;saveMeta();if(sheetOpen&&!sheetForced)closeSheet();applySide();toast(M.wide!==false?'Wide layout on.':'Wide layout off.')};
 addEventListener('resize',applySide);applySide();

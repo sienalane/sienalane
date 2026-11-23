@@ -1,6 +1,6 @@
 // SienaLane Games offline support.
 // Pages load fresh when online and from the cache when offline. Bump CACHE and add new files to FILES when adding a game.
-const CACHE = 'sl-games-v17';
+const CACHE = 'sl-games-v18';
 const FILES = [
   'games.html', 'potion-sort.html', 'puzzles.html', 'world-order.html', 'wild-acres.html', 'blind-tasting.html',
   'guess-five.html', 'four-by-four.html', 'honeycomb.html', 'close-call.html', 'letter-loop.html', 'word-ladder.html',
