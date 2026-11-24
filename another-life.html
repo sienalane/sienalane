@@ -355,11 +355,11 @@ function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
 function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
-let lastMenu=null;const NO_AGAIN=['showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet','switchSheet'];
+let lastMenu=null;const NO_AGAIN=['leaveChurch','showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet','switchSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
 function returnTarget(){const ok=e=>e&&e.title&&!e.forced&&!NO_AGAIN.includes(e.name);if(ok(curNav))return{e:curNav,stack:navStack.filter(ok)};for(let i=navStack.length-1;i>=0;i--)if(ok(navStack[i]))return{e:navStack[i],stack:navStack.slice(0,i).filter(ok)};const p=curNav&&PARENT_OF[curNav.name];if(p&&RAW[p])return{e:{key:p+':',name:p,go:()=>RAW[p](),title:p==='relSheet'?'People ❤️':p,forced:false},stack:[]};return null}
 function closeSheet(){const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack};$('#sheet').classList.add('hidden');document.body.classList.remove('panel-open');sheetOpen=false;sheetForced=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
-function nextQ(){if(!sheetOpen&&Q.length)Q.shift()()}
+function nextQ(){let n=0;while(!sheetOpen&&Q.length&&n++<20){try{Q.shift()()}catch(e){console.warn(e)}}}
 $('#sheetBack').onclick=goBack;
 $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&$('#sheetClose').style.display!=='none')closeSheet()});
@@ -941,7 +941,7 @@ function actSheet(){P();if(S.jail)return prisonSheet();const w=el('div');const a
  A('🪪','Licenses','Driver, motorcycle, boat, pilot',16,licenseSheet);
  w.append(sec('😈 Crime'));
  A('😈','Commit a crime','Shoplifting to bank heists. Risky',14,crimeSheet);
- if(FM()){w.append(sec('⛪ Church'));A('⛪','Church','Service, choir, potluck, VBS, tithing',0,()=>churchSheet())}
+ if(FM()){w.append(sec('⛪ Church'));A('⛪','Church','Service, choir, potluck, VBS, tithing',0,()=>churchSheet())}else{w.append(sec('🕊️ Faith'));A('🕊️','Explore faith','Visit a church, meet the pastor, get baptized',8,()=>faithJourneySheet())}
  w.append(sec('📺 Fame'));A('📺','Reality TV show',S.show?'"'+S.show.name+'" · ratings '+S.show.rating+'%':'Pitch a show about your life',18,()=>tvSheet());
  w.append(sec('Fortune'));
  A('🎟️','Lottery','Scratch-offs, Powerball, raffles',18,lotterySheet);
@@ -1387,6 +1387,7 @@ function churchSheet(){if(!FM())return closeSheet();const w=el('div');w.append(e
  C('🌍','Go on a mission trip','$1,500',16,'mission','You helped build a school and came home changed.','You got sunburned in shapes you did not know were possible. Still worth it.',{karma:8,happy:6,money:-1500},'karma');
  C('🎄','Be in the Christmas pageant','',4,'pageant',`You were cast as ${pick(['Mary','Joseph','the Angel Gabriel','a very serious Wise Man'])}. Standing ovation.`,'You were cast as Sheep #4. You gave it everything.',{happy:5},'looks');
  w.append(opt('💵','Tithe 10%',S.money>0?fmt(S.money*.1):'You need money first',()=>{if(S.money<=0)return toast('You need money first.');if(!once('ch_tithe'))return;const t=Math.round(S.money*.1);S.money-=t;E({faith:8,karma:4,happy:3});log(`I tithed ${fmt(t)}. 🙏`,'good');fix();act('Tithe',`You gave ${fmt(t)}. ${pick(['The church finally fixed the AC. You are a hero.','Pastor Dave\'s new truck is very nice.','The fellowship hall got new folding chairs. The good kind.'])}`,'💵')}));
+ w.append(opt('🚪','Leave the church','',()=>leaveChurch(),{cls:'danger'}));
  if(S.age>=18&&!partner())w.append(opt('💒','Ask the church to set you up','The church ladies have a list',()=>{if(!once('ch_setup'))return;const p=meet();p.job=pick(['youth pastor','worship leader','nurse','teacher','homeschool parent']);toast(`${pick(CHURCH_LADIES)} says ${first(p.name)} "loves the Lord and has a good job."`);showCandidate(p)}));
  sheet('Church ⛪',w)}
 const CHURCH_EV=[
@@ -1451,10 +1452,37 @@ const TV_EV=[
  {ic:'🧒',t:'One of your kids says they are tired of the cameras.',cond:()=>kids().some(k=>k.alive&&k.age>=10),c:[['Give them a break from filming',()=>{kids().forEach(k=>k.rel=clamp(k.rel+8));S.show.rating=clamp(S.show.rating-4);return 'They were so relieved.'}],['The show must go on',()=>{kids().forEach(k=>k.rel=clamp(k.rel-10));return 'They filmed. They were not smiling.'}]]}];
 function tvYear(){const sh=S.show;if(!sh)return;sh.rating=clamp(sh.rating+rnd(-6,3));if(sh.seasons>0&&sh.rating<18&&chance(.5)){log(`📺 "${sh.name}" was canceled after ${sh.seasons} seasons.`,'bad');S.show=null;return}if(chance(.45)){const pool=TV_EV.filter(e=>!e.cond||e.cond());const e=pick(pool);Q.push(()=>choice(`📺 ${sh.name}`,e.t,e.c,e.ic))}}
 
+// ---------- finding faith (or leaving it) mid-life ----------
+function faithJourneySheet(){if(FM())return churchSheet();const seek=S.flags.seek||0;const w=el('div');w.append(el('div','info',`<b>🕊️ Exploring faith</b><br>${seek===0?'Curious about church? Take it one step at a time.':seek<2?'You are starting to feel something. Keep going, or take the plunge.':'Pastor Dave keeps saying the baptism tank is "warmed up and ready."'}`));
+ const step=(ic,n,key,t)=>w.append(opt(ic,n,'Once a year',()=>{if(!once('seek_'+key))return;S.flags.seek=seek+1;E({happy:3});log(t);fix();act(n,t,ic)}));
+ step('⛪','Visit a church this Sunday','visit',`You sat in the back row. ${pick(CHURCH_LADIES)} welcomed you, learned your life story and invited you to lunch.`);
+ step('☕','Have coffee with a pastor','pastor','Pastor Dave listened, answered your questions and paid for your latte. He also mentioned the softball league. Twice.');
+ step('📖','Read the Bible','bible','You started with Genesis. You are now very invested in Joseph and his brothers.');
+ step('🔥','Go to a tent revival','revival','There was a lot of clapping, a choir in matching robes and the best sweet tea you have ever had.');
+ w.append(sec('Commit'));
+ w.append(opt('💧','Get baptized',seek?'Join the church and turn on Faith & Family life':'Take at least one step first',()=>{if(!seek)return toast('Visit a church or talk to a pastor first.');baptismSheet()},{cls:seek?'primary':'locked'}));
+ sheet('Explore Faith 🕊️',w)}
+function baptismSheet(){const w=el('div');w.append(el('div','evt-icon','💧'),el('p','evt-text','The big day! How do you want to be baptized?'));
+ [['🏞️','In the river','The old-fashioned way. Very cold.'],['🛁','In the church baptism tank','Heated. Mostly.'],['💦','A gentle sprinkle','Low commitment, high elegance.']].forEach(([ic,n,sub])=>w.append(opt(ic,n,sub,()=>convert(n))));sheet('Baptism 💧',w,true)}
+function convert(how){S.mode='faith';S.faith=rnd(65,85);S.flags.converted=(S.flags.converted||0)+1;S.flags.church=S.flags.church||pick(['First Community Church','Grace Fellowship','Cornerstone Chapel','New Hope Church']);E({happy:10});
+ log(`💧 I was baptized ${how.toLowerCase()} and joined ${S.flags.church}. ⛪`,'big');Q.push(confetti);
+ const p=partner();if(p)Q.push(()=>choice('Big news at home',`You tell ${first(p.name)} you got baptized and want to live by church standards now${p.role!=='Spouse'?', including courtship rules':''}.`,[
+  ['Ask them to come with you',()=>{if(chance(.45+p.rel/300)){p.rel=clamp(p.rel+10);return `${first(p.name)} came to church with you on Sunday. ${pick(CHURCH_LADIES)} already loves them.`}p.rel=clamp(p.rel-12);if(p.rel<35&&chance(.5))return endIt(p);return `${first(p.name)} said it is not for them, but they respect it.`}],
+  ['Give them space',()=>{p.rel=clamp(p.rel-3);return `${first(p.name)} appreciated you not pushing.`}]],'💬'));
+ const ks=kids().filter(k=>k.alive&&k.age<18);if(ks.length)log(`My kids now go to Sunday school. ${first(ks[0].name)} is already the loudest in the choir.`);
+ const mom=ppl('Mother')[0];if(mom)mom.rel=clamp(mom.rel+rnd(-5,15));
+ fix();result('Welcome to the family! ⛪',`You were baptized ${how.toLowerCase()}. The congregation clapped, the choir sang and ${pick(CHURCH_LADIES)} brought a casserole to your house that same afternoon.<br><br><b>Faith & Family life is now on.</b> You have a Faith meter, the Church menu and courtship rules.`,'💧')}
+function leaveChurch(){const w=el('div');w.append(el('div','evt-icon','🚪'),el('p','evt-text','Leave the church? You will lose the Faith meter and the Church menu, and courtship rules end.'));
+ w.append(opt('🚪','Quietly stop going','',()=>{S.mode='classic';log(`⛪ I stopped going to church. ${pick(CHURCH_LADIES)} still texts "Missed you! 🙏" every Sunday.`);fix();result('You left','You stopped going. The casseroles slowed down, then stopped. You kind of miss the potlucks.','🚪')}));
+ w.append(opt('📣','Announce it on social media','',()=>{S.mode='classic';E({fame:1});log('⛪ I announced I left the church. The prayer chain was busy that night.','bad');fix();result('You left','Your post got 200 comments. 190 were "praying for you."','📣')}));
+ w.append(opt('','Never mind, stay','',goBack));sheet('Leave the Church',w)}
+EV.push({a:[14,85],cond:()=>!FM(),ic:'⛪',t:'A friend invites you to church this Sunday. "There\'s free brunch after."',c:[['Go',()=>{S.flags.seek=(S.flags.seek||0)+1;E({happy:4});Q.push(()=>faithJourneySheet());return 'The music was good and the brunch was better. You might go back.'}],['Not for me',()=>'You slept in instead.']]},
+ {a:[18,85],cond:()=>!FM()&&S.st.happy<35,ic:'🕊️',t:'You are going through a rough patch. A neighbor asks if you would like to come to their church.',c:[['Give it a try',()=>{S.flags.seek=(S.flags.seek||0)+1;E({happy:8});Q.push(()=>faithJourneySheet());return 'People hugged you that you had never met. It felt good.'}],['Politely decline',()=>'They said the door is always open.']]},
+ {a:[18,85],cond:()=>FM()&&S.faith<30,ic:'🤔',t:'You have not felt connected at church lately.',c:[['Recommit',()=>{S.faith=clamp(S.faith+15);return 'You joined a small group and it helped.'}],['Take a step back',()=>{Q.push(()=>leaveChurch());return 'You are thinking about leaving.'}]]});
+
 // ---------- upgrades / ribbons / creator ----------
 function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
  UPGRADES.forEach(u=>{const own=has(u.id);w.append(opt(u.ic,u.n,u.d,()=>{if(own)return toast('Already unlocked!');if(M.points<u.cost)return toast(`You need ${u.cost} Life Points.`);M.points-=u.cost;M.up[u.id]=1;saveMeta();confetti();toast(`${u.n} unlocked!`);render();upgradeSheet()},{rt:own?'✅':`⭐ ${u.cost}`}))});
- w.append(sec('Life mode'));w.append(opt('⛪',FM()?'Faith & Family mode is ON':'Turn on Faith & Family mode','Satire: church life, courtship, big families, a Faith meter. This life only.',()=>{if(!S||!S.log.length)return toast('Start a life first.');S.mode=FM()?'classic':'faith';if(S.faith==null)S.faith=60;log(FM()?'⛪ I started going to church.':'I stopped going to church.');fix();upgradeSheet()},{rt:FM()?'✅':''}));
  w.append(sec('Sandbox'));w.append(opt(M.sandbox?'🔓':'🧪',M.sandbox?'Sandbox mode is ON':'Turn on sandbox mode',M.sandbox?'Everything unlocked for free. Tap to turn off.':'Unlock every upgrade for free, just to play around.',()=>{M.sandbox=!M.sandbox;saveMeta();render();upgradeSheet()}));
  sheet('Upgrades ⭐',w)}
 const ACH=[
@@ -1608,6 +1636,8 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+faithJourneySheet=nav('faithJourneySheet',faithJourneySheet);
+leaveChurch=nav('leaveChurch',leaveChurch);
 tvSheet=nav('tvSheet',tvSheet);
 churchSheet=nav('churchSheet',churchSheet);
 courtSheet=nav('courtSheet',courtSheet);
