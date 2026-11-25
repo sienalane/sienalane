@@ -154,13 +154,14 @@ body.glance-free.dock-right #glance{left:10px}
     <button id="btnUp">⭐ Upgrades<span class="badge" id="ptsBadge">0</span></button>
     <button id="btnSide">🖥️ Side view</button>
     <button id="btnDock">📺 Dock</button>
-    <button id="btnWide" class="hidden">🗔 Wide layout</button>
+    <button id="btnWide" class="hidden">↔️ Wide layout</button>
     <button id="btnRewind" class="hidden">⏪ Rewind</button>
     <button id="btnCreator" class="hidden">🪄 Creator</button>
     <button id="btnAch">🏆 Ribbons</button>
     <button id="btnSave">💾 Save</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
+    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v32 · Nov 25</span>
   </div>
   <main id="log"></main>
   <section id="stats"></section>
@@ -353,7 +354,7 @@ function nav(name,fn){return(...args)=>{const key=name+':'+args.map(a=>a&&typeof
 function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev.parentEntry)navStack=[prev.parentEntry];curNav=prev;beep(420,.05);prev.go()}
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
-function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'🗔 Wide layout: On':'🗔 Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
+function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'↔️ Wide layout: On':'↔️ Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
 function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
 let lastMenu=null;const NO_AGAIN=['leaveChurch','showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet','switchSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
@@ -424,6 +425,7 @@ function render(){
 }
 
 // ---------- aging ----------
+function quietYear(){if(!S.alive||S.log.some(l=>l.a===S.age))return;const a=S.age;const L0=a<3?['I mostly napped, ate and babbled.','I learned to clap. Everyone was thrilled.','I discovered my toes.']:a<6?['I spent the year playing pretend and asking "why?" about everything.','I built a blanket fort and refused to leave it.','I learned my ABCs (mostly).','I fell in love with a stuffed animal named '+pick(['Mr. Buttons','Bun Bun','Sir Fluff','Pickles'])+'.']:a<13?['It was a quiet year of homework and cartoons.','I spent the summer riding bikes with neighborhood kids.','I collected '+pick(['rocks','Pokémon cards','stickers','seashells'])+' all year.','Nothing big happened. I grew two inches.']:a<20?['A pretty normal teenage year. School, friends, drama.','I spent most of the year texting my friends.','I went through a '+pick(['punk','emo','preppy','skater'])+' phase.']:a<60?['A quiet, steady year.','Work, sleep, repeat. Not a bad year.','I tried a new coffee shop and made it my regular spot.','I binge-watched three whole TV series.','Nothing major happened, and honestly that was nice.']:['A peaceful year.','I spent a lot of time in the garden.','I told the same stories at every family dinner.','I took up crossword puzzles.'];log(pick(L0))}
 function ageUp(){
  if(sheetOpen)return;
  if(!S.alive)return showDeath();
@@ -432,6 +434,7 @@ function ageUp(){
  const av=$('#avatar');av.classList.add('bump');setTimeout(()=>av.classList.remove('bump'),400);
  beep(700,.06);setTimeout(()=>beep(900,.06),60);
  yearly();
+ quietYear();
  fix();
  if(!S.alive){Q=[showDeath];nextQ();return}
  if(S.jail){if(chance(.6))queuePrisonEvent()}else if(S.job&&chance(.55))queueJobEvent();
@@ -915,6 +918,8 @@ function bizSheet(b){const w=el('div');w.append(el('div','info',`<b>${b.icon} ${
 
 // ---------- activities ----------
 function actSheet(){P();if(S.jail)return prisonSheet();const w=el('div');const a=S.age;
+ const A0=(ic,n,sub,minAge,fn)=>w.append(opt(ic,n,a<minAge?`Age ${minAge}+`:sub,()=>{if(a<minAge)return toast(`You must be ${minAge}.`);fn()},{cls:a<minAge?'locked':''}));
+ w.append(sec(FM()?'⛪ Church':'🕊️ Faith'));if(FM())A0('⛪','Church','Service, choir, potluck, VBS, tithing, leave the church',0,()=>churchSheet());else A0('🕊️','Explore faith','Visit a church, meet the pastor, get baptized',8,()=>faithJourneySheet());
  const A=(ic,n,sub,minAge,fn,lock)=>{if(lock)return w.append(opt('🔒',n,lock,upgradeSheet,{cls:'locked'}));w.append(opt(ic,n,a<minAge?`Age ${minAge}+`:sub,()=>{if(a<minAge)return toast(`You must be ${minAge}.`);fn()},{cls:a<minAge?'locked':''}))};
  w.append(sec('Mind & Body'));
  A('🏋️','Go to the gym','Lift, run, yoga, boxing, climbing',10,gymSheet);
@@ -941,7 +946,7 @@ function actSheet(){P();if(S.jail)return prisonSheet();const w=el('div');const a
  A('🪪','Licenses','Driver, motorcycle, boat, pilot',16,licenseSheet);
  w.append(sec('😈 Crime'));
  A('😈','Commit a crime','Shoplifting to bank heists. Risky',14,crimeSheet);
- if(FM()){w.append(sec('⛪ Church'));A('⛪','Church','Service, choir, potluck, VBS, tithing',0,()=>churchSheet())}else{w.append(sec('🕊️ Faith'));A('🕊️','Explore faith','Visit a church, meet the pastor, get baptized',8,()=>faithJourneySheet())}
+
  w.append(sec('📺 Fame'));A('📺','Reality TV show',S.show?'"'+S.show.name+'" · ratings '+S.show.rating+'%':'Pitch a show about your life',18,()=>tvSheet());
  w.append(sec('Fortune'));
  A('🎟️','Lottery','Scratch-offs, Powerball, raffles',18,lotterySheet);
