@@ -161,7 +161,7 @@ body.glance-free.dock-right #glance{left:10px}
     <button id="btnSave">💾 Save</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
-    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v34 · Nov 25</span>
+    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v35 · Nov 25</span>
   </div>
   <main id="log"></main>
   <section id="stats"></section>
@@ -360,11 +360,12 @@ function goBack(){const prev=navStack.pop();if(!prev)return closeSheet();if(prev
 function backToMenu(){if(curNav)curNav.go();else closeSheet()}
 let sheetForced=false;const WIDE=()=>innerWidth>=760;const isWideLayout=()=>innerWidth>=1000&&!M.dock&&M.wide!==false;const isSide=()=>isWideLayout()||(!!M.side&&WIDE()&&!M.dock);
 function applySide(){const wl=isWideLayout();document.body.classList.toggle('wide',wl);document.body.classList.toggle('side',!wl&&isSide());$('#btnSide').classList.toggle('hidden',wl);const bw=$('#btnWide');bw.classList.toggle('hidden',innerWidth<1000||!!M.dock);bw.classList.toggle('on',M.wide!==false);bw.textContent=M.wide!==false?'↔️ Wide layout: On':'↔️ Wide layout';if(S)render();const b=$('#btnSide');b.classList.toggle('on',!!M.side);b.textContent=M.side?'🖥️ Side view: On':'🖥️ Side view';document.documentElement.style.setProperty('--dockw',(M.dockw||52)+'vw');document.documentElement.style.setProperty('--vidh',(M.vidh==null?40:M.vidh)+'vh');document.body.classList.toggle('glance-free',!!M.dock&&innerWidth>=600&&innerWidth-Math.max(480,innerWidth*(M.dockw||52)/100)-30>=260);document.body.classList.toggle('dock-left',M.dock==='left');document.body.classList.toggle('dock-right',M.dock==='right');const d=$('#btnDock');d.classList.toggle('on',!!M.dock);d.textContent=M.dock==='left'?'📺 Docked left':M.dock==='right'?'📺 Docked right':'📺 Dock'}
-function sheet(title,content,forced=false){sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);b.scrollTop=0;$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
-let lastMenu=null;const NO_AGAIN=['leaveChurch','showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet','switchSheet'];
+let SCROLL={},shownKey=null,FRESH=false;
+function sheet(title,content,forced=false){if(sheetOpen&&shownKey)SCROLL[shownKey]=$('#sheetBody').scrollTop;sheetForced=forced;document.body.classList.add('panel-open');if(curNav&&!curNav.title){curNav.title=title;curNav.forced=forced}$('#sheetTitle').textContent=title;$('#sheetBack').style.display=forced?'none':'';$('#sheetBack').textContent='‹ Back';const b=$('#sheetBody');b.innerHTML='';if(typeof content==='string')b.innerHTML=content;else b.append(content);shownKey=!forced&&curNav?curNav.key:null;const y=(!FRESH&&shownKey&&SCROLL[shownKey])||0;FRESH=false;b.scrollTop=y;if(y)requestAnimationFrame(()=>{b.scrollTop=y});$('#sheetClose').style.display=forced?'none':'';$('#sheet').classList.remove('hidden');sheetOpen=true}
+let lastMenu=null;const NO_AGAIN=['managerSheet','leaveChurch','showCandidate','findDate','startScreen','showDeath','creatorSheet','promSheet','hookupSheet','makeLoveSheet','switchSheet'];
 const RAW={};const PARENT_OF={showCandidate:'relSheet',findDate:'relSheet'};
 function returnTarget(){const ok=e=>e&&e.title&&!e.forced&&!NO_AGAIN.includes(e.name);if(ok(curNav))return{e:curNav,stack:navStack.filter(ok)};for(let i=navStack.length-1;i>=0;i--)if(ok(navStack[i]))return{e:navStack[i],stack:navStack.slice(0,i).filter(ok)};const p=curNav&&PARENT_OF[curNav.name];if(p&&RAW[p])return{e:{key:p+':',name:p,go:()=>RAW[p](),title:p==='relSheet'?'People ❤️':p,forced:false},stack:[]};return null}
-function closeSheet(){const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack};$('#sheet').classList.add('hidden');document.body.classList.remove('panel-open');sheetOpen=false;sheetForced=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
+function closeSheet(){if(sheetOpen&&shownKey)SCROLL[shownKey]=$('#sheetBody').scrollTop;shownKey=null;const rt=returnTarget();if(rt)lastMenu={title:rt.e.title,go:rt.e.go,name:rt.e.name,stack:rt.stack,key:rt.e.key};$('#sheet').classList.add('hidden');document.body.classList.remove('panel-open');sheetOpen=false;sheetForced=false;navStack=[];curNav=null;render();setTimeout(nextQ,280)}
 function nextQ(){let n=0;while(!sheetOpen&&Q.length&&n++<20){try{Q.shift()()}catch(e){console.warn(e)}}}
 $('#sheetBack').onclick=goBack;
 $('#sheetClose').onclick=()=>{const i=navStack.map(e=>e.forced).lastIndexOf(true);if(i>=0){navStack=navStack.slice(0,i+1);goBack()}else closeSheet()};
@@ -501,7 +502,7 @@ function yearly(){
   if(S.debt>0){S.debt*=1.05;const pay=Math.min(S.debt,Math.max(6000,S.debt*.1));if(S.money>pay){S.money-=pay;S.debt-=pay}else S.st.happy-=3;if(S.debt<1)S.debt=0}
   if(S.money<0){S.st.happy-=5;if(chance(.5))log('Bills are piling up. I am in the red. 😬','bad')}}
  S.assets.forEach(x=>{if(x.kind==='house')x.val*=1+rnd(-4,8)/100;else x.val*=.88;S.st.happy+=x.kind==='house'?1:.5});
- S.biz.forEach(b=>{const pr=b.val*(rnd(-14,24)+b.mgmt)/100;S.money+=pr;b.val*=1+rnd(-8,14)/100;b.mgmt=Math.max(0,b.mgmt-2);
+ S.biz.forEach(b=>{const pr=b.val*(rnd(-14,24)+b.mgmt)/100;S.money+=pr;b.val*=1+rnd(-8,14)/100;if(b.manager){S.money-=b.manager.salary;b.mgmt=Math.min(30,b.mgmt+Math.round(b.manager.skill/30));b.manager.years=(b.manager.years||0)+1;if(b.manager.skill<40&&chance(.15)){b.val*=.9;log(`My manager ${b.manager.name} made a costly mistake at my ${b.name}.`,'bad')}}else b.mgmt=Math.max(0,b.mgmt-2);
   if(b.name==='Tech Startup'&&!b.ipo&&chance(.04+L()/3)){b.ipo=1;b.val*=20;log(`🚀 My Tech Startup went public! It is now worth ${fmt(b.val)}.`,'big');Q.push(()=>{confetti();toast('IPO! 🚀')})}
   else if(pr<-b.val*.08)log(`${b.icon} ${b.name} had a rough year (${fmt(pr)}).`,'bad')});
  // death
@@ -916,9 +917,14 @@ function assetSheet(){const w=el('div');
  w.append(sec('Real estate'));HOUSES.forEach(([n,ic,b],i)=>{const p=price(b,i);const cash=S.money>=p,mort=!cash&&S.money>=p*.2&&S.job;w.append(opt(ic,n,cash?'Buy with cash':mort?`Mortgage: ${fmt(p*.2)} down`:'Need '+fmt(p*.2)+' down + a job',()=>{if(S.age<18)return toast('You must be 18.');if(cash){S.money-=p}else if(mort){S.money-=p*.2;S.debt+=p*.8}else return toast('You cannot afford this yet.');S.assets.push({kind:'house',name:n,ic,val:p});E({happy:10});log(`I bought a ${n}! ${ic}`,'big');Q.push(confetti);fix();closeSheet()},{rt:fmt(p),cls:cash||mort?'':'locked'}))});
  w.append(sec('Vehicles'));CARS.forEach(([n,ic,b],i)=>{const p=price(b,i+3);w.append(opt(ic,n,S.money>=p?'':'Too pricey',()=>{if(S.age<16)return toast('You must be 16.');if(S.money<p)return toast('Not enough cash.');S.money-=p;S.assets.push({kind:'car',name:n,ic,val:p});E({happy:6});log(`I bought a ${n}! ${ic}`,'good');fix();closeSheet()},{rt:fmt(p),cls:S.money>=p?'':'locked'}))});
  sheet('Assets 🏠',w)}
+function managerSheet(b){if(!S.biz.includes(b))return closeSheet();if(b.manager)return toast('Fire your current manager first.');const w=el('div');w.append(el('p','evt-text',`Who should run your ${b.name}? Better managers cost more, and you pay their salary every year.`));
+ for(let i=0;i<3;i++){const sk=rnd(25,95),g=pick(['male','female']);const c={name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),skill:sk,salary:Math.round((25000+sk*sk*12)/1000)*1000,trait:pick(['organized','charismatic','a numbers whiz','calm under pressure','a bit lazy','super creative'])};
+  w.append(opt('🧑‍💼',c.name,`Skill ${c.skill}% · ${c.trait}`,()=>{if(b.manager)return toast('Fire your current manager first.');if(S.money<c.salary)return toast('You need one year of salary up front.');S.money-=c.salary;b.manager=c;b.mgmt+=Math.round(c.skill/12);log(`I hired ${c.name} to manage my ${b.name}. 🧑‍💼`,'good');fix();act(b.name,`${c.name} is your new manager. They are ${c.trait}.`,'🧑‍💼')},{rt:fmt(c.salary)+'/yr'}))}
+ sheet('Hire a Manager',w)}
 function bizSheet(b){const w=el('div');w.append(el('div','info',`<b>${b.icon} ${b.name}</b><br>Value ${fmt(b.val)}<br>Momentum ${b.mgmt}`));
  w.append(opt('📣','Invest in marketing',fmt(b.val*.08),()=>{if(!once('mk'+b.id))return;const c=b.val*.08;if(S.money<c)return toast('Not enough cash.');S.money-=c;b.mgmt+=rnd(6,12);act(b.name,'I launched a marketing push. Customers are pouring in.','📣')}));
- w.append(opt('🧑‍💼','Hire a great manager',fmt(60000),()=>{if(!once('mg'+b.id))return;if(S.money<60000)return toast('Not enough cash.');S.money-=60000;b.mgmt+=8;b.val*=1.04;act(b.name,'I hired a strong manager. Things run smoother.','🧑‍💼')}));
+ if(b.manager)w.append(opt('👔',`Manager: ${b.manager.name}`,`Skill ${b.manager.skill}% · ${fmt(b.manager.salary)}/yr · tap to fire`,()=>{const m=b.manager;b.manager=null;b.mgmt=Math.max(0,b.mgmt-5);log(`I fired ${m.name}, the manager of my ${b.name}.`,'bad');fix();act(b.name,`You fired ${m.name}. You can hire a new manager now.`,'🚪')},{cls:'danger'}));
+ else w.append(opt('🧑‍💼','Hire a manager','Pick from 3 candidates',()=>managerSheet(b)));
  w.append(opt('🏬','Open a new location',fmt(b.val*.5)+' · once a year',()=>{if(!once('loc'+b.id))return;const c=b.val*.5;if(S.money<c)return toast('Not enough cash.');S.money-=c;b.locs=(b.locs||1)+1;b.val*=chance(.75+L())?1.7:1.2;log(`I opened location #${b.locs} of my ${b.name}. 🏬`,'good');fix();act(b.name,`Location #${b.locs} is open! Value now ${fmt(b.val)}.`,'🏬')}));
  w.append(opt('🎉','Throw a customer appreciation event',fmt(5000),()=>{if(S.money<5000)return toast('Not enough cash.');S.money-=5000;b.mgmt+=4;E({happy:3});fix();act(b.name,'Free samples, music and a line around the block.','🎉')}));
  w.append(opt('💰','Sell the business',fmt(b.val),()=>{S.money+=b.val;S.biz=S.biz.filter(x=>x!==b);log(`I sold my ${b.name} for ${fmt(b.val)}.`,'good');fix();closeSheet()},{cls:'danger'}));
@@ -1714,8 +1720,8 @@ function startScreen(){const w=el('div');w.append(el('div','title','Another Life
 
 // ---------- wiring ----------
 $('#ageBtn').onclick=()=>{if(sheetOpen&&isSide()&&!sheetForced)closeSheet();ageUp()};
-$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();if(!navStack.length&&lastSub[m.name]&&lastSub[m.name].title)navStack=[Object.assign({},lastSub[m.name],{parentEntry:{key:'p:'+m.name,name:m.name,go:m.go,title:m.title,forced:false}})];m.go()};
-document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(!S)return;if(sheetOpen){if(isSide()&&!sheetForced)closeSheet();else return}if(!S.alive)return showDeath();({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
+$('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:m.key||'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();if(!navStack.length&&lastSub[m.name]&&lastSub[m.name].title)navStack=[Object.assign({},lastSub[m.name],{parentEntry:{key:'p:'+m.name,name:m.name,go:m.go,title:m.title,forced:false}})];m.go()};
+document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(!S)return;if(sheetOpen){if(isSide()&&!sheetForced)closeSheet();else return}if(!S.alive)return showDeath();FRESH=true;({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
 $('#btnUp').onclick=()=>upgradeSheet();
 $('#btnSave').onclick=()=>{if(S&&S.log.length)openMenu(saveSheet);else toast('Start a life first.')};
 $('#btnAch').onclick=()=>S&&achSheet();
@@ -1772,6 +1778,7 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+managerSheet=nav('managerSheet',managerSheet);
 skillsSheet=nav('skillsSheet',skillsSheet);
 skillSheet=nav('skillSheet',skillSheet);
 langSheet=nav('langSheet',langSheet);
