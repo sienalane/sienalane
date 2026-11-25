@@ -161,7 +161,7 @@ body.glance-free.dock-right #glance{left:10px}
     <button id="btnSave">💾 Save</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
-    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v32 · Nov 25</span>
+    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v33 · Nov 25</span>
   </div>
   <main id="log"></main>
   <section id="stats"></section>
@@ -327,7 +327,7 @@ function newLife(o={}){
 }
 
 function log(t,cls=''){S.log.push({a:S.age,t,c:cls});if(S.log.length>600)S.log.splice(0,S.log.length-600)}
-function E(o){for(const k in o){if(k in S.st)S.st[k]+=o[k];else if(k==='money')S.money+=o[k];else S[k]+=o[k]}}
+function E(o){const f=1/(1+REPN*.75);for(const k in o){if(k in S.st)S.st[k]+=o[k]>0?Math.max(o[k]?1:0,Math.round(o[k]*f)):o[k];else if(k!=='money'&&o[k]>0&&['karma','fame','faith'].includes(k))S[k]+=Math.max(1,Math.round(o[k]*f));else if(k==='money')S.money+=o[k];else S[k]+=o[k]}}
 function fix(){for(const k in S.st)S.st[k]=clamp(S.st[k]);if(S.faith!=null)S.faith=clamp(S.faith);S.karma=clamp(S.karma);S.fame=clamp(S.fame);checkAch();save();render()}
 const net=()=>S.money-S.debt+S.assets.reduce((a,b)=>a+b.val,0)+S.biz.reduce((a,b)=>a+b.val,0)+invTotal();
 const first=n=>n.split(' ')[0];
@@ -335,7 +335,11 @@ const year=()=>S.born+S.age;
 const ppl=role=>S.rel.filter(r=>r.alive&&(Array.isArray(role)?role.includes(r.role):r.role===role));
 const partner=()=>S.rel.find(r=>r.alive&&['Partner','Fiancé','Fiancée','Spouse'].includes(r.role));
 const kids=()=>S.rel.filter(r=>r.role==='Son'||r.role==='Daughter');
-function once(k){if(S.used[k]){toast('You already did that this year. Age up!');return false}S.used[k]=1;return true}
+// Most actions can be repeated; repeats in the same year give smaller stat boosts.
+// These stay once a year because repeating them would break careers, money or story pacing.
+const YEARLY=/^(film|album|proj|pitch|spin|merch|tour|video|collab|fest|promo|work|net|study|skip|pres|honor|schol|prom|ch_tithe|donate|behave|escape|crime|mk|mg|sa\d|p_.*_(money|give)$|single)/;
+let REPN=0;
+function once(k){const n=S.used[k]||0;if(n&&YEARLY.test(k)){toast('You can only do that once a year. Age up!');return false}S.used[k]=n+1;REPN=n;setTimeout(()=>REPN=0,0);return true}
 
 // ---------- audio / fx ----------
 let AC=null;
@@ -829,10 +833,10 @@ function relSheet(){const w=el('div');
  if(S.rel.some(r=>r.alive)){w.append(sec('Everyone'));w.append(opt('💞','Spend time with everyone','Does Spend time and Have a conversation with every person, plus plays with your pets',()=>{
   let t=0,c=0,pp=0;const lines=[];
   S.rel.filter(r=>r.alive).forEach(r=>{const k=a=>`p_${r.id}_${a}`;
-   if(!S.used[k('time')]){S.used[k('time')]=1;r.rel+=rnd(4,12);E({happy:4});t++;log(`I spent quality time with ${first(r.name)}.`)}
-   if(!S.used[k('talk')]){S.used[k('talk')]=1;r.rel+=rnd(2,7);c++;log(pick([`${first(r.name)} and I talked about life.`,`${first(r.name)} and I laughed about old memories.`,`${first(r.name)} gave me some good advice.`]))}
+   {const c=S.used[k('time')]||0;S.used[k('time')]=c+1;r.rel+=Math.max(1,Math.round(rnd(4,12)/(1+c*.75)));E({happy:c?1:4});t++;log(`I spent quality time with ${first(r.name)}.`)}
+   {const cc=S.used[k('talk')]||0;S.used[k('talk')]=cc+1;r.rel+=Math.max(1,Math.round(rnd(2,7)/(1+cc*.75)));c++;log(pick([`${first(r.name)} and I talked about life.`,`${first(r.name)} and I laughed about old memories.`,`${first(r.name)} gave me some good advice.`]))}
    r.rel=clamp(r.rel)});
-  S.pets.filter(p=>p.alive).forEach(p=>{if(!S.used['pet'+p.name]){S.used['pet'+p.name]=1;E({happy:5});pp++;log(`I played with ${p.name}. ${p.ic}`)}});
+  S.pets.filter(p=>p.alive).forEach(p=>{{const pc=S.used['pet'+p.name]||0;S.used['pet'+p.name]=pc+1;E({happy:pc?1:5});pp++;log(`I played with ${p.name}. ${p.ic}`)}});
   if(!t&&!c&&!pp)return toast('You already spent time with everyone this year. Age up!');
   fix();const parts=[];if(t)parts.push(`spent time with ${t} ${t===1?'person':'people'}`);if(c)parts.push(`had ${c} conversation${c===1?'':'s'}`);if(pp)parts.push(`played with ${pp} pet${pp===1?'':'s'}`);
   const w2=el('div');w2.append(el('div','evt-icon','💞'),el('p','evt-text',`This year I ${parts.join(', ')}.`));const rt=returnTarget();if(rt)w2.append(opt('‹',`Back to ${rt.e.title}`,'',()=>{navStack=rt.stack.slice();curNav=rt.e;rt.e.go()}));w2.append(opt('','Continue','',closeSheet,{cls:'primary'}));sheet('Quality time',w2,true)}))}
@@ -1309,8 +1313,8 @@ function surgerySheet(){const w=el('div');[['👃','Nose job',6000,8],['😁','T
 // ---------- choice menus for every action ----------
 // person actions: [icon,label,sub,cost,[relMin,relMax],effects,text(name)]
 function personMenu(r,key,title,items){if(!r||!r.alive)return closeSheet();const w=el('div');w.append(el('div','info',`<b>${r.name}</b> · ${r.role} · relationship ${r.rel}%`));
- items.forEach(([ic,l,sub,cost,rr,eff,txt,risk])=>w.append(opt(ic,l,sub||(cost?fmt(cost):''),()=>{const k=`p_${r.id}_${key}`;if(S.used[k])return toast(`You already did that with ${first(r.name)} this year.`);if(cost&&S.money<cost)return toast('Not enough money.');S.used[k]=1;S.money-=cost||0;
-  const bad=risk&&chance(risk);const d=bad?-rnd(3,10):rnd(rr[0],rr[1]);r.rel=clamp(r.rel+d);if(!bad&&eff)E(eff);const t=typeof txt==='function'?txt(first(r.name),bad):txt;log(t.replace(/<br>.*/,''));fix();act(r.name,t,ic)})));
+ items.forEach(([ic,l,sub,cost,rr,eff,txt,risk])=>w.append(opt(ic,l,sub||(cost?fmt(cost):''),()=>{const k=`p_${r.id}_${key}`;if(cost&&S.money<cost)return toast('Not enough money.');const cnt=S.used[k]||0;S.used[k]=cnt+1;REPN=cnt;setTimeout(()=>REPN=0,0);S.money-=cost||0;
+  const bad=risk&&chance(risk);let d=bad?-rnd(3,10):rnd(rr[0],rr[1]);if(d>0)d=Math.max(1,Math.round(d/(1+cnt*.75)));r.rel=clamp(r.rel+d);if(!bad&&eff)E(eff);const t=typeof txt==='function'?txt(first(r.name),bad):txt;log(t.replace(/<br>.*/,''));fix();act(r.name,t,ic)})));
  sheet(title,w)}
 let timeSheet=r=>personMenu(r,'time',`Spend time with ${first(r.name)}`,[
  ['🎬','Go to a movie','',30,[5,10],{happy:4},n=>`You and ${n} saw a ${pick(['hilarious comedy','scary horror movie','big action movie','tearjerker'])}.`],
@@ -1361,7 +1365,7 @@ function moveSheet(){if(S.age<18)return toast('You must be 18.');const w=el('div
 function donateSheet(){if(S.age<18)return toast('You must be 18.');const w=el('div');const causes=[['🐾','Animal shelter'],['📚','Literacy program'],['🌍','Climate fund'],['🏥','Children\'s hospital'],['🍲','Food bank']];const cause=el('select');cause.innerHTML=causes.map(c=>`<option>${c[0]} ${c[1]}</option>`).join('');w.append(el('label','lb','Cause'),cause);
  [100,1000,10000,100000].forEach(a=>w.append(opt('💛',`Donate ${fmt(a)}`,'',()=>{if(S.money<a)return toast('Not enough money.');if(!once('donate'))return;S.money-=a;const k=Math.min(15,3+Math.round(Math.log10(a)*2.5));E({karma:k,happy:4});if(a>=100000)E({fame:3});log(`I donated ${fmt(a)} to ${cause.value.slice(2).trim()}. 💛`,'good');fix();act('Donation',`You donated ${fmt(a)} to the ${cause.value.slice(2).trim().toLowerCase()}. Karma +${k}`,'💛')})));sheet('Donate 🎗️',w)}
 function petSheet(p){if(!p||!p.alive)return closeSheet();const w=el('div');w.append(el('div','info',`<b>${p.ic} ${p.name}</b> · ${p.type}, age ${p.age}`));
- [['🎾','Play fetch','',{happy:5},`${p.name} brought the ball back 47 times.`],['🦮','Go for a walk','',{happy:3,health:2},`You and ${p.name} explored the neighborhood.`],['🍖','Spoil with treats','$20',{happy:4,money:-20},`${p.name} did a happy dance.`],['🎓','Teach a trick','',{happy:4,smarts:1},chance(.6)?`${p.name} learned to shake!`:`${p.name} just stared at you.`],['🩺','Vet checkup','$100',{money:-100},`${p.name} is healthy. The vet gave them a sticker.`]].forEach(([ic,n,sub,eff,t])=>w.append(opt(ic,n,sub,()=>{if(!once('pet'+p.name))return toast(`You already spent time with ${p.name} this year.`);if(n==='Vet checkup')p.life+=1;E(eff);fix();act(p.name,t,ic)})));
+ [['🎾','Play fetch','',{happy:5},`${p.name} brought the ball back 47 times.`],['🦮','Go for a walk','',{happy:3,health:2},`You and ${p.name} explored the neighborhood.`],['🍖','Spoil with treats','$20',{happy:4,money:-20},`${p.name} did a happy dance.`],['🎓','Teach a trick','',{happy:4,smarts:1},chance(.6)?`${p.name} learned to shake!`:`${p.name} just stared at you.`],['🩺','Vet checkup','$100',{money:-100},`${p.name} is healthy. The vet gave them a sticker.`]].forEach(([ic,n,sub,eff,t])=>w.append(opt(ic,n,sub,()=>{once('pet'+p.name);if(n==='Vet checkup')p.life+=1;E(eff);fix();act(p.name,t,ic)})));
  sheet(p.name,w)}
 
 // ---------- FAITH & FAMILY MODE (gentle satire of church culture) ----------
