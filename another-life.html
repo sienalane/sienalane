@@ -161,7 +161,7 @@ body.glance-free.dock-right #glance{left:10px}
     <button id="btnSave">💾 Save</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
-    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v35 · Nov 25</span>
+    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v36 · Nov 25</span>
   </div>
   <main id="log"></main>
   <section id="stats"></section>
@@ -502,7 +502,7 @@ function yearly(){
   if(S.debt>0){S.debt*=1.05;const pay=Math.min(S.debt,Math.max(6000,S.debt*.1));if(S.money>pay){S.money-=pay;S.debt-=pay}else S.st.happy-=3;if(S.debt<1)S.debt=0}
   if(S.money<0){S.st.happy-=5;if(chance(.5))log('Bills are piling up. I am in the red. 😬','bad')}}
  S.assets.forEach(x=>{if(x.kind==='house')x.val*=1+rnd(-4,8)/100;else x.val*=.88;S.st.happy+=x.kind==='house'?1:.5});
- S.biz.forEach(b=>{const pr=b.val*(rnd(-14,24)+b.mgmt)/100;S.money+=pr;b.val*=1+rnd(-8,14)/100;if(b.manager){S.money-=b.manager.salary;b.mgmt=Math.min(30,b.mgmt+Math.round(b.manager.skill/30));b.manager.years=(b.manager.years||0)+1;if(b.manager.skill<40&&chance(.15)){b.val*=.9;log(`My manager ${b.manager.name} made a costly mistake at my ${b.name}.`,'bad')}}else b.mgmt=Math.max(0,b.mgmt-2);
+ S.biz.forEach(b=>{const pr=b.val*(rnd(-14,24)+b.mgmt)/100;S.money+=pr;if(b.manager)b.val*=1+b.manager.skill/1000;b.val*=1+rnd(-8,14)/100;if(b.manager){S.money-=b.manager.salary;const before=b.mgmt;b.mgmt=Math.min(40,b.mgmt+mgrGain(b.manager));if(b.mgmt>before)log(`🧑‍💼 ${b.manager.name} grew momentum at my ${b.name} to ${b.mgmt}.`,'good');b.manager.years=(b.manager.years||0)+1;if(b.manager.skill<40&&chance(.15)){b.val*=.9;log(`My manager ${b.manager.name} made a costly mistake at my ${b.name}.`,'bad')}}else b.mgmt=Math.max(0,b.mgmt-2);
   if(b.name==='Tech Startup'&&!b.ipo&&chance(.04+L()/3)){b.ipo=1;b.val*=20;log(`🚀 My Tech Startup went public! It is now worth ${fmt(b.val)}.`,'big');Q.push(()=>{confetti();toast('IPO! 🚀')})}
   else if(pr<-b.val*.08)log(`${b.icon} ${b.name} had a rough year (${fmt(pr)}).`,'bad')});
  // death
@@ -918,10 +918,11 @@ function assetSheet(){const w=el('div');
  w.append(sec('Vehicles'));CARS.forEach(([n,ic,b],i)=>{const p=price(b,i+3);w.append(opt(ic,n,S.money>=p?'':'Too pricey',()=>{if(S.age<16)return toast('You must be 16.');if(S.money<p)return toast('Not enough cash.');S.money-=p;S.assets.push({kind:'car',name:n,ic,val:p});E({happy:6});log(`I bought a ${n}! ${ic}`,'good');fix();closeSheet()},{rt:fmt(p),cls:S.money>=p?'':'locked'}))});
  sheet('Assets 🏠',w)}
 function managerSheet(b){if(!S.biz.includes(b))return closeSheet();if(b.manager)return toast('Fire your current manager first.');const w=el('div');w.append(el('p','evt-text',`Who should run your ${b.name}? Better managers cost more, and you pay their salary every year.`));
- for(let i=0;i<3;i++){const sk=rnd(25,95),g=pick(['male','female']);const c={name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),skill:sk,salary:Math.round((25000+sk*sk*12)/1000)*1000,trait:pick(['organized','charismatic','a numbers whiz','calm under pressure','a bit lazy','super creative'])};
+ for(let i=0;i<3;i++){const sk=rnd(25,95),g=pick(['male','female']);const c={name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),skill:sk,salary:Math.max(15000,Math.round(b.val*(.03+sk/1500)/1000)*1000),trait:pick(['organized','charismatic','a numbers whiz','calm under pressure','a bit lazy','super creative'])};
   w.append(opt('🧑‍💼',c.name,`Skill ${c.skill}% · ${c.trait}`,()=>{if(b.manager)return toast('Fire your current manager first.');if(S.money<c.salary)return toast('You need one year of salary up front.');S.money-=c.salary;b.manager=c;b.mgmt+=Math.round(c.skill/12);log(`I hired ${c.name} to manage my ${b.name}. 🧑‍💼`,'good');fix();act(b.name,`${c.name} is your new manager. They are ${c.trait}.`,'🧑‍💼')},{rt:fmt(c.salary)+'/yr'}))}
  sheet('Hire a Manager',w)}
-function bizSheet(b){const w=el('div');w.append(el('div','info',`<b>${b.icon} ${b.name}</b><br>Value ${fmt(b.val)}<br>Momentum ${b.mgmt}`));
+const mgrGain=m=>Math.round(m.skill/12);
+function bizSheet(b){if(!S.biz.includes(b))return closeSheet();const w=el('div');const avg=Math.round(b.val*(5+b.mgmt)/100);w.append(el('div','info',`<b>${b.icon} ${b.name}</b>${b.locs>1?` · ${b.locs} locations`:''}<br>Value ${fmt(b.val)}<br>Momentum <b>${b.mgmt}</b> ${b.manager?`<span style="color:var(--good)">(+${mgrGain(b.manager)} a year from ${first(b.manager.name)})</span>`:'<span style="color:var(--bad)">(−2 a year with no manager)</span>'}<br>Expected profit about <b>${fmt(avg)}</b> a year${b.manager?` after paying ${fmt(b.manager.salary)} salary: <b>${fmt(avg-b.manager.salary)}</b>`:''}<div class="tiny" style="margin-top:6px">Momentum raises your yearly profit and how fast the business grows. A manager adds momentum every year when you age up.</div>`));
  w.append(opt('📣','Invest in marketing',fmt(b.val*.08),()=>{if(!once('mk'+b.id))return;const c=b.val*.08;if(S.money<c)return toast('Not enough cash.');S.money-=c;b.mgmt+=rnd(6,12);act(b.name,'I launched a marketing push. Customers are pouring in.','📣')}));
  if(b.manager)w.append(opt('👔',`Manager: ${b.manager.name}`,`Skill ${b.manager.skill}% · ${fmt(b.manager.salary)}/yr · tap to fire`,()=>{const m=b.manager;b.manager=null;b.mgmt=Math.max(0,b.mgmt-5);log(`I fired ${m.name}, the manager of my ${b.name}.`,'bad');fix();act(b.name,`You fired ${m.name}. You can hire a new manager now.`,'🚪')},{cls:'danger'}));
  else w.append(opt('🧑‍💼','Hire a manager','Pick from 3 candidates',()=>managerSheet(b)));
