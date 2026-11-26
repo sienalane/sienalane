@@ -140,6 +140,41 @@ body.glance-free.dock-right #glance{left:10px}
  body.side #sheet.hidden{transform:translateX(70px)}
  body.side .sheet-inner{max-height:none;height:100%;border-radius:24px;border-bottom:1px solid var(--line);transform:none!important;box-shadow:0 20px 50px #0007}
 }
+/* ===== Calm themes ===== */
+:root{--bg1:hsl(var(--hue) 14% 15%);--bg2:hsl(calc(var(--hue) + 25) 12% 10%);--card:hsl(var(--hue) 10% 19% / .88);--line:hsl(var(--hue) 10% 32% / .55);--txt:#ece8df;--mut:#a7ada6;--acc:#9fc2ab;--good:#8fbf9f;--mid:#d9bf86;--bad:#d9958e;--soft:#ffffff0c;--soft2:#ffffff16;--ink:#1e2a24}
+body{background:radial-gradient(1100px 800px at 15% -10%,hsl(var(--hue) 18% 26% / .45),transparent 60%),radial-gradient(900px 700px at 110% 110%,hsl(calc(var(--hue) + 40) 16% 24% / .35),transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2))}
+#avatar{background:linear-gradient(135deg,hsl(var(--hue) 22% 62%),hsl(calc(var(--hue) + 40) 20% 52%));box-shadow:0 0 0 3px hsl(var(--hue) 15% 70% / .25),0 6px 16px #0004}
+#ageBtn{background:linear-gradient(135deg,#a9c8b4,#7fa58d);color:var(--ink);box-shadow:0 8px 22px #7fa58d55;animation:calmpulse 3.2s infinite}
+#ageBtn span{color:var(--ink)}
+#ageBtn:hover{background:linear-gradient(135deg,#b7d3c0,#8db39a)}
+@keyframes calmpulse{0%,100%{box-shadow:0 8px 22px #7fa58d44,0 0 0 0 #9fc2ab55}50%{box-shadow:0 8px 22px #7fa58d44,0 0 0 10px transparent}}
+.opt{background:var(--soft)}.opt:hover{background:var(--soft2)}
+.opt.primary{background:linear-gradient(135deg,#a9c8b4,#86ab94);color:var(--ink)}
+.info,.pill{background:var(--soft)}
+.bar{background:#ffffff14}
+input[type=text],input[type=number],select,textarea{background:var(--soft2)!important;color:var(--txt)!important}
+.ent.good{color:#bcd8c4}.ent.bad{color:#e8bdb7}.ent.big{color:#efd9a8}
+.title{background:linear-gradient(90deg,var(--txt),var(--acc));-webkit-background-clip:text;background-clip:text}
+.sheet-inner{background:linear-gradient(180deg,hsl(var(--hue) 12% 21%),hsl(var(--hue) 12% 14%))}
+#toast{background:hsl(var(--hue) 12% 22%)}
+.badge{background:var(--acc);color:var(--ink)}
+/* Day theme: cream and sage, like the main site */
+body.day{--bg1:#f5f1e8;--bg2:#e6eee8;--card:rgba(255,255,255,.82);--line:#d4e2d9;--txt:#34403a;--mut:#6d7c74;--acc:#6b8e7f;--good:#4f8a66;--mid:#b28a34;--bad:#b4594f;--soft:rgba(107,142,127,.07);--soft2:rgba(107,142,127,.14);--ink:#fff}
+body.day{background:radial-gradient(1000px 700px at 10% -10%,#dfeae2,transparent 60%),radial-gradient(900px 700px at 110% 110%,#efe6d6,transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2))}
+body.day #ageBtn{background:linear-gradient(135deg,#7fa58d,#6b8e7f);color:#fff;box-shadow:0 8px 20px #6b8e7f44}
+body.day #ageBtn span{color:#fff}
+body.day .opt.primary{background:linear-gradient(135deg,#7fa58d,#6b8e7f);color:#fff}
+body.day .bar{background:#6b8e7f1f}
+body.day .ent.good{color:#3f7a57}body.day .ent.bad{color:#a5554c}body.day .ent.big{color:#7d5f1c}
+body.day .sheet-inner{background:linear-gradient(180deg,#fbf8f2,#f1f4ef)}
+body.day #sheet{background:#34403a55}
+body.day #toast{background:#fff;color:var(--txt)}
+body.day #sheetBack,body.day #sheetClose{background:var(--soft2);color:var(--txt)}
+body.day select option{background:#fff;color:#34403a}
+body.day #avatar{box-shadow:0 0 0 3px #fff,0 6px 16px #6b8e7f33}
+body.day nav button:hover{background:var(--soft)}
+body.day .title{background:linear-gradient(90deg,#4f6f61,#8fb09e);-webkit-background-clip:text;background-clip:text}
+body.day #pmoney{color:#4f8a66}
 </style>
 </head>
 <body>
@@ -159,9 +194,10 @@ body.glance-free.dock-right #glance{left:10px}
     <button id="btnCreator" class="hidden">🪄 Creator</button>
     <button id="btnAch">🏆 Ribbons</button>
     <button id="btnSave">💾 Save</button>
+    <button id="btnTheme">🎨 Theme</button>
     <button id="btnSound">🔊</button>
     <button id="btnNew">↻ New life</button>
-    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v37 · Nov 25</span>
+    <span id="ver" style="align-self:center;font-size:11px;color:var(--mut);padding:0 6px">v38 · Nov 25</span>
   </div>
   <main id="log"></main>
   <section id="stats"></section>
@@ -303,7 +339,7 @@ function saveSheet(){const w=el('div');w.append(el('div','info','<b>Your save co
 function newLife(o={}){
  const g=o.gender||pick(['male','female']);
  const last=o.last||pick(LAST);
- S={name:o.name||(pick(g==='male'?MALE:FEMALE)+' '+last),gender:g,age:0,born:o.born||2026,city:o.city||pick(CITIES),alive:true,
+ S={look:o.look||null,name:o.name||(pick(g==='male'?MALE:FEMALE)+' '+last),gender:g,age:0,born:o.born||2026,city:o.city||pick(CITIES),alive:true,
   st:{health:rnd(70,100),happy:rnd(60,100),smarts:rnd(20,90),looks:rnd(20,95)},fame:0,karma:50,
   money:0,debt:0,log:[],school:null,degrees:[],job:null,retired:null,rel:[],assets:[],biz:[],pets:[],used:{},ill:null,flags:{},
   rewinds:3,gen:o.gen||1,mode:o.mode||'classic',faith:o.mode==='faith'?rnd(55,85):50,achs:[],jobsHeld:[],cause:null,paid:false};
@@ -349,7 +385,7 @@ function chime(){beep(523,.12);setTimeout(()=>beep(659,.12),90);setTimeout(()=>b
 function sad(){beep(330,.25,'triangle');setTimeout(()=>beep(262,.4,'triangle'),200)}
 const fx=$('#fx'),cx=fx.getContext('2d');let parts=[];
 function resize(){fx.width=innerWidth;fx.height=innerHeight}resize();addEventListener('resize',resize);
-function confetti(n=90){for(let i=0;i<n;i++)parts.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*12,vy:Math.random()*-11-3,c:`hsl(${rnd(0,360)} 90% 60%)`,s:rnd(4,8),r:Math.random()*6,l:120});if(parts.length===n)requestAnimationFrame(tick);chime()}
+function confetti(n=90){for(let i=0;i<n;i++)parts.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*12,vy:Math.random()*-11-3,c:`hsl(${rnd(0,360)} 40% 72%)`,s:rnd(4,8),r:Math.random()*6,l:120});if(parts.length===n)requestAnimationFrame(tick);chime()}
 function tick(){cx.clearRect(0,0,fx.width,fx.height);parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.3;p.vx*=.99;p.r+=.2;p.l--;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);cx.restore()});parts=parts.filter(p=>p.l>0);if(parts.length)requestAnimationFrame(tick);else cx.clearRect(0,0,fx.width,fx.height)}
 let tt;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2600)}
 
@@ -378,7 +414,7 @@ function act(title,r,icon){result(title,r,icon)}
 
 // ---------- render ----------
 function stage(){const a=S.age;return a<3?0:a<13?1:a<20?2:a<60?3:4}
-function avatar(){if(!S.alive)return'🪦';const m=S.gender==='male',a=S.age;if(a<3)return'👶';if(a<13)return m?'👦':'👧';if(a<20)return m?'🧑':'👱‍♀️';if(a<60)return m?'👨':'👩';return m?'👴':'👵'}
+function avatar(){if(!S.alive)return'🪦';ensureLook();return faceFor(S.gender,S.age,S.look)}
 function mood(){const h=S.st.happy;return h>80?'😄':h>60?'🙂':h>40?'😐':h>20?'😟':'😢'}
 function openMenu(fn){if(sheetOpen){if(sheetForced)return;closeSheet()}fn()}
 function renderGlance(){const g=$('#glance');if(!g||!(document.body.classList.contains('wide')||document.body.classList.contains('glance-free'))||!S)return;g.innerHTML='';
@@ -391,7 +427,7 @@ function renderGlance(){const g=$('#glance');if(!g||!(document.body.classList.co
  g.append(sec('People'));
  const order=['Spouse','Fiancé','Fiancée','Partner','Son','Daughter','Mother','Father','Sister','Brother','Friend','Grandson','Granddaughter','Grandmother','Grandfather','Mother-in-law','Father-in-law','Aunt','Uncle','Cousin'];
  const ppl=S.rel.filter(r=>r.alive).sort((a,b)=>order.indexOf(a.role)-order.indexOf(b.role)).slice(0,6);
- ppl.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';g.append(opt(r.gender==='male'?'🧑':'👩',r.name,`${r.role} · age ${r.age}`,()=>openMenu(()=>personSheet(r)),{rt:`<div class="bar" style="width:60px"><i style="width:${r.rel}%;background:${c}"></i></div>`}))});
+ ppl.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';g.append(opt(face(r),r.name,`${r.role} · age ${r.age}`,()=>openMenu(()=>personSheet(r)),{rt:`<div class="bar" style="width:60px"><i style="width:${r.rel}%;background:${c}"></i></div>`}))});
  S.pets.filter(p=>p.alive).slice(0,2).forEach(p=>g.append(el('div','mini',`<span>${p.ic} ${p.name}</span><span>${p.type}, age ${p.age}</span>`)));
  g.append(opt('❤️','All people','Family, love, friends',()=>openMenu(relSheet)));
  g.append(sec('Money'));
@@ -405,8 +441,8 @@ function renderGlance(){const g=$('#glance');if(!g||!(document.body.classList.co
 }
 function render(){
  if(!S)return;
- document.documentElement.style.setProperty('--hue',[330,175,270,210,35][stage()]);
- $('#avatar').textContent=avatar();
+ document.documentElement.style.setProperty('--hue',[20,150,250,200,40][stage()]);document.body.classList.toggle('day',M.theme!=='dusk');
+ $('#avatar').textContent=avatar();if(S.look)$('#avatar').style.background=S.look.bg;
  $('#pname').textContent=`${S.name} ${S.alive?mood():''}`;
  const title=S.jail?`In prison (${S.jail} yr left)`:S.job?CAR[S.job.id].lv[S.job.lvl][0]:S.school?S.school.type:S.retired?'Retired':S.age<5?'Toddler':S.age>=18?'Unemployed':'Kid';
  $('#psub').textContent=`Age ${S.age} · ${title} · ${S.city}`;
@@ -427,7 +463,7 @@ function render(){
  const st=$('#stats');st.innerHTML='';
  const list=[['❤️ Health',S.st.health],['😊 Happiness',S.st.happy],['🧠 Smarts',S.st.smarts],['✨ Looks',S.st.looks],['☯️ Karma',S.karma]];
  if(has('spotlight')||S.fame>0)list.push(['🌟 Fame',S.fame]);if(S.mode==='faith')list.push(['✝️ Faith',S.faith]);
- list.forEach(([n,v])=>{const c=v>66?'var(--good)':v>33?'var(--mid)':'var(--bad)';st.append(el('div','stat',`<div class="row"><span>${n}</span><span>${v}%</span></div><div class="bar"><i style="width:${v}%;background:${c}"></i></div>`))});
+ list.forEach(([n,v])=>{v=Math.max(0,Math.min(100,Math.round(v)));const c=v>66?'var(--good)':v>33?'var(--mid)':'var(--bad)';st.append(el('div','stat',`<div class="row"><span>${n}</span><span>${v}%</span></div><div class="bar"><i style="width:${v}%;background:${c}"></i></div>`))});
 }
 
 // ---------- aging ----------
@@ -444,6 +480,7 @@ function ageUp(){
  fix();
  if(!S.alive){Q=[showDeath];nextQ();return}
  if(S.jail){if(chance(.6))queuePrisonEvent()}else if(S.job&&chance(.55))queueJobEvent();
+ if(!S.jail&&S.job&&chance(.3))queueWorkEvent();
  if(!S.jail&&S.age>=4)queueNPC();
  if(!S.jail)faithYear();
  if(!S.jail)tvYear();
@@ -822,15 +859,15 @@ let DATES={pref:null,list:[]};
 function matchesSheet(pref){if(DATES.pref!==pref||!DATES.list.length){DATES={pref,list:Array.from({length:5},()=>meet(pref))}}const w=el('div');const p0=partner();
  if(p0){w.append(el('div','info',`<b>💕 You are dating ${p0.name}.</b><br>Find them in People to plan date nights or propose.`));w.append(opt('❤️','Go to People','',()=>relSheet(),{cls:'primary'}));return sheet('Your Matches 💘',w)}
  w.append(el('p','evt-text','Tap someone to see their profile and ask them out.'));
- DATES.list.forEach(c=>w.append(opt(c.asked?'💔':(c.gender==='male'?'🧔':'👩‍🦰'),`${c.name}, ${c.age}`,c.asked?'Turned you down':`${c.job} · looks ${stars(c.looks)}`,()=>{if(c.asked)return toast(`${first(c.name)} already said no.`);showCandidate(c)},{cls:c.asked?'locked':''})));
+ DATES.list.forEach(c=>w.append(opt(c.asked?'💔':face(c),`${c.name}, ${c.age}`,c.asked?'Turned you down':`${c.job} · looks ${stars(c.looks)}`,()=>{if(c.asked)return toast(`${first(c.name)} already said no.`);showCandidate(c)},{cls:c.asked?'locked':''})));
  w.append(opt('🔄','Show new people','',()=>{DATES.list=Array.from({length:5},()=>meet(pref));matchesSheet(pref)}));
  sheet('Your Matches 💘',w)}
-function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',p.gender==='male'?'🧔':'👩‍🦰'));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else{p.asked=true;result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}}));if(!FM()&&S.age>=18&&p.age>=18&&!partner())w.append(opt('😏','Go home with them','Skip the dating part',()=>hookupSheet(p)));w.append(opt('👋','Pass','',()=>{if(DATES.list.includes(p))goBack();else closeSheet()}));sheet('Your Date',w)}
+function showCandidate(p){const w=el('div');w.append(el('div','evt-icon',face(p)));w.append(el('div','info',`<b>${p.name}</b>, ${p.age}<br>Works as a ${p.job}<br>Looks ${stars(p.looks)}<br>Smarts ${stars(p.smarts)}`));w.append(opt('💌','Ask them out','',()=>{if(chance(S.st.looks/130+.25+L()-(p.looks-60)/250)){addPartner(p);log(`I started dating ${p.name}. 💕`,'good');result('It\'s a match!',`${first(p.name)} said yes! You are now dating.`,'💕')}else{p.asked=true;result('Rejected',`${first(p.name)} declined. Plenty of fish.`,'💔')}}));if(!FM()&&S.age>=18&&p.age>=18&&!partner())w.append(opt('😏','Go home with them','Skip the dating part',()=>hookupSheet(p)));w.append(opt('👋','Pass','',()=>{if(DATES.list.includes(p))goBack();else closeSheet()}));sheet('Your Date',w)}
 
 function relSheet(){const w=el('div');
  const groups=[['Family',['Mother','Father','Brother','Sister','Grandmother','Grandfather','Aunt','Uncle','Cousin','Mother-in-law','Father-in-law']],['Love',['Partner','Fiancé','Fiancée','Spouse']],['Children',['Son','Daughter']],['Grandchildren',['Grandson','Granddaughter']],['Friends',['Friend']]];
  groups.forEach(([g,roles])=>{const list=S.rel.filter(r=>roles.includes(r.role));if(!list.length&&g!=='Love')return;w.append(sec(g));
-  list.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';w.append(opt(r.alive?(r.gender==='male'?'🧑':'👩'):'🪦',`${r.name}`,`${r.role} · ${r.alive?'age '+r.age:'deceased'}`,()=>personSheet(r),{rt:r.alive?`<div class="bar" style="width:70px"><i style="width:${r.rel}%;background:${c}"></i></div>`:''}))});
+  list.forEach(r=>{const c=r.rel>66?'var(--good)':r.rel>33?'var(--mid)':'var(--bad)';w.append(opt(face(r),`${r.name}`,`${r.role} · ${r.alive?'age '+r.age:'deceased'}`,()=>personSheet(r),{rt:r.alive?`<div class="bar" style="width:70px"><i style="width:${r.rel}%;background:${c}"></i></div>`:''}))});
   if(g==='Love'&&!partner())w.append(opt('💘','Find a date','Meet someone new',findDate))});
  if(S.pets.length){w.append(sec('Pets'));S.pets.forEach(p=>w.append(opt(p.alive?p.ic:'🌈',p.name,`${p.type} · ${p.alive?'age '+p.age:'passed away'}`,()=>{if(!p.alive)return;petSheet(p)})))}
  if(S.rel.some(r=>r.alive)){w.append(sec('Everyone'));w.append(opt('💞','Spend time with everyone','Does Spend time and Have a conversation with every person, plus plays with your pets',()=>{
@@ -846,7 +883,7 @@ function relSheet(){const w=el('div');
  w.append(sec('Social'));w.append(opt('🤝','Make a new friend','Gym, coffee shop, online, dog park',()=>friendSheet()));
  sheet('People ❤️',w)}
 
-function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}</b><br>${r.role}${r.alive?' · Age '+r.age+' · Relationship '+r.rel+'%':' · Deceased'}`));
+function personSheet(r){const w=el('div');w.append(el('div','info',`<div style="display:flex;gap:12px;align-items:center"><span style="font-size:44px;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:${(face(r),r.look&&r.look.bg)||'var(--soft2)'}">${face(r)}</span><div><b>${r.name}</b><br>${r.role}${r.alive?' · Age '+r.age+' · Relationship '+r.rel+'%':' · Deceased'}</div></div>`));
  const k=a=>`p_${r.id}_${a}`;
  const go=(a,fn)=>()=>{if(!once(k(a)))return;const res=fn();r.rel=clamp(r.rel);act(r.name,res,'💬')};
  if(!r.alive){w.append(opt('🌹','Visit their grave','',go('grave',()=>{E({happy:3});return`I left flowers for ${first(r.name)}.`})));return sheet(r.role,w)}
@@ -864,7 +901,7 @@ function personSheet(r){const w=el('div');w.append(el('div','info',`<b>${r.name}
  if(r.role!=='Spouse'&&!['Son','Daughter'].includes(r.role))w.append(opt('😤','Argue','Yell, sulk, or talk it out',()=>argueSheet(r),{cls:'danger'}));
  if(r.role==='Friend')w.append(opt('🚪','End friendship','',()=>{S.rel=S.rel.filter(x=>x!==r);log(`I ended my friendship with ${r.name}.`);closeSheet()},{cls:'danger'}));
  sheet(r.role,w)}
-function babyBorn(age=0,nm,gg){const g=gg||pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const taken=[first(S.name),...S.rel.map(r=>first(r.name))];const c={id:uid(),name:nm||(pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)))+' '+last),gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
+function babyBorn(age=0,nm,gg){const g=gg||pick(['male','female']);const last=S.name.split(' ').slice(-1)[0];const taken=[first(S.name),...S.rel.map(r=>first(r.name))];const c={look:randLook(S.look?S.look.tone:null),id:uid(),name:nm||(pick((g==='male'?MALE:FEMALE).filter(n=>!taken.includes(n)))+' '+last),gender:g,age,rel:90,role:g==='male'?'Son':'Daughter',alive:true};S.rel.push(c);log(`Welcome to the family, ${c.name}! ${age?'':'👶'}`,'big');S.st.happy+=12;Q.push(confetti)}
 
 // ---------- career ----------
 function meets(c){const r=c.req,miss=[];
@@ -987,7 +1024,10 @@ const invTotal=()=>S&&S.inv?S.inv.index+S.inv.tech+S.inv.crypto:0;
 // generic outcome resolver used by studio actions and activity choices
 function resolve(stat,o={}){const v=stat?(stat==='karma'?S.karma:stat==='fame'?S.fame:stat==='skill'?(S.music?S.music.skill:50):S.st[stat]):50;const p=o.p!=null?o.p+L():.55+(v-50)/150+L();const ok=chance(p);
  if(S.job&&o.job!==false)S.job.perf=clamp(S.job.perf+(ok?rnd(5,11):-rnd(4,9)));E(Object.assign({happy:ok?3:-3},(ok?o.g:o.b)||{}));return ok}
-function runAct(title,ic,a,key){if(key&&!once(key))return;const [label,stat,good,bad,o]=a;const ok=resolve(stat,o||{});fix();act(title,ok?good:bad,ic)}
+function runAct(title,ic,a,key){if(key&&!once(key))return;const [label,stat,good,bad,o]=a;const ok=resolve(stat,o||{});let text=ok?good:bad;
+ if(typeof SKILLMAP!=='undefined'&&SKILLMAP[title]){const sk=SKILLMAP[title];const v=gainSkill(sk,SKILLS.find(x=>x[0]===sk)[2]);text+=`<br><span class="tiny">📈 ${SKILLS.find(x=>x[0]===sk)[2]} skill: ${v}%</span>`}
+ if(key==='lib')S.flags.books=(S.flags.books||0)+1;
+ fix();const pool=typeof FOLLOW!=='undefined'&&FOLLOW[key];if(pool&&chance(.4))return followSheet(title,ic,text,pick(pool));act(title,text,ic)}
 const NAMEA=['Midnight','Golden','Velvet','Northern','Electric','Paper','Silent','Wild','Blue','Neon','Crimson','Lucky','Hollow','Summer','Glass','Burning'];
 const NAMEB=['Horizon','Garden','Signal','Harbor','Echo','Summit','River','Atlas','Lantern','Orchard','Compass','Tide','Hearts','Static','Skyline','Letters'];
 const genName=()=>pick(NAMEA)+' '+pick(NAMEB);
@@ -1200,7 +1240,7 @@ function schoolPeople(){const s=S.school;if(!s)return null;if(!s.people||s.peopl
 function schoolSheet(){P();if(!S.school){toast('You are not in school right now.');return closeSheet()}const s=S.school,sp=schoolPeople(),w=el('div');
  w.append(el('div','info',`<b>🏫 ${s.type}${s.major?' · '+s.major:''}</b><br>${s.left} year${s.left===1?'':'s'} left · Grades ${s.perf}%${s.club?'<br>Club: '+s.club:''}`));
  w.append(sec('Teachers'));sp.teachers.forEach(t=>w.append(opt('🧑‍🏫',t.name,`${t.subject} · relationship ${t.rel}%`,()=>teacherSheet(t),{rt:bar(t.rel)})));
- w.append(sec('Classmates'));sp.mates.forEach(m=>w.append(opt(m.gender==='male'?'🧑':'👧',m.name,`${m.vibe} · ${m.rel}%`,()=>mateSheet(m),{rt:bar(m.rel)})));
+ w.append(sec('Classmates'));sp.mates.forEach(m=>w.append(opt(faceFor(m.gender,S.age,m.look||(m.look=randLook())),m.name,`${m.vibe} · ${m.rel}%`,()=>mateSheet(m),{rt:bar(m.rel)})));
  w.append(sec('Clubs & teams'));w.append(opt('🏅',s.club?`Your club: ${s.club}`:'Join a club or team',s.club?'Big moments happen each year':'One at a time',clubSheet));
  w.append(sec('School life'));
  w.append(opt('📚','Study harder','+grades',()=>{if(!once('study'))return;s.perf=clamp(s.perf+rnd(8,15));E({smarts:rnd(1,4),happy:-2});act('Study','You hit the books hard this year.','📚')}));
@@ -1621,6 +1661,87 @@ function expansionYear(){
  checkResolution();if(S.age>=10&&chance(.3))Q.push(resolutionPrompt);
 }
 
+// ================= DEPTH: follow-ups, skill links, travel, work & school moments =================
+const addFriend=(how)=>{const g=pick(['male','female']);const f={id:uid(),name:pick(g==='male'?MALE:FEMALE)+' '+pick(LAST),gender:g,age:Math.max(6,S.age+rnd(-5,5)),rel:rnd(50,75),role:'Friend',alive:true};S.rel.push(f);return f};
+const FOLLOW={
+ gym:[['A regular asks you to spot them on a heavy bench press.',[['Spot them',()=>{if(chance(.85)){E({karma:2});return 'They hit a new record and fist-bumped you. Gym friends now.'}E({health:-4});return 'The bar slipped. You both survived, barely.'}],['Say you are just leaving',()=>'They found someone else.']]],
+  ['Someone at the gym asks if you want to be workout buddies.',[['Sure!',()=>{const f=addFriend();return `You and ${first(f.name)} now train together three times a week.`}],['I prefer working out alone',()=>'Headphones in, world out.']]],
+  ['A trainer offers you a free session.',[['Take it',()=>{E({health:5});gainSkill('fitness','Fitness');return 'Brutal, but you learned a lot.'}],['Buy a 10-pack after ($600)',()=>{if(S.money<600)return 'You could not afford it.';S.money-=600;E({health:9});gainSkill('fitness','Fitness',2);return 'Your form is perfect now.'}],['No thanks',()=>'Maybe next time.']]]],
+ lib:[['The librarian slides a book across the desk. "You will love this one."',[['Read it',()=>{E({smarts:3,happy:3});S.flags.books=(S.flags.books||0)+1;return 'It became your new favorite book.'}],['Politely pass',()=>'You stuck with your pick.']]],
+  ['A book club in the corner invites you to join.',[['Join',()=>{const f=addFriend();E({happy:4});return `You joined. ${first(f.name)} has excellent taste in books.`}],['Not today',()=>'They waved goodbye.']]],
+  ['You find an old note tucked inside the book you borrowed.',[['Read it',()=>pick(['It was a grocery list from 1987. Mostly eggs.','It was a sweet love letter. You put it back carefully.','It said "If you found this, have a great day." You did.'])],['Leave it',()=>'Some mysteries stay mysteries.']]]],
+ med:[['A stranger in the park says you have a really calm presence.',[['Chat with them',()=>{if(chance(.5)){const f=addFriend();return `You talked for an hour. ${first(f.name)} is your new friend.`}return 'Nice chat. You went your separate ways.'}],['Smile and keep going',()=>'Peace preserved.']]],
+  ['Halfway through, your mind starts racing about work.',[['Gently refocus',()=>{E({happy:4});return 'You brought it back to your breath. Progress.'}],['Give up and make a to-do list',()=>{E({smarts:1});return 'Not relaxing, but very productive.'}]]]],
+ hobby:[['Someone sees what you made and offers to buy it.',[['Sell it',()=>{const m=rnd(40,400);S.money+=m;return `You sold it for ${fmt(m)}!`}],['Keep it',()=>{E({happy:3});return 'It is not for sale. It is yours.'}]]],
+  ['A community center asks you to teach a beginner class.',[['Teach it',()=>{E({karma:4,happy:4});S.money+=200;return 'Your students loved you. +$200'}],['Not ready yet',()=>'Maybe next year.']]],
+  ['You post your work online and it gets attention.',[['Post more',()=>{E({fame:2,happy:3});return 'You are building a small following.'}],['Keep it private',()=>'Some things are just for you.']]]],
+ adv:[['Your guide offers an even more extreme option, off the usual route.',[['Go for it',()=>{if(chance(.6+S.st.health/400)){E({happy:10});return 'The most incredible thing you have ever done.'}E({health:-10});return 'You got hurt. Worth the story, maybe.'}],['Play it safe',()=>{E({happy:2});return 'You enjoyed the view from solid ground.'}]]],
+  ['You meet another traveler on the trip.',[['Swap numbers',()=>{const f=addFriend();return `You and ${first(f.name)} are planning the next adventure.`}],['Just enjoy the moment',()=>'A nice chat, then goodbye.']]]],
+ vol:[['The organizer asks if you would lead next time.',[['Yes',()=>{E({karma:6});S.flags.leader=1;return 'You are now a volunteer coordinator.'}],['I just like helping',()=>{E({karma:2});return 'They understood.'}]]],
+  ['You meet someone really kind while volunteering.',[['Ask them to coffee',()=>{const p=meet();p.job='volunteer';if(!partner()&&S.age>=16)Q.push(()=>showCandidate(p));else addFriend();return 'You made a real connection.'}],['Keep working',()=>'Good work done.']]]],
+ spa:[['Your stylist suggests a bold new look.',[['Trust them',()=>{if(chance(.6)){E({looks:5,happy:5});return 'Stunning. Everyone noticed.'}E({looks:-3,happy:-4});return 'It is... a choice. It will grow out.'}],['Keep it classic',()=>'Safe and lovely.']]]],
+ martial:[['Your instructor says you are ready for a tournament.',[['Compete',()=>{if(chance(.4+S.st.health/250)){E({happy:10,fame:1});return 'You won your division! 🥇'}E({health:-5});return 'You lost in round two. You will be back.'}],['Keep training',()=>{E({health:2});return 'Patience builds skill.'}]]]],
+ instr:[['Your teacher says you are ready for a recital.',[['Perform',()=>{if(chance(.5+S.st.smarts/300)){E({happy:9,fame:1});return 'Flawless. Your family cheered the loudest.'}E({happy:-4});return 'You missed a few notes. Nobody noticed. Probably.'}],['Not yet',()=>'More practice first.']]]],
+ night:[['Someone spills a drink all over you.',[['Laugh it off',()=>{if(chance(.4)){const f=addFriend();return `They bought you a drink. ${first(f.name)} is hilarious.`}return 'Sticky, but you stayed.'}],['Make them pay for dry cleaning',()=>{S.money+=40;E({karma:-1});return 'They paid $40 and left.'}]]],
+  ['The DJ calls for someone to come on stage.',[['Jump up',()=>{E({happy:8,fame:1});return 'You owned the stage. People filmed it.'}],['Hide behind your friends',()=>'Your friends pushed you anyway. You survived.']]],
+  ['Your ex walks in.',[['Say hi',()=>{if(chance(.5))return 'It was surprisingly friendly.';E({happy:-5});return 'Awkward. Very awkward.'}],['Leave through the side door',()=>'Smooth exit.']]]]};
+function followSheet(title,ic,text,[q,chs]){const w=el('div');w.append(el('div','evt-icon',ic),el('p','evt-text',text),el('div','sec','Then...'),el('p','evt-text',q));
+ chs.forEach(([l,f])=>w.append(opt('',l,'',()=>{let r;try{r=f()}catch(e){r='The moment passed.'}log(r);fix();act(title,r,ic)})));sheet(title,w,true)}
+const SKILLMAP={'Painting':'painting','Gardening':'gardening','Cooking class':'cooking','Photography':'photo','Write a story':'writing','Lift weights':'fitness','Cardio':'fitness','Boxing':'fitness','Rock climbing':'fitness','Yoga class':'fitness','Dance class':'dance'};
+
+// ---------- travel with stops ----------
+const TRIPS={Italy:['🇮🇹',4000,[['🏛️','Tour the Colosseum','smarts'],['🍝','Take a pasta-making class','cooking'],['🚤','Boat ride along the Amalfi Coast','happy']]],Japan:['🇯🇵',5000,[['⛩️','Visit Kyoto temples at sunrise','happy'],['🍣','Eat at a tiny sushi counter','cooking'],['🗻','Hike near Mount Fuji','health']]],Mexico:['🇲🇽',2000,[['🛕','Climb the pyramids at Teotihuacán','health'],['🌮','Street taco crawl','cooking'],['🏖️','Snorkel in a cenote','happy']]],Iceland:['🇮🇸',4500,[['🌌','Hunt for the northern lights','happy'],['♨️','Soak in a hot spring','health'],['🧊','Glacier hike','health']]],Kenya:['🇰🇪',6000,[['🦁','Safari at dawn','happy'],['🏘️','Visit a local village','karma'],['🎈','Hot air balloon over the plains','happy']]],Peru:['🇵🇪',3500,[['🏔️','Hike to Machu Picchu','health'],['🦙','Meet alpacas in the Andes','happy'],['🍲','Try ceviche in Lima','cooking']]],Greece:['🇬🇷',3500,[['🌅','Watch the sunset in Santorini','happy'],['🏺','Explore ancient ruins','smarts'],['⛵','Island-hop by ferry','happy']]],Australia:['🇦🇺',6000,[['🐨','Hold a koala','happy'],['🐠','Snorkel the Great Barrier Reef','health'],['🏄','Surf at Bondi Beach','fitness']]],Spain:['🇪🇸',3500,[['💃','Watch flamenco in Seville','dance'],['🥘','Cook paella in Valencia','cooking'],['⛪','See the Sagrada Família','smarts']]],France:['🇫🇷',4000,[['🗼','Picnic under the Eiffel Tower','happy'],['🍷','Tour vineyards in Bordeaux','smarts'],['🎨','Paint by the Seine','painting']]]};
+const LANG_OF={Italy:'italian',Japan:'japanese',Mexico:'spanish',Peru:'spanish',Spain:'spanish',France:'french'};
+travelSheet=()=>{P();const w=el('div');const st=S.flags.stamps||[];w.append(el('div','info',`<b>🛂 Passport stamps: ${st.length}</b>${st.length?'<br>'+st.map(c=>TRIPS[c]?TRIPS[c][0]:'').join(' '):''}`));
+ Object.entries(TRIPS).forEach(([c,[ic,cost]])=>w.append(opt(ic,c,st.includes(c)?'Visited · go again':'',()=>tripSheet(c),{rt:fmt(cost)})));sheet('Travel the World 🌍',w)};
+let tripSheet=c=>{const [ic,cost,stops]=TRIPS[c];const w=el('div');w.append(el('div','info',`<b>${ic} ${c}</b> · ${fmt(cost)}<br>Pick 2 stops for your trip.`));const chosen=[];
+ stops.forEach(([sic,n])=>{const b=opt(sic,n,'',()=>{const i=chosen.indexOf(n);if(i>=0){chosen.splice(i,1);b.style.borderColor=''}else if(chosen.length<2){chosen.push(n);b.style.borderColor='var(--acc)'}go.querySelector('.tx').firstChild.textContent=`Book the trip (${chosen.length}/2 stops)`});w.append(b)});
+ w.append(el('label','lb','Souvenir'));const sv=el('select');sv.innerHTML=['Fridge magnet','Local art','Handmade jewelry','A silly hat','Nothing, just memories'].map(x=>`<option>${x}</option>`).join('');w.append(sv);
+ const go=opt('✈️','Book the trip (0/2 stops)','',()=>{if(S.age<18)return toast('You must be 18.');if(chosen.length<2)return toast('Pick 2 stops.');if(S.money<cost)return toast('Not enough money.');S.money-=cost;const lines=[];
+  chosen.forEach(n=>{const [sic,,k]=stops.find(x=>x[1]===n);if(['smarts','health','happy'].includes(k))E({[k]:rnd(3,6)});else if(k==='karma')E({karma:5});else gainSkill(k,SKILLS.find(x=>x[0]===k)[2]);lines.push(`${sic} ${n}: ${pick(['unforgettable.','the highlight of the trip.','better than the photos.','you took 300 pictures.'])}`)});
+  E({happy:rnd(8,12)});if(LANG_OF[c])gainSkill(LANG_OF[c],LANGS.find(l=>l[0]===LANG_OF[c])[2]);S.flags.stamps=[...new Set([...(S.flags.stamps||[]),c])];S.flags.countries=S.flags.stamps.length;
+  if(chance(.25)){const f=addFriend();lines.push(`🤝 You met ${f.name} on the trip and stayed in touch.`)}
+  log(`I traveled to ${c}. ${ic}`,'good');fix();act(`${ic} ${c}`,lines.join('<br>')+`<br>🎁 Souvenir: ${sv.value.toLowerCase()}.`,ic)},{cls:'primary'});w.append(go);sheet(`${ic} ${c}`,w)};
+
+// ---------- everyday work moments (all jobs) ----------
+const WORK_EV=[['🎂','It is a coworker\'s birthday and someone needs to organize the card.',[['Organize it',()=>{S.job.perf=clamp(S.job.perf+3);E({karma:3});return 'Everyone signed. The coworker teared up.'}],['Just sign it',()=>'You wrote "HBD!" and moved on.']]],
+ ['🎄','The office holiday party is tonight.',[['Go and do karaoke',()=>{if(chance(.6)){S.job.perf=clamp(S.job.perf+4);E({happy:6});return 'Your boss sang backup. Legendary night.'}E({happy:-3});return 'You chose a 9-minute song. Regret.'}],['Show up for 20 minutes',()=>'You grabbed snacks and left. Efficient.'],['Skip it',()=>{S.job.perf=clamp(S.job.perf-2);return 'People noticed you were gone.'}]]],
+ ['💘','A coworker asks you out for drinks after work.',[['Go',()=>{if(!partner()&&S.age>=18){const p=meet();p.job='coworker';Q.push(()=>showCandidate(p));return 'You hit it off. Office romance incoming?'}return 'Just friendly drinks.'}],['Keep it professional',()=>'Smart. Maybe.']]],
+ ['📉','There are rumors of layoffs.',[['Work extra hard',()=>{S.job.perf=clamp(S.job.perf+6);E({happy:-3});return 'You made yourself hard to cut.'}],['Update your résumé quietly',()=>{E({smarts:1});return 'Ready for anything.'}],['Ignore the rumors',()=>chance(.15)&&S.job?(log(`I was laid off from my job as ${CAR[S.job.id].lv[S.job.lvl][0]}.`,'bad'),S.job=null,'You were laid off.'):'The rumors were false.']]],
+ ['🏠','Your boss offers you the option to work from home.',[['Take it',()=>{E({happy:6});return 'Pajama pants forever.'}],['Stay in the office',()=>{S.job.perf=clamp(S.job.perf+3);return 'Face time paid off.'}]]],
+ ['🧾','A coworker quits and their work lands on your desk.',[['Handle it',()=>{S.job.perf=clamp(S.job.perf+7);E({happy:-4,health:-1});return 'Exhausting, but your boss noticed.'}],['Push back',()=>{if(chance(.5))return 'Your boss hired a temp. Phew.';S.job.perf=clamp(S.job.perf-4);return 'Your boss was not pleased.'}]]],
+ ['☕','Someone keeps stealing your lunch from the office fridge.',[['Leave a passive-aggressive note',()=>'The thief left a note back. War has begun.'],['Set a spicy trap',()=>{E({happy:4});return 'You heard a yelp from the break room. Justice.'}],['Let it go',()=>'You eat out now.']]]];
+function queueWorkEvent(){if(!S.job)return;const [ic,t,c]=pick(WORK_EV);Q.push(()=>choice('At work',t,c.map(([l,f])=>[l,()=>S.job?f():'You no longer work there.']),ic))}
+
+// ---------- school moments ----------
+EV.push({a:[6,18],cond:()=>!!S.school,ic:'📝',t:'Pop quiz! You did not study.',c:[['Try your best',()=>{if(chance(S.st.smarts/110)){S.school.perf=clamp(S.school.perf+4);return 'You aced it somehow.'}S.school.perf=clamp(S.school.perf-5);return 'You got a D.'}],['Peek at your neighbor\'s paper',()=>{if(chance(.6)){S.school.perf=clamp(S.school.perf+2);E({karma:-3});return 'You got away with it.'}S.school.perf=clamp(S.school.perf-10);return 'Caught. Zero and a note home.'}]]},
+ {a:[6,14],cond:()=>!!S.school,ic:'🚌',t:'Field trip day! Where is your class going?',c:[['The science museum',()=>{E({smarts:3,happy:4});return 'You touched a real meteorite.'}],['The aquarium',()=>{E({happy:6});return 'A sea otter waved at you. Probably.'}],['The zoo',()=>{E({happy:6,smarts:1});return 'The giraffes were the best part.'}]]},
+ {a:[7,17],cond:()=>!!S.school,ic:'🍱',t:'It is your first day in the cafeteria and you need a place to sit.',c:[['Sit with the popular kids',()=>{if(chance(S.st.looks/120)){E({happy:6});return 'They let you stay. You are in.'}E({happy:-5});return '"That seat is saved."'}],['Sit with the quiet kid alone',()=>{const f=addFriend();E({karma:3});return `You and ${first(f.name)} became best friends.`}],['Eat in the library',()=>{E({smarts:2});return 'Peaceful. The librarian likes you.'}]]},
+ {a:[14,18],cond:()=>!!S.school,ic:'🚗',t:'Your friend offers to drive you to school in their new car.',c:[['Ride along',()=>{E({happy:4});return 'Windows down, music up.'}],['Take the bus',()=>'Reliable. Boring.']]});
+
+// ---------- appearance ----------
+const TONES=['','🏻','🏼','🏽','🏾','🏿'];
+const HAIRS=[['none','Classic'],['blond','Blond'],['red','Red'],['curly','Curly'],['white','Silver'],['bald','Bald'],['beard','Beard']];
+const BGS=['#a9c8b4','#c9b79c','#a7b8cf','#d4a5a5','#b9a7cf','#e0c98f','#9fbfbf','#c4c4b8'];
+function randLook(base){const tone=base!=null&&chance(.75)?base:rnd(0,5);return{tone,hair:pick(['none','none','none','blond','red','curly','curly','bald','beard']),bg:pick(BGS)}}
+function faceFor(g,age,look){look=look||{tone:0,hair:'none'};const t=TONES[look.tone||0],m=g==='male',ZW='‍';
+ if(age<3)return'👶'+t;if(age<13)return(m?'👦':'👧')+t;
+ let hair=look.hair||'none';if(hair==='beard'&&!m)hair='none';if(age>=65&&hair!=='bald')hair=hair==='beard'?'beard':'white';
+ if(hair==='beard')return'🧔'+t+(m?ZW+'♂️':'');
+ if(hair==='blond')return'👱'+t+ZW+(m?'♂️':'♀️');
+ const base=m?'👨':'👩';if(hair==='none')return age>=65?(m?'👴':'👵')+t:base+t;
+ return base+t+ZW+{red:'🦰',curly:'🦱',white:'🦳',bald:'🦲'}[hair]}
+const FAMILY_ROLES=['Mother','Father','Brother','Sister','Son','Daughter','Grandmother','Grandfather','Aunt','Uncle','Cousin','Grandson','Granddaughter'];
+function face(r){if(!r)return'🧑';if(!r.alive&&r.alive!==undefined)return'🪦';if(!r.look){const fam=FAMILY_ROLES.includes(r.role);r.look=randLook(fam&&S.look?S.look.tone:null)}return faceFor(r.gender,r.age!=null?r.age:30,r.look)}
+function ensureLook(){if(S&&!S.look)S.look={tone:rnd(0,5),hair:S.gender==='male'?pick(['none','curly','blond','beard']):pick(['none','curly','blond','red']),bg:pick(BGS)}}
+function appearanceSheet(){ensureLook();const L=S.look;const w=el('div');const prev=el('div','evt-icon',faceFor(S.gender,Math.max(S.age,20),L));prev.style.cssText+=`;width:96px;height:96px;margin:4px auto 10px;border-radius:50%;display:grid;place-items:center;background:${L.bg}`;w.append(prev);
+ const redraw=()=>{prev.textContent=faceFor(S.gender,Math.max(S.age,20),L);prev.style.background=L.bg;save();render()};
+ w.append(sec('Skin tone'));const tr=el('div');tr.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px';TONES.forEach((t,i)=>{const b=el('button','opt','✋'+t);b.style.cssText='width:auto;font-size:26px;padding:6px 10px';b.onclick=()=>{L.tone=i;redraw()};tr.append(b)});w.append(tr);
+ w.append(sec('Hair'));const hr=el('div');hr.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px';HAIRS.forEach(([k,n])=>{if(k==='beard'&&S.gender!=='male')return;const b=el('button','opt',`<span style="font-size:24px">${faceFor(S.gender,30,{tone:L.tone,hair:k})}</span>&nbsp;${n}`);b.style.cssText='width:auto;padding:6px 10px';b.onclick=()=>{L.hair=k;redraw();appearanceSheet()};hr.append(b)});w.append(hr);
+ w.append(sec('Background color'));const br=el('div');br.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px';BGS.forEach(c=>{const b=el('button','opt','');b.style.cssText=`width:38px;height:38px;padding:0;border-radius:50%;background:${c};${L.bg===c?'outline:3px solid var(--acc)':''}`;b.onclick=()=>{L.bg=c;redraw();appearanceSheet()};br.append(b)});w.append(br);
+ w.append(opt('🎲','Randomize','',()=>{Object.assign(L,randLook());redraw();appearanceSheet()}));
+ w.append(opt('','Done','',closeSheet,{cls:'primary'}));sheet('Your Look 🎨',w)}
+
 // ---------- upgrades / ribbons / creator ----------
 function upgradeSheet(){const w=el('div');w.append(el('div','info',`<b>⭐ Life Points: ${M.sandbox?'∞':M.points}</b><br>Earn points from ribbons and by living long, rich lives. Upgrades carry over to every future life.`));
  UPGRADES.forEach(u=>{const own=has(u.id);w.append(opt(u.ic,u.n,u.d,()=>{if(own)return toast('Already unlocked!');if(M.points<u.cost)return toast(`You need ${u.cost} Life Points.`);M.points-=u.cost;M.up[u.id]=1;saveMeta();confetti();toast(`${u.n} unlocked!`);render();upgradeSheet()},{rt:own?'✅':`⭐ ${u.cost}`}))});
@@ -1693,7 +1814,7 @@ function willSheet(){const w=el('div');const live=S.rel.filter(r=>r.alive&&HEIRS
  sheet('Write a Will 📜',w)}
 function estateLines(){const estate=Math.max(0,net());const {out,charity}=willShares();const lines=Object.entries(out).map(([id,f])=>{const r=S.rel.find(x=>x.id===id);return r?`${r.name} (${r.role}): ${fmt(estate*f)}`:''}).filter(Boolean);if(charity>0)lines.push(`Charity: ${fmt(estate*charity)}`);return lines}
 function continueAs(h,alive=false){const estate=Math.max(0,net());const {out}=willShares();const inh=alive?0:Math.round(estate*(out[h.id]||0));const deceased=S;const spouse=S.rel.find(r=>r.role==='Spouse'&&r.alive);const gen=S.gen+1;const parts=h.name.split(' ');
- newLife({name:h.name,gender:h.gender,last:parts[parts.length-1],city:deceased.city,born:deceased.born+deceased.age-h.age,gen,noFamily:true,mode:deceased.mode});
+ newLife({name:h.name,gender:h.gender,last:parts[parts.length-1],city:deceased.city,born:deceased.born+deceased.age-h.age,gen,noFamily:true,mode:deceased.mode,look:h.look});
  S.age=h.age;S.money+=inh;S.st.smarts=clamp(S.st.smarts);
  S.rel.push({id:uid(),name:deceased.name,role:deceased.gender==='male'?'Father':'Mother',gender:deceased.gender,age:deceased.age,rel:h.rel,alive:alive});
  if(spouse)S.rel.push({...spouse,role:spouse.gender==='male'?'Father':'Mother',rel:rnd(50,90)});
@@ -1711,17 +1832,19 @@ function startScreen(){const w=el('div');w.append(el('div','title','Another Life
  w.append(el('label','lb','Gender'));const gs=el('select');gs.innerHTML='<option value="male">Male</option><option value="female">Female</option>';gs.value=g;w.append(gs);
  w.append(el('label','lb','First name'));const fn=el('input');fn.type='text';fn.value=pick(g==='male'?MALE:FEMALE);w.append(fn);
  w.append(el('label','lb','Last name'));const ln=el('input');ln.type='text';ln.value=pick(LAST);w.append(ln);
+ const lookPrev=el('div');w.append(el('label','lb','Look'));const lk={tone:rnd(0,5),hair:'none',bg:pick(BGS)};const lkRow=el('div');lkRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px';const drawLk=()=>{lkRow.innerHTML='';TONES.forEach((t,i)=>{const b=el('button','opt',faceFor(gs.value,25,{tone:i,hair:lk.hair}));b.style.cssText=`width:auto;font-size:24px;padding:4px 8px;${lk.tone===i?'outline:2px solid var(--acc)':''}`;b.onclick=()=>{lk.tone=i;drawLk()};lkRow.append(b)});HAIRS.forEach(([k,n])=>{if(k==='beard'&&gs.value!=='male')return;const b=el('button','opt',n);b.style.cssText=`width:auto;font-size:12px;padding:4px 8px;${lk.hair===k?'outline:2px solid var(--acc)':''}`;b.onclick=()=>{lk.hair=k;drawLk()};lkRow.append(b)})};drawLk();gs.addEventListener('change',drawLk);w.append(lkRow);
  w.append(el('label','lb','Life mode'));const md=el('select');md.id='lifeMode';md.innerHTML='<option value="classic">🎲 Classic</option><option value="faith">⛪ Faith & Family (satire)</option>';w.append(md);
  w.append(el('label','lb','Birthplace'));const cs=el('select');cs.innerHTML=CITIES.map(c=>`<option>${c}</option>`).join('');cs.value=pick(CITIES);w.append(cs);
  gs.onchange=()=>{fn.value=pick(gs.value==='male'?MALE:FEMALE)};
  const stats={};
  if(has('creator')){w.append(sec('🪄 Creator Mode: design your stats'));['health','happy','smarts','looks'].forEach(k=>{stats[k]=rnd(50,90);w.append(el('label','lb',`${k} <span id="sv_${k}">${stats[k]}</span>`));const r=el('input');r.type='range';r.min=0;r.max=100;r.value=stats[k];r.oninput=()=>{stats[k]=+r.value;$('#sv_'+k).textContent=r.value};w.append(r)})}
  w.append(opt('🎲','Randomize','',()=>{gs.value=pick(['male','female']);fn.value=pick(gs.value==='male'?MALE:FEMALE);ln.value=pick(LAST);cs.value=pick(CITIES)}));
- w.append(opt('','Be born ✨','',()=>{newLife({mode:md.value,name:(fn.value.trim()||'Alex')+' '+(ln.value.trim()||'Smith'),gender:gs.value,last:ln.value.trim()||'Smith',city:cs.value,stats:has('creator')?stats:null});closeSheet()},{cls:'primary'}));
+ w.append(opt('','Be born ✨','',()=>{newLife({mode:md.value,name:(fn.value.trim()||'Alex')+' '+(ln.value.trim()||'Smith'),gender:gs.value,last:ln.value.trim()||'Smith',city:cs.value,stats:has('creator')?stats:null,look:lk});closeSheet()},{cls:'primary'}));
  w.append(opt('⭐',`Upgrades (${M.sandbox?'∞':M.points} points)`,'Spend Life Points before you start',upgradeSheet));
  sheet('New Life',w,true)}
 
 // ---------- wiring ----------
+$('#avatar').style.cursor='pointer';$('#avatar').title='Change your look';$('#avatar').onclick=()=>{if(!S||!S.log.length||!S.alive)return;openMenu(appearanceSheet)};
 $('#ageBtn').onclick=()=>{if(sheetOpen&&isSide()&&!sheetForced)closeSheet();ageUp()};
 $('#againBtn').onclick=()=>{if(sheetOpen||!lastMenu||!S.alive)return;const m=lastMenu;beep(520,.05);curNav={key:m.key||'again:'+m.name,name:m.name,go:m.go,title:null};navStack=(m.stack||[]).slice();if(!navStack.length&&lastSub[m.name]&&lastSub[m.name].title)navStack=[Object.assign({},lastSub[m.name],{parentEntry:{key:'p:'+m.name,name:m.name,go:m.go,title:m.title,forced:false}})];m.go()};
 document.querySelectorAll('nav button[data-a]').forEach(b=>b.onclick=()=>{if(!S)return;if(sheetOpen){if(isSide()&&!sheetForced)closeSheet();else return}if(!S.alive)return showDeath();FRESH=true;({job:jobSheet,assets:assetSheet,rel:relSheet,act:actSheet})[b.dataset.a]()});
@@ -1741,6 +1864,7 @@ $('#btnDock').onclick=()=>{if(sheetOpen&&sheetForced)return toast('Start your li
 $('#btnSide').onclick=()=>{if(M.dock&&!M.side)toast('Undock first to use side view.');M.side=!M.side;saveMeta();applySide();toast(!M.side?'Side view off.':WIDE()?'Side view on: menus open next to your game.':'Side view is on, but this screen is too narrow. Turn your device sideways or widen the window.')};
 $('#btnWide').onclick=()=>{M.wide=M.wide===false?true:false;saveMeta();if(sheetOpen&&!sheetForced)closeSheet();applySide();toast(M.wide!==false?'Wide layout on.':'Wide layout off.')};
 addEventListener('resize',applySide);applySide();
+$('#btnTheme').onclick=()=>{M.theme=M.theme==='dusk'?'day':'dusk';saveMeta();render();toast(M.theme==='dusk'?'Calm Dusk theme':'Calm Day theme')};
 $('#btnSound').onclick=()=>{M.sound=!M.sound;saveMeta();render()};
 $('#btnNew').onclick=()=>{if(sheetOpen&&sheetForced)return;const w=el('div');const ks=S.alive?kids().filter(c=>c.alive):[];if(ks.length){w.append(el('p','evt-text','Switch to one of your children?'));ks.forEach(c=>w.append(opt('🔄',`Live as ${c.name}`,`${c.role} · age ${c.age}`,()=>switchSheet(c))));w.append(sec('Or'))}w.append(el('p','evt-text','Abandon this life and start over?'));w.append(opt('','Yes, start a new life','',()=>{closeSheet();setTimeout(startScreen,300)},{cls:'primary'}));w.append(opt('','Keep living','',closeSheet));sheet('New life?',w)};
 $('#btnRewind').onclick=()=>{if(!has('rewind'))return;if(!PREV)return toast('Nothing to rewind yet.');if(S.rewinds<=0)return toast('No rewinds left this life.');const r=S.rewinds-1;S=JSON.parse(PREV);S.rewinds=r;PREV=null;Q=[];if(sheetOpen){$('#sheet').classList.add('hidden');sheetOpen=false}log('⏪ I went back in time...');beep(300,.3,'sawtooth');save();render()};
@@ -1765,6 +1889,8 @@ ACH.push(['plat','💿','Platinum Record','Release a platinum album',20,()=>S.mu
  ['mastery','🎓','Master of One','Max out any skill',15,()=>SKILLS.some(k=>(S.skills||{})[k[0]]>=100)],
  ['landlord','🔑','Landlord','Rent out 3 properties',15,()=>S.assets.filter(a=>a.rented).length>=3],
  ['chain','🏬','Franchise','Open 3 locations of one business',15,()=>S.biz.some(b=>(b.locs||1)>=3)],
+ ['bookworm','📚','Bookworm','Read 20 books',10,()=>(S.flags.books||0)>=20],
+ ['stamps','🛂','Full Passport','Collect 8 passport stamps',15,()=>(S.flags.stamps||[]).length>=8],
  ['licensed','🪪','Fully Licensed','Earn every license',10,()=>S.lic&&LICENSES.every(l=>S.lic[l[0]])]);
 // back-button navigation: wrap every menu
 jobSheet=nav('jobSheet',jobSheet);
@@ -1781,6 +1907,8 @@ uniOfferAdult=nav('uniOfferAdult',uniOfferAdult);
 gradOffer=nav('gradOffer',gradOffer);
 upgradeSheet=nav('upgradeSheet',upgradeSheet);
 achSheet=nav('achSheet',achSheet);
+appearanceSheet=nav('appearanceSheet',appearanceSheet);
+tripSheet=nav('tripSheet',tripSheet);
 managerSheet=nav('managerSheet',managerSheet);
 skillsSheet=nav('skillsSheet',skillsSheet);
 skillSheet=nav('skillSheet',skillSheet);
